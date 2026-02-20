@@ -1,14 +1,360 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// ==========================================
+// Enums
+// ==========================================
+
+enum ProviderType {
+  GOOGLE
+  CREDENTIALS
+}
+
+enum PlanType {
+  TRIAL
+  BASIC
+  PRO
+  ENTERPRISE
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  COORDINATOR
+  TEACHER
+}
+
+enum TermStatus {
+  PLANNING
+  ACTIVE
+  FINISHED
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+// ==========================================
+// Phase 1: Identity and Billing
+// ==========================================
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String
+  passwordHash String?  @map("password_hash")
+  avatarUrl    String?  @map("avatar_url")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  identities    UserIdentity[]
+  ownedAccounts Account[]
+  memberships   Member[]
+
+  @@map("users")
+}
+
+model UserIdentity {
+  id         String       @id @default(uuid())
+  userId     String       @map("user_id")
+  provider   ProviderType
+  providerId String       @map("provider_id")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerId])
+  @@map("user_identities")
+}
+
+model Account {
+  id        String   @id @default(uuid())
+  name      String
+  ownerId   String   @map("owner_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  owner         User           @relation(fields: [ownerId], references: [id])
+  subscription  Subscription?
+  organizations Organization[]
+
+  @@map("accounts")
+}
+
+model Subscription {
+  id        String    @id @default(uuid())
+  accountId String    @unique @map("account_id")
+  plan      PlanType  @default(TRIAL)
+  isActive  Boolean   @default(true) @map("is_active")
+  expiresAt DateTime? @map("expires_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  // Relationships
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+// ==========================================
+// Phase 2: Multi-tenancy and Access Control
+// ==========================================
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  accountId String   @map("account_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  account       Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  members       Member[]
+  disciplines   Discipline[]
+  courses       Course[]
+  terms         Term[]
+  locations     Location[]
+  timeSlotGroup TimeSlotGroup[]
+
+  @@map("organizations")
+}
+
+model Member {
+  id             String       @id @default(uuid())
+  userId         String       @map("user_id")
+  organizationId String       @map("organization_id")
+  roles          MemberRole[] @default([TEACHER])
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  // Relationships
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sections     Section[]
+
+  @@unique([userId, organizationId])
+  @@map("members")
+}
+
+// ==========================================
+// Phase 3: Academic Catalog
+// ==========================================
+
+model Discipline {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  name           String
+  code           String?
+  workload       Int?
+  color          String?
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  organization Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  curriculums  CurriculumDiscipline[]
+
+  @@map("disciplines")
+}
+
+model Course {
+  id             String   @id @default(uuid())
+  name           String
+  organizationId String   @map("organization_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  curriculums  Curriculum[]
+
+  @@map("courses")
+}
+
+model Curriculum {
+  id        String   @id @default(uuid())
+  name      String
+  courseId  String   @map("course_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  course      Course                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  disciplines CurriculumDiscipline[]
+  timetables  Timetable[]
+
+  @@map("curriculums")
+}
+
+model CurriculumDiscipline {
+  id           String  @id @default(uuid())
+  curriculumId String  @map("curriculum_id")
+  disciplineId String  @map("discipline_id")
+  level        Int
+  isMandatory  Boolean @default(true) @map("is_mandatory")
+
+  // Relationships
+  curriculum Curriculum @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
+  discipline Discipline @relation(fields: [disciplineId], references: [id], onDelete: Cascade)
+  sections   Section[]
+
+  @@unique([curriculumId, disciplineId])
+  @@map("curriculum_disciplines")
+}
+
+// ==========================================
+// Phase 4: Infrastructure and Time
+// ==========================================
+
+model Term {
+  id             String     @id @default(uuid())
+  name           String
+  startDate      DateTime   @map("start_date")
+  endDate        DateTime   @map("end_date")
+  status         TermStatus @default(PLANNING)
+  organizationId String     @map("organization_id")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  timetables   Timetable[]
+
+  @@map("terms")
+}
+
+model Location {
+  id             String   @id @default(uuid())
+  name           String
+  capacity       Int?
+  organizationId String   @map("organization_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  slots        Slot[]
+
+  @@map("locations")
+}
+
+model TimeSlotGroup {
+  id             String   @id @default(uuid())
+  name           String
+  organizationId String   @map("organization_id")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  timeSlots    TimeSlot[]
+
+  @@map("time_slot_groups")
+}
+
+model TimeSlot {
+  id              String   @id @default(uuid())
+  name            String
+  startTime       String   @map("start_time")
+  endTime         String   @map("end_time")
+  timeSlotGroupId String   @map("time_slot_group_id")
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  timeSlotGroup TimeSlotGroup @relation(fields: [timeSlotGroupId], references: [id], onDelete: Cascade)
+  slots         Slot[]
+
+  @@map("time_slots")
+}
+
+// ==========================================
+// Phase 5: Timetable Engine
+// ==========================================
+
+model Timetable {
+  id           String   @id @default(uuid())
+  name         String
+  termId       String   @map("term_id")
+  curriculumId String   @map("curriculum_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  term       Term       @relation(fields: [termId], references: [id], onDelete: Cascade)
+  curriculum Curriculum @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
+  boards     Board[]
+  sections   Section[]
+
+  @@map("timetables")
+}
+
+model Section {
+  id                     String   @id @default(uuid())
+  name                   String
+  timetableId            String   @map("timetable_id")
+  curriculumDisciplineId String   @map("curriculum_discipline_id")
+  memberId               String   @map("member_id")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  timetable            Timetable            @relation(fields: [timetableId], references: [id], onDelete: Cascade)
+  curriculumDiscipline CurriculumDiscipline @relation(fields: [curriculumDisciplineId], references: [id], onDelete: Cascade)
+  teacher              Member               @relation(fields: [memberId], references: [id])
+  slots                Slot[]
+
+  @@map("sections")
+}
+
+model Board {
+  id          String   @id @default(uuid())
+  name        String
+  timetableId String   @map("timetable_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  timetable Timetable @relation(fields: [timetableId], references: [id], onDelete: Cascade)
+  slots     Slot[]
+
+  @@map("boards")
+}
+
+model Slot {
+  id         String    @id @default(uuid())
+  boardId    String    @map("board_id")
+  sectionId  String    @map("section_id")
+  locationId String    @map("location_id")
+  timeSlotId String    @map("time_slot_id")
+  dayOfWeek  DayOfWeek @map("day_of_week")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  // Relationships
+  board    Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  section  Section  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  location Location @relation(fields: [locationId], references: [id])
+  timeSlot TimeSlot @relation(fields: [timeSlotId], references: [id])
+
+  @@unique([boardId, dayOfWeek, timeSlotId, locationId])
+  @@map("slots")
 }
