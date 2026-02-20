@@ -9,9 +9,12 @@ import { MembersModule } from './members/members.module';
 import { DisciplinesModule } from './disciplines/disciplines.module';
 import { CoursesModule } from './courses/courses.module';
 import { CurriculumsModule } from './curriculums/curriculums.module';
+import { LocationsModule } from './locations/locations.module';
+import { TimeSlotsModule } from './time-slots/time-slots.module';
+import { TermsModule } from './terms/terms.module';
 
 @Module({
-  imports: [UsersModule, AccountsModule, SubscriptionsModule, OrganizationsModule, MembersModule, DisciplinesModule, CoursesModule, CurriculumsModule],
+  imports: [UsersModule, AccountsModule, SubscriptionsModule, OrganizationsModule, MembersModule, DisciplinesModule, CoursesModule, CurriculumsModule, LocationsModule, TimeSlotsModule, TermsModule],
   controllers: [AppController],
   providers: [AppService],
 })
