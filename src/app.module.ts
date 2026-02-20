@@ -16,6 +16,7 @@ import { SectionsModule } from './sections/sections.module'
 import { TimetablesModule } from './timetables/timetables.module'
 import { BoardsModule } from './boards/boards.module'
 import { SlotsModule } from './slots/slots.module'
+import { DatabaseModule } from './database/database.module'
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { SlotsModule } from './slots/slots.module'
     TimetablesModule,
     BoardsModule,
     SlotsModule,
+    DatabaseModule,
   ],
   controllers: [AppController],
   providers: [AppService],
