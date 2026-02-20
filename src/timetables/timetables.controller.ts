@@ -1,7 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { TimetablesService } from './timetables.service';
-import { CreateTimetableDto } from './dto/create-timetable.dto';
-import { UpdateTimetableDto } from './dto/update-timetable.dto';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common'
+import { TimetablesService } from './timetables.service'
+import { CreateTimetableDto } from './dto/create-timetable.dto'
+import { UpdateTimetableDto } from './dto/update-timetable.dto'
 
 @Controller('timetables')
 export class TimetablesController {
@@ -9,26 +17,29 @@ export class TimetablesController {
 
   @Post()
   create(@Body() createTimetableDto: CreateTimetableDto) {
-    return this.timetablesService.create(createTimetableDto);
+    return this.timetablesService.create(createTimetableDto)
   }
 
   @Get()
   findAll() {
-    return this.timetablesService.findAll();
+    return this.timetablesService.findAll()
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.timetablesService.findOne(+id);
+    return this.timetablesService.findOne(+id)
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTimetableDto: UpdateTimetableDto) {
-    return this.timetablesService.update(+id, updateTimetableDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateTimetableDto: UpdateTimetableDto,
+  ) {
+    return this.timetablesService.update(+id, updateTimetableDto)
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.timetablesService.remove(+id);
+    return this.timetablesService.remove(+id)
   }
 }

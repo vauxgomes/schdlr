@@ -1,7 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { TermsService } from './terms.service';
-import { CreateTermDto } from './dto/create-term.dto';
-import { UpdateTermDto } from './dto/update-term.dto';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common'
+import { TermsService } from './terms.service'
+import { CreateTermDto } from './dto/create-term.dto'
+import { UpdateTermDto } from './dto/update-term.dto'
 
 @Controller('terms')
 export class TermsController {
@@ -9,26 +17,26 @@ export class TermsController {
 
   @Post()
   create(@Body() createTermDto: CreateTermDto) {
-    return this.termsService.create(createTermDto);
+    return this.termsService.create(createTermDto)
   }
 
   @Get()
   findAll() {
-    return this.termsService.findAll();
+    return this.termsService.findAll()
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.termsService.findOne(+id);
+    return this.termsService.findOne(+id)
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateTermDto: UpdateTermDto) {
-    return this.termsService.update(+id, updateTermDto);
+    return this.termsService.update(+id, updateTermDto)
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.termsService.remove(+id);
+    return this.termsService.remove(+id)
   }
 }

@@ -5,12 +5,12 @@ import {
   PrismaClient,
   ProviderType,
   TermStatus,
-} from '@prisma/client';
+} from '@prisma/client'
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
 
 async function main() {
-  console.log('Seeding database...');
+  console.log('Seeding database...')
 
   // ==========================================
   // Phase 1: Identity and Billing
@@ -28,7 +28,7 @@ async function main() {
         },
       },
     },
-  });
+  })
 
   const account = await prisma.account.create({
     data: {
@@ -41,7 +41,7 @@ async function main() {
         },
       },
     },
-  });
+  })
 
   // ==========================================
   // Phase 2: Multi-tenancy and Access Control
@@ -52,7 +52,7 @@ async function main() {
       name: 'Main Campus',
       accountId: account.id,
     },
-  });
+  })
 
   const member = await prisma.member.create({
     data: {
@@ -60,7 +60,7 @@ async function main() {
       organizationId: organization.id,
       roles: [MemberRole.ADMIN, MemberRole.COORDINATOR, MemberRole.TEACHER],
     },
-  });
+  })
 
   // ==========================================
   // Phase 3: Academic Catalog
@@ -71,14 +71,14 @@ async function main() {
       name: 'Software Engineering',
       organizationId: organization.id,
     },
-  });
+  })
 
   const curriculum = await prisma.curriculum.create({
     data: {
       name: '2026 Core Curriculum',
       courseId: course.id,
     },
-  });
+  })
 
   const disciplineNode = await prisma.discipline.create({
     data: {
@@ -88,7 +88,7 @@ async function main() {
       color: '#339933',
       organizationId: organization.id,
     },
-  });
+  })
 
   const disciplineCleanCode = await prisma.discipline.create({
     data: {
@@ -98,7 +98,7 @@ async function main() {
       color: '#007acc',
       organizationId: organization.id,
     },
-  });
+  })
 
   const currDiscNode = await prisma.curriculumDiscipline.create({
     data: {
@@ -107,7 +107,7 @@ async function main() {
       level: 1,
       isMandatory: true,
     },
-  });
+  })
 
   await prisma.curriculumDiscipline.create({
     data: {
@@ -116,7 +116,7 @@ async function main() {
       level: 1,
       isMandatory: true,
     },
-  });
+  })
 
   // ==========================================
   // Phase 4: Infrastructure and Time
@@ -130,7 +130,7 @@ async function main() {
       status: TermStatus.PLANNING,
       organizationId: organization.id,
     },
-  });
+  })
 
   const location = await prisma.location.create({
     data: {
@@ -138,14 +138,14 @@ async function main() {
       capacity: 30,
       organizationId: organization.id,
     },
-  });
+  })
 
   const timeSlotGroup = await prisma.timeSlotGroup.create({
     data: {
       name: 'Morning Shift',
       organizationId: organization.id,
     },
-  });
+  })
 
   const timeSlot1 = await prisma.timeSlot.create({
     data: {
@@ -154,7 +154,7 @@ async function main() {
       endTime: '08:50',
       timeSlotGroupId: timeSlotGroup.id,
     },
-  });
+  })
 
   const timeSlot2 = await prisma.timeSlot.create({
     data: {
@@ -163,7 +163,7 @@ async function main() {
       endTime: '09:40',
       timeSlotGroupId: timeSlotGroup.id,
     },
-  });
+  })
 
   // ==========================================
   // Phase 5: Timetable Engine
@@ -175,14 +175,14 @@ async function main() {
       termId: term.id,
       curriculumId: curriculum.id,
     },
-  });
+  })
 
   const board = await prisma.board.create({
     data: {
       name: 'Main Visual Board',
       timetableId: timetable.id,
     },
-  });
+  })
 
   const section = await prisma.section.create({
     data: {
@@ -191,7 +191,7 @@ async function main() {
       curriculumDisciplineId: currDiscNode.id,
       memberId: member.id, // Assigned to our admin/teacher
     },
-  });
+  })
 
   await prisma.slot.create({
     data: {
@@ -201,7 +201,7 @@ async function main() {
       timeSlotId: timeSlot1.id,
       dayOfWeek: DayOfWeek.MONDAY,
     },
-  });
+  })
 
   await prisma.slot.create({
     data: {
@@ -211,16 +211,16 @@ async function main() {
       timeSlotId: timeSlot2.id,
       dayOfWeek: DayOfWeek.MONDAY,
     },
-  });
+  })
 
-  console.log('Database seeded successfully!');
+  console.log('Database seeded successfully!')
 }
 
 main()
   .catch((e) => {
-    console.error(e);
-    process.exit(1);
+    console.error(e)
+    process.exit(1)
   })
   .finally(async () => {
-    await prisma.$disconnect();
-  });
+    await prisma.$disconnect()
+  })

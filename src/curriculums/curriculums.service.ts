@@ -1,26 +1,26 @@
-import { Injectable } from '@nestjs/common';
-import { CreateCurriculumDto } from './dto/create-curriculum.dto';
-import { UpdateCurriculumDto } from './dto/update-curriculum.dto';
+import { Injectable } from '@nestjs/common'
+import { CreateCurriculumDto } from './dto/create-curriculum.dto'
+import { UpdateCurriculumDto } from './dto/update-curriculum.dto'
 
 @Injectable()
 export class CurriculumsService {
   create(createCurriculumDto: CreateCurriculumDto) {
-    return 'This action adds a new curriculum';
+    return 'This action adds a new curriculum'
   }
 
   findAll() {
-    return `This action returns all curriculums`;
+    return `This action returns all curriculums`
   }
 
   findOne(id: number) {
-    return `This action returns a #${id} curriculum`;
+    return `This action returns a #${id} curriculum`
   }
 
   update(id: number, updateCurriculumDto: UpdateCurriculumDto) {
-    return `This action updates a #${id} curriculum`;
+    return `This action updates a #${id} curriculum`
   }
 
   remove(id: number) {
-    return `This action removes a #${id} curriculum`;
+    return `This action removes a #${id} curriculum`
   }
 }
