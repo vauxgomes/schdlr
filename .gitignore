@@ -1,0 +1,40 @@
+
+# dependencies
+node_modules/
+
+# build outputs
+dist/
+.next/
+build/
+*.tsbuildinfo
+
+# environment
+.env
+.env.local
+.env.*.local
+
+# prisma
+*.db
+*.db-journal
+
+# logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Claude Code
+.claude/
+
+# Handoff
+.handoff/
+
+# Plans (local only)
+.plan/

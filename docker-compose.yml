@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: schdlr-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: schdlr
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-schdlr}
+      POSTGRES_DB: schdlr
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - schdlr-net
+
+volumes:
+  postgres-data:
+
+networks:
+  schdlr-net:
+    driver: bridge
