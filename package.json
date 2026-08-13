@@ -6,6 +6,8 @@
     "node": ">=24"
   },
   "scripts": {
+    "dev:api": "pnpm --filter @schdlr/api start:dev",
+    "build:api": "pnpm --filter @schdlr/api build",
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\""
   },
   "devDependencies": {
