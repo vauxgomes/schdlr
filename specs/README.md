@@ -1,0 +1,53 @@
+# Specs
+
+Reconstrução da API, uma spec por vez. Cada spec é autocontida: uma sessão nova consegue executá-la lendo só o arquivo dela e os arquivos que ela lista em "Contexto necessário".
+
+## Como usar
+
+```
+/spec          # lista e sugere a próxima executável
+/spec 0007     # executa a spec 0007
+```
+
+## Regras
+
+- **Uma spec = uma sessão = um commit de implementação.** Se estourar isso, a spec estava grande demais — divida.
+- A spec é commitada **antes** da implementação (`docs(spec): ...`); a implementação referencia o id (`feat(api): ... (spec 0007)`).
+- **Spec com `status: done` não se edita.** Requisito novo vira spec nova, senão o registro vira ficção.
+- **Nome do arquivo: `NNNN-<área>-<slug>.md`.** O id é uma sequência única e global, não uma por área — specs do front dependem das da API, e `depends_on: [0014]` precisa ser inequívoco. Áreas: `api`, `web`.
+- `specs/` é versionado. `.plan/` (exploração) e `.handoff/` continuam locais.
+
+## Índice
+
+| id | spec | status | depende de |
+|---|---|---|---|
+| **Fundação** ||||
+| [0001](0001-api-migration-inicial.md) | Migration inicial e DatabaseService | todo | — |
+| [0002](0002-api-bootstrap.md) | Bootstrap da aplicação | todo | 0001 |
+| **Identidade** ||||
+| [0003](0003-api-autenticacao.md) | Cadastro e autenticação | todo | 0002 |
+| [0004](0004-api-email.md) | Infraestrutura de e-mail | todo | 0002 |
+| [0005](0005-api-recuperacao-senha.md) | Recuperação de senha | todo | 0003, 0004 |
+| [0006](0006-api-perfil.md) | Perfil do usuário | todo | 0003 |
+| **Tenant** ||||
+| [0007](0007-api-organizacao.md) | Organização | todo | 0003 |
+| [0008](0008-api-unidade.md) | Unidade e camada de permissões | todo | 0007 |
+| [0009](0009-api-membros.md) | Membros da unidade | todo | 0008 |
+| [0010](0010-api-convites.md) | Convites de unidade | todo | 0009, 0004 |
+| [0011](0011-api-notificacoes.md) | Notificações | todo | 0003 |
+| **Acadêmico** ||||
+| [0012](0012-api-curso.md) | Curso — define o padrão de módulo | todo | 0008 |
+| [0013](0013-api-disciplina.md) | Disciplina | todo | 0012 |
+| [0014](0014-api-curriculo.md) | Currículo e disciplinas do currículo | todo | 0012, 0013 |
+| [0015](0015-api-local.md) | Local | todo | 0012 |
+| [0016](0016-api-periodo.md) | Período letivo | todo | 0012 |
+| [0017](0017-api-grade-horarios.md) | Grade de horários | todo | 0012 |
+| **Scheduling** ||||
+| [0018](0018-api-projeto.md) | Projeto | todo | 0014, 0016 |
+| [0019](0019-api-membros-projeto.md) | Membros do projeto | todo | 0018 |
+
+## Fora de escopo por enquanto
+
+`Offer`, `Board` e `BoardSlot` não têm spec ainda. É onde entram as regras de conflito de horário — professor ou sala em dois lugares ao mesmo tempo, aula conjunta, choque entre unidades — e isso pede um passo de design próprio antes de virar spec.
+
+Também sem spec: gestão de planos e assinatura (além da criação no cadastro) e qualquer worker assíncrono.
