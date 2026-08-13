@@ -1,0 +1,681 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// schdlr — modelo de dados
+//
+// Fluxo do domínio:
+//   Organization -> Unit -> catálogo (Course, Discipline, Location, Term, Timetable)
+//   Course -> Curriculum -> CurriculumDiscipline   (a grade: o que se cursa, em que nível)
+//   Term + Curriculum -> Project                   (a execução da grade num período)
+//   Project -> Offer                               (a disciplina ofertada, com professor)
+//   Project -> Board -> BoardSlot                  (a turma e as células do seu quadro)
+//
+// Isolamento de tenant é a invariante estrutural do schema: toda tabela abaixo
+// de Unit carrega `unitId` e expõe `@@unique([id, unitId])`; os filhos
+// referenciam o pai por FK composta `[paiId, unitId] -> [id, unitId]`. O Postgres
+// passa a recusar qualquer linha que misture entidades de unidades diferentes,
+// sem depender do `where` da aplicação. Modelos ancorados assim não declaram
+// relação direta com Unit — o vínculo já é garantido transitivamente pelo pai.
+//
+// Conflitos de horário (professor ou sala em dois lugares ao mesmo tempo) são
+// verificados na aplicação, não no banco: expressá-los exigiria EXCLUDE
+// constraints escritas à mão na migration, e todas as migrations aqui são
+// geradas pelo Prisma.
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum StaffRole {
+  SUPPORT
+  ADMIN
+}
+
+enum MemberRole {
+  ADMIN
+  MANAGER
+  COORDINATOR
+  TEACHER
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  REVOKED
+}
+
+enum TermStatus {
+  PLANNING
+  ADJUSTMENTS
+  STARTED
+  FINISHED
+  CANCELLED
+}
+
+enum ProjectStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum LocationType {
+  CLASSROOM
+  LAB
+  COMPUTER_LAB
+  AUDITORIUM
+  LIBRARY
+  MEETING_ROOM
+  GYM
+  COURT
+  POOL
+  FIELD
+  OTHER
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELLED
+}
+
+enum NotificationType {
+  UNIT_INVITE
+  MEMBER_ACTIVATED
+  MEMBER_DEACTIVATED
+  PROJECT_ASSISTANT_ADDED
+  TERM_STARTED
+  SUBSCRIPTION_EXPIRING
+  SUBSCRIPTION_EXPIRED
+}
+
+enum PlanType {
+  GRACE
+  TRIAL
+  BASIC
+  PRO
+  ENTERPRISE
+}
+
+// ---------------------------------------------------------------------------
+// Subscription
+// ---------------------------------------------------------------------------
+
+model Subscription {
+  id        String             @id @default(cuid())
+  plan      PlanType           @default(TRIAL)
+  status    SubscriptionStatus @default(ACTIVE)
+  expiresAt DateTime?          @map("expires_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // References
+  user User?
+
+  @@map("subscriptions")
+}
+
+// ---------------------------------------------------------------------------
+// Auth & Users
+// ---------------------------------------------------------------------------
+
+model User {
+  id             String     @id @default(cuid())
+  email          String     @unique
+  name           String
+  passwordHash   String     @map("password_hash")
+  staffRole      StaffRole? @map("staff_role")
+  subscriptionId String?    @unique @map("subscription_id")
+  isActive       Boolean    @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  // References
+  passwordResets      PasswordReset[]
+  refreshTokens       RefreshToken[]
+  organizations       Organization[]
+  unitMemberships     UnitMember[]
+  unitInvites         UnitInvite[]
+  sentUnitInvites     UnitInvite[]    @relation("InvitedBy")
+  resolvedUnitInvites UnitInvite[]    @relation("ResolvedBy")
+  resentUnitInvites   UnitInvite[]    @relation("ResentBy")
+  notifications       Notification[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  token     String    @unique // SHA-256 hash of the raw token
+  userId    String    @map("user_id")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  userAgent String?   @map("user_agent")
+  ipAddress String?   @map("ip_address")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model PasswordReset {
+  id        String    @id @default(cuid())
+  token     String    @unique // SHA-256 hash of the raw token
+  userId    String    @map("user_id")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_resets")
+}
+
+// ---------------------------------------------------------------------------
+// Organization & Unit
+// ---------------------------------------------------------------------------
+
+model Organization {
+  id       String  @id @default(cuid())
+  ownerId  String  @map("owner_id")
+  name     String
+  slug     String  @unique
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  owner User @relation(fields: [ownerId], references: [id])
+
+  // References
+  units Unit[]
+
+  @@index([ownerId])
+  @@map("organizations")
+}
+
+model Unit {
+  id             String  @id @default(cuid())
+  organizationId String  @map("organization_id")
+  name           String
+  slug           String
+  workingDays    Int     @default(5) @map("working_days") // 5 = seg-sex, 6 = seg-sáb
+  isActive       Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  // References
+  members     UnitMember[]
+  invites     UnitInvite[]
+  courses     Course[]
+  disciplines Discipline[]
+  locations   Location[]
+  terms       Term[]
+  timetables  Timetable[]
+
+  // Constraints
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+  @@map("units")
+}
+
+// Uma linha por par user/unit. Pelo menos um papel é obrigatório — validado no service.
+model UnitMember {
+  id       String       @id @default(cuid())
+  userId   String       @map("user_id")
+  unitId   String       @map("unit_id")
+  roles    MemberRole[] @default([TEACHER])
+  isActive Boolean      @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id])
+  unit Unit @relation(fields: [unitId], references: [id])
+
+  // References
+  createdProjects    Project[]
+  projectMemberships ProjectMember[]
+  offers             Offer[]
+
+  // Constraints
+  @@unique([userId, unitId])
+  @@unique([id, unitId])
+  @@index([unitId])
+  @@map("unit_members")
+}
+
+model UnitInvite {
+  id        String       @id @default(cuid())
+  token     String       @unique
+  unitId    String       @map("unit_id")
+  email     String
+  userId    String?      @map("user_id") // preenchido quando o e-mail já tem conta
+  roles     MemberRole[]
+  status    InviteStatus @default(PENDING)
+  expiresAt DateTime     @map("expires_at")
+
+  invitedById  String    @map("invited_by_id")
+  resolvedAt   DateTime? @map("resolved_at") // aceite, recusa ou revogação
+  resolvedById String?   @map("resolved_by_id")
+  resentAt     DateTime? @map("resent_at")
+  resentById   String?   @map("resent_by_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  unit     Unit  @relation(fields: [unitId], references: [id])
+  user     User? @relation(fields: [userId], references: [id])
+  inviter  User  @relation("InvitedBy", fields: [invitedById], references: [id])
+  resolver User? @relation("ResolvedBy", fields: [resolvedById], references: [id])
+  resender User? @relation("ResentBy", fields: [resentById], references: [id])
+
+  // Constraints
+  @@index([unitId, status])
+  @@index([email])
+  @@index([userId])
+  @@map("unit_invites")
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  userId      String           @map("user_id")
+  type        NotificationType
+  payload     Json
+  referenceId String?          @map("reference_id")
+  readAt      DateTime?        @map("read_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@map("notifications")
+}
+
+// ---------------------------------------------------------------------------
+// Catálogo acadêmico
+// ---------------------------------------------------------------------------
+
+model Course {
+  id       String  @id @default(cuid())
+  unitId   String  @map("unit_id")
+  name     String
+  code     String
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  unit Unit @relation(fields: [unitId], references: [id])
+
+  // References
+  curricula Curriculum[]
+
+  // Constraints
+  @@unique([unitId, code])
+  @@unique([id, unitId])
+  @@index([unitId])
+  @@map("courses")
+}
+
+model Discipline {
+  id                   String        @id @default(cuid())
+  unitId               String        @map("unit_id")
+  name                 String
+  code                 String
+  workload             Int // carga horária total prevista
+  requiredLocationType LocationType? @map("required_location_type") // null = qualquer local serve
+  color                String?
+  isActive             Boolean       @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  unit Unit @relation(fields: [unitId], references: [id])
+
+  // References
+  curriculumItems CurriculumDiscipline[]
+
+  // Constraints
+  @@unique([unitId, code])
+  @@unique([id, unitId])
+  @@index([unitId])
+  @@map("disciplines")
+}
+
+model Curriculum {
+  id       String  @id @default(cuid())
+  unitId   String  @map("unit_id")
+  courseId String  @map("course_id")
+  name     String
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  course Course @relation(fields: [courseId, unitId], references: [id, unitId])
+
+  // References
+  disciplines CurriculumDiscipline[]
+  projects    Project[]
+
+  // Constraints
+  @@unique([courseId, name])
+  @@unique([id, unitId])
+  @@index([unitId])
+  @@index([courseId])
+  @@map("curricula")
+}
+
+// A disciplina dentro da grade: em que nível ela é cursada e quantas aulas semanais exige.
+model CurriculumDiscipline {
+  id            String  @id @default(cuid())
+  unitId        String  @map("unit_id")
+  curriculumId  String  @map("curriculum_id")
+  disciplineId  String  @map("discipline_id")
+  level         Int // período/semestre
+  weeklyLessons Int     @map("weekly_lessons") // quantos slots a oferta precisa ocupar por semana
+  isRequired    Boolean @default(true) @map("is_required")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  curriculum Curriculum @relation(fields: [curriculumId, unitId], references: [id, unitId])
+  discipline Discipline @relation(fields: [disciplineId, unitId], references: [id, unitId])
+
+  // References
+  offers Offer[]
+
+  // Constraints
+  @@unique([curriculumId, disciplineId])
+  @@unique([id, unitId])
+  @@index([curriculumId, level])
+  @@index([disciplineId])
+  @@map("curriculum_disciplines")
+}
+
+// ---------------------------------------------------------------------------
+// Infraestrutura & calendário
+// ---------------------------------------------------------------------------
+
+model Location {
+  id       String       @id @default(cuid())
+  unitId   String       @map("unit_id")
+  name     String
+  type     LocationType
+  capacity Int?
+  isActive Boolean      @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  unit Unit @relation(fields: [unitId], references: [id])
+
+  // References
+  boardSlots BoardSlot[]
+
+  // Constraints
+  @@unique([unitId, name])
+  @@unique([id, unitId])
+  @@index([unitId])
+  @@map("locations")
+}
+
+model Term {
+  id        String     @id @default(cuid())
+  unitId    String     @map("unit_id")
+  name      String
+  startDate DateTime   @map("start_date")
+  endDate   DateTime   @map("end_date")
+  status    TermStatus @default(PLANNING)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  unit Unit @relation(fields: [unitId], references: [id])
+
+  // References
+  projects Project[]
+
+  // Constraints
+  @@unique([unitId, name])
+  @@unique([id, unitId])
+  @@index([unitId])
+  @@map("terms")
+}
+
+// Uma grade de horários (na prática, um turno: manhã, tarde, noite).
+model Timetable {
+  id       String  @id @default(cuid())
+  unitId   String  @map("unit_id")
+  name     String
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  unit Unit @relation(fields: [unitId], references: [id])
+
+  // References
+  timeSlots TimeSlot[]
+  boards    Board[]
+
+  // Constraints
+  @@unique([unitId, name])
+  @@unique([id, unitId])
+  @@index([unitId])
+  @@map("timetables")
+}
+
+model TimeSlot {
+  id          String  @id @default(cuid())
+  unitId      String  @map("unit_id")
+  timetableId String  @map("timetable_id")
+  name        String
+  startTime   Int     @map("start_time") // minutos desde a meia-noite
+  endTime     Int     @map("end_time")
+  isActive    Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  timetable Timetable @relation(fields: [timetableId, unitId], references: [id, unitId])
+
+  // References
+  boardSlots BoardSlot[]
+
+  // Constraints
+  @@unique([timetableId, startTime])
+  @@unique([id, unitId])
+  @@index([timetableId])
+  @@map("time_slots")
+}
+
+// ---------------------------------------------------------------------------
+// Scheduling
+// ---------------------------------------------------------------------------
+
+// A execução de um currículo num período letivo.
+model Project {
+  id           String        @id @default(cuid())
+  unitId       String        @map("unit_id")
+  termId       String        @map("term_id")
+  curriculumId String        @map("curriculum_id")
+  createdById  String        @map("created_by_id")
+  name         String
+  status       ProjectStatus @default(DRAFT)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  term       Term       @relation(fields: [termId, unitId], references: [id, unitId])
+  curriculum Curriculum @relation(fields: [curriculumId, unitId], references: [id, unitId])
+  createdBy  UnitMember @relation(fields: [createdById, unitId], references: [id, unitId])
+
+  // References
+  members ProjectMember[]
+  offers  Offer[]
+  boards  Board[]
+
+  // Constraints
+  @@unique([termId, curriculumId]) // um currículo é executado uma única vez por período
+  @@unique([id, unitId])
+  @@index([unitId, termId])
+  @@index([curriculumId])
+  @@index([createdById])
+  @@map("projects")
+}
+
+// Membro com acesso de edição ao projeto, além do criador.
+model ProjectMember {
+  id        String @id @default(cuid())
+  unitId    String @map("unit_id")
+  projectId String @map("project_id")
+  memberId  String @map("member_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relationships
+  project Project    @relation(fields: [projectId, unitId], references: [id, unitId], onDelete: Cascade)
+  member  UnitMember @relation(fields: [memberId, unitId], references: [id, unitId])
+
+  // Constraints
+  @@unique([projectId, memberId])
+  @@index([memberId])
+  @@map("project_members")
+}
+
+// A oferta concreta de uma disciplina da grade dentro do projeto.
+//
+// `variant` nomeia uma segunda oferta da mesma disciplina no mesmo projeto —
+// divisão de turma, repetentes, recuperação (ex.: "PIM", "Repetentes"); string
+// vazia = oferta base. Como a duplicata só existe se receber um nome, o unique
+// abaixo barra o clique duplo acidental sem impedir a divisão intencional.
+model Offer {
+  id                     String  @id @default(cuid())
+  unitId                 String  @map("unit_id")
+  projectId              String  @map("project_id")
+  curriculumDisciplineId String  @map("curriculum_discipline_id")
+  memberId               String? @map("member_id") // null até um professor ser atribuído
+  variant                String  @default("")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  project              Project              @relation(fields: [projectId, unitId], references: [id, unitId], onDelete: Cascade)
+  curriculumDiscipline CurriculumDiscipline @relation(fields: [curriculumDisciplineId, unitId], references: [id, unitId])
+  // Restrict, e não SetNull, porque a FK é composta: anular member_id anularia
+  // junto unit_id, que é NOT NULL. Desvincular o professor é update, não delete.
+  member               UnitMember?          @relation(fields: [memberId, unitId], references: [id, unitId], onDelete: Restrict)
+
+  // References
+  boardSlots BoardSlot[]
+
+  // Constraints
+  @@unique([projectId, curriculumDisciplineId, variant])
+  @@unique([id, unitId])
+  @@index([projectId])
+  @@index([curriculumDisciplineId])
+  @@index([memberId])
+  @@map("offers")
+}
+
+// A turma dentro do projeto. `level` amarra a turma a um período do currículo.
+model Board {
+  id          String @id @default(cuid())
+  unitId      String @map("unit_id")
+  projectId   String @map("project_id")
+  timetableId String @map("timetable_id")
+  name        String
+  level       Int // período/semestre que a turma cursa
+  position    Int    @default(0)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  project   Project   @relation(fields: [projectId, unitId], references: [id, unitId], onDelete: Cascade)
+  timetable Timetable @relation(fields: [timetableId, unitId], references: [id, unitId])
+
+  // References
+  boardSlots BoardSlot[]
+
+  // Constraints
+  @@unique([projectId, name])
+  @@unique([id, unitId])
+  @@index([projectId])
+  @@index([timetableId])
+  @@map("boards")
+}
+
+// Célula do quadro: um dia da semana num horário de uma turma. As linhas são
+// materializadas na criação do board (dias úteis × time slots) e preenchidas por
+// atribuição — por isso `offerId` e `locationId` são opcionais.
+//
+// A detecção de choque (professor ou sala ocupados) percorre daqui para
+// TimeSlot (faixa de horário) e para Offer -> UnitMember (professor). Aula
+// conjunta — a mesma oferta em dois boards no mesmo horário — é legítima; o que
+// caracteriza choque são ofertas diferentes disputando o mesmo recurso.
+model BoardSlot {
+  id         String  @id @default(cuid())
+  unitId     String  @map("unit_id")
+  boardId    String  @map("board_id")
+  timeSlotId String  @map("time_slot_id")
+  weekDay    Int     @map("week_day") // 1=seg ... 7=dom
+  offerId    String? @map("offer_id")
+  locationId String? @map("location_id")
+  isBlocked  Boolean @default(false) @map("is_blocked")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  board    Board     @relation(fields: [boardId, unitId], references: [id, unitId], onDelete: Cascade)
+  timeSlot TimeSlot  @relation(fields: [timeSlotId, unitId], references: [id, unitId])
+  offer    Offer?    @relation(fields: [offerId, unitId], references: [id, unitId], onDelete: Restrict)
+  location Location? @relation(fields: [locationId, unitId], references: [id, unitId], onDelete: Restrict)
+
+  // Constraints
+  @@unique([boardId, timeSlotId, weekDay])
+  @@index([unitId, weekDay])
+  @@index([locationId])
+  @@index([offerId])
+  @@index([timeSlotId])
+  @@map("board_slots")
+}
