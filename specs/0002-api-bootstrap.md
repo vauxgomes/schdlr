@@ -1,7 +1,7 @@
 ---
 id: 0002
 title: Bootstrap da aplicação
-status: todo
+status: done
 depends_on: [0001]
 ---
 
@@ -23,6 +23,8 @@ A aplicação sobe com validação de entrada, leitura de ambiente e as peças q
 - `ZodValidationPipe` próprio, aplicado globalmente
 - `cookie-parser`, CORS com `credentials: true`, `PORT` vindo do ambiente
 - Filtro de exceção que padroniza o corpo de erro (`{ statusCode, message }`)
+- `GET /health` com status do processo e do banco (pedido durante a execução)
+- Testes das peças acima (pedido durante a execução)
 
 **Não entra:**
 
@@ -39,23 +41,36 @@ A aplicação sobe com validação de entrada, leitura de ambiente e as peças q
 
 ## Critérios de aceite
 
-- [ ] Subir sem `DATABASE_URL` falha no boot com mensagem clara, não em runtime
-- [ ] Um body inválido responde 400 com os campos que falharam
-- [ ] Um body com campos a mais é rejeitado ou tem os extras removidos (decidir e registrar qual)
-- [ ] `GET /` responde na porta 3001
-- [ ] Cookies chegam ao request (`req.cookies`)
+- [x] Subir sem `DATABASE_URL` falha no boot com mensagem clara, não em runtime
+- [x] Um body inválido responde 400 com os campos que falharam
+- [x] Um body com campos a mais é rejeitado ou tem os extras removidos (decidir e registrar qual)
+- [x] `GET /` responde na porta 3001
+- [x] Cookies chegam ao request (`req.cookies`)
+- [x] `GET /health` responde 200 com o banco de pé e 503 com ele fora
+- [x] Cada peça acima tem teste automatizado, sem depender de banco
 
 ## Verificação
 
 ```bash
 pnpm --filter @schdlr/api exec tsc --noEmit
 pnpm --filter @schdlr/api lint
+pnpm --filter @schdlr/api test
+pnpm --filter @schdlr/api test:e2e
 pnpm build:api
 ```
 
 ## Registro
 
-_Preenchido durante a execução._
+Verificação (`tsc --noEmit`, `lint`, `build:api`) passou. Comportamento conferido com a app de pé: `/` e `/health` na 3001, preflight de CORS devolvendo `Access-Control-Allow-Credentials: true`, e `/health` alternando 200 ↔ 503 ao parar e religar o container do Postgres (reconecta sozinho, sem restart da app).
 
-- **commits:**
+- **commits:** `feat(api): bootstrap da aplicação (spec 0002)` — branch `feature/migration-inicial`
+- **decisão pendente da spec:** **campos a mais são removidos, não rejeitados.** É o comportamento padrão do `z.object()`; rejeitar exigiria `.strict()` em todo schema. O corpo que chega ao handler só tem o que o schema declara.
 - **desvios:**
+  - **`@Validate(schema)` no lugar de pipe global.** Pipe do Nest não enxerga metadata de rota — `PipeTransform.transform` recebe só `(value, ArgumentMetadata)`, sem `ExecutionContext`, logo sem `Reflector`. O `ZodValidationPipe` é o da spec; o que muda é que ele chega na rota por um decorator composto (`UsePipes`), e não por registro global. O pipe ignora argumento que não seja `body`, já que `UsePipes` alcança `@Param` e `@Query` também.
+  - **`GET /health` entrou fora do escopo original**, pedido durante a execução. Módulo em `src/modules/health/`. Quando a spec 0003 subir o guard global de JWT, esta rota precisa de `@Public()`.
+  - **Duas variáveis novas de ambiente:** `NODE_ENV` e `CORS_ORIGIN` (esta com default `http://localhost:3000`, porque `credentials: true` proíbe origem `*`). `.env` e `.env.example` reorganizados por seções.
+  - **Corpo de erro tem um terceiro campo em falha de validação:** `{ statusCode, message, issues }`. Sem `issues` não dava para atender o critério de responder com os campos que falharam. O campo `error` do corpo padrão do Nest foi descartado.
+  - **`import 'dotenv/config'` saiu do `main.ts`**, como a 0001 previu: `ConfigModule.forRoot` carrega e valida o ambiente de forma síncrona, antes de qualquer provider ser instanciado.
+  - **Testes entraram fora do escopo original**, pedidos durante a execução: 15 unitários (`env`, pipe, filtro, `HealthService`) e 6 e2e da montagem HTTP. Nenhum precisa de banco — o `HealthService` recebe um `$queryRaw` falso e o e2e usa um controller de sonda no lugar do `AppModule`.
+  - **`configureApp` extraído para `src/app.setup.ts`.** O `cookie-parser`, o CORS e o filtro global estavam dentro de `bootstrap()`, fora do alcance de qualquer teste; um e2e teria que reproduzir a montagem à mão e passaria a testar uma cópia, não o que roda em produção.
+  - **Convenção de idioma registrada em `.claude/rules/code-quality.md`** (código em inglês; comentário explicativo de mais de uma linha em português), aplicada aos arquivos desta spec. O `schema.prisma` ainda tem comentários curtos em português, de antes da regra — não foram tocados.
