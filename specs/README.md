@@ -19,32 +19,35 @@ Reconstrução da API, uma spec por vez. Cada spec é autocontida: uma sessão n
 
 ## Índice
 
-| id | spec | status | depende de |
-|---|---|---|---|
-| **Fundação** ||||
-| [0001](0001-api-migration-inicial.md) | Migration inicial e DatabaseService | done | — |
-| [0002](0002-api-bootstrap.md) | Bootstrap da aplicação | todo | 0001 |
-| **Identidade** ||||
-| [0003](0003-api-autenticacao.md) | Cadastro e autenticação | todo | 0002 |
-| [0004](0004-api-email.md) | Infraestrutura de e-mail | todo | 0002 |
-| [0005](0005-api-recuperacao-senha.md) | Recuperação de senha | todo | 0003, 0004 |
-| [0006](0006-api-perfil.md) | Perfil do usuário | todo | 0003 |
-| **Tenant** ||||
-| [0007](0007-api-organizacao.md) | Organização | todo | 0003 |
-| [0008](0008-api-unidade.md) | Unidade e camada de permissões | todo | 0007 |
-| [0009](0009-api-membros.md) | Membros da unidade | todo | 0008 |
-| [0010](0010-api-convites.md) | Convites de unidade | todo | 0009, 0004 |
-| [0011](0011-api-notificacoes.md) | Notificações | todo | 0003 |
-| **Acadêmico** ||||
-| [0012](0012-api-curso.md) | Curso — define o padrão de módulo | todo | 0008 |
-| [0013](0013-api-disciplina.md) | Disciplina | todo | 0012 |
-| [0014](0014-api-curriculo.md) | Currículo e disciplinas do currículo | todo | 0012, 0013 |
-| [0015](0015-api-local.md) | Local | todo | 0012 |
-| [0016](0016-api-periodo.md) | Período letivo | todo | 0012 |
-| [0017](0017-api-grade-horarios.md) | Grade de horários | todo | 0012 |
-| **Scheduling** ||||
-| [0018](0018-api-projeto.md) | Projeto | todo | 0014, 0016 |
-| [0019](0019-api-membros-projeto.md) | Membros do projeto | todo | 0018 |
+| id                                       | spec                                 | status | depende de |
+| ---------------------------------------- | ------------------------------------ | ------ | ---------- |
+| **Fundação**                             |                                      |        |            |
+| [0001](0001-api-migration-inicial.md)    | Migration inicial e DatabaseService  | done   | —          |
+| [0002](0002-api-bootstrap.md)            | Bootstrap da aplicação               | todo   | 0001       |
+| [0020](0020-api-estrategia-de-testes.md) | Estratégia de testes                 | todo   | 0002       |
+| **Identidade**                           |                                      |        |            |
+| [0003](0003-api-autenticacao.md)         | Cadastro e autenticação              | todo   | 0002       |
+| [0004](0004-api-email.md)                | Infraestrutura de e-mail             | todo   | 0002       |
+| [0005](0005-api-recuperacao-senha.md)    | Recuperação de senha                 | todo   | 0003, 0004 |
+| [0006](0006-api-perfil.md)               | Perfil do usuário                    | todo   | 0003       |
+| **Tenant**                               |                                      |        |            |
+| [0007](0007-api-organizacao.md)          | Organização                          | todo   | 0003       |
+| [0008](0008-api-unidade.md)              | Unidade e camada de permissões       | todo   | 0007       |
+| [0009](0009-api-membros.md)              | Membros da unidade                   | todo   | 0008       |
+| [0010](0010-api-convites.md)             | Convites de unidade                  | todo   | 0009, 0004 |
+| [0011](0011-api-notificacoes.md)         | Notificações                         | todo   | 0003       |
+| **Acadêmico**                            |                                      |        |            |
+| [0012](0012-api-curso.md)                | Curso — define o padrão de módulo    | todo   | 0008       |
+| [0013](0013-api-disciplina.md)           | Disciplina                           | todo   | 0012       |
+| [0014](0014-api-curriculo.md)            | Currículo e disciplinas do currículo | todo   | 0012, 0013 |
+| [0015](0015-api-local.md)                | Local                                | todo   | 0012       |
+| [0016](0016-api-periodo.md)              | Período letivo                       | todo   | 0012       |
+| [0017](0017-api-grade-horarios.md)       | Grade de horários                    | todo   | 0012       |
+| **Scheduling**                           |                                      |        |            |
+| [0018](0018-api-projeto.md)              | Projeto                              | todo   | 0014, 0016 |
+| [0019](0019-api-membros-projeto.md)      | Membros do projeto                   | todo   | 0018       |
+
+A 0020 aparece fora da ordem numérica de propósito: nasceu depois das outras, mas precisa ser executada antes da 0003 — é ela que define como se testa banco, e é da 0003 em diante que entra o código onde uma regressão passa despercebida. O id é uma sequência de criação, não de execução; quem manda na ordem é o `depends_on` e o lugar na tabela.
 
 ## Fora de escopo por enquanto
 
