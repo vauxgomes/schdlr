@@ -5,3 +5,6 @@ packages:
 onlyBuiltDependencies:
   - '@prisma/engines'
   - prisma
+  - bcrypt
+  - esbuild
+  - unrs-resolver
