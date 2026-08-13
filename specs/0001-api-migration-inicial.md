@@ -1,7 +1,7 @@
 ---
 id: 0001
 title: Migration inicial e DatabaseService
-status: todo
+status: done
 depends_on: []
 ---
 
@@ -37,11 +37,11 @@ O banco existe com o schema completo e a aplicação consegue consultá-lo.
 
 ## Critérios de aceite
 
-- [ ] `docker compose up -d postgres` sobe o banco e ele aceita conexão
-- [ ] Existe `prisma/migrations/<timestamp>_init/migration.sql` gerado pelo Prisma
-- [ ] O SQL gerado contém as FKs compostas de tenant (ex.: `projects_term_id_unit_id_fkey`)
-- [ ] `DatabaseService` injetável em qualquer módulo sem import explícito
-- [ ] A app sobe conectada ao banco e uma consulta trivial (`user.count()`) responde
+- [x] `docker compose up -d postgres` sobe o banco e ele aceita conexão
+- [x] Existe `prisma/migrations/<timestamp>_init/migration.sql` gerado pelo Prisma
+- [x] O SQL gerado contém as FKs compostas de tenant (ex.: `projects_term_id_unit_id_fkey`)
+- [x] `DatabaseService` injetável em qualquer módulo sem import explícito
+- [x] A app sobe conectada ao banco e uma consulta trivial (`user.count()`) responde
 
 ## Verificação
 
@@ -53,7 +53,10 @@ pnpm build:api
 
 ## Registro
 
-_Preenchido durante a execução._
+Migration `20260813003802_init` — 36 constraints, 18 FKs compostas de tenant. `user.count()` respondeu 0 com a app de pé. Verificação (`db:migrate`, `tsc --noEmit`, `build:api`) passou.
 
-- **commits:**
+- **commits:** `feat(api): migration inicial e DatabaseService (spec 0001)` — branch `ft-sonet-migration-inicial`
 - **desvios:**
+  - **Porta do Postgres 5432 → 5434** (`docker-compose.yml`, `.env`, `.env.example`). A 5432 e a 5433 estavam ocupadas por containers de outro projeto na máquina; mapear para uma porta livre foi a saída não destrutiva.
+  - **`import 'dotenv/config'` no `main.ts`.** Sem isso o `DATABASE_URL` não chega ao processo e o último critério de aceite não fecha. É andaime: a spec 0002 substitui pelo `ConfigModule` com validação Zod.
+  - Nada foi feito com o adapter que a 0002 já preveja — sem ConfigModule, pipe, cookie-parser, CORS ou filtro de exceção.
