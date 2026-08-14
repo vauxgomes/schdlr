@@ -1,7 +1,7 @@
 ---
 id: 0020
 title: Estratégia de testes
-status: todo
+status: done
 depends_on: [0002]
 ---
 
@@ -49,12 +49,12 @@ A 0002 deixou testes das peças compartilhadas, mas todos rodam sem banco. A par
 
 ## Critérios de aceite
 
-- [ ] `pnpm test:e2e` sobe, migra e limpa o banco de teste sem passo manual
-- [ ] O banco de desenvolvimento não é tocado ao rodar a suíte
-- [ ] Um teste de exemplo prova que a FK composta recusa filho de outra unidade
-- [ ] Um teste de exemplo prova o caminho de permissão negada num service
-- [ ] Rodar a suíte duas vezes seguidas dá o mesmo resultado (sem resíduo entre execuções)
-- [ ] A regra do que exige teste está em `.claude/rules/`, não só nesta spec
+- [x] `pnpm test:e2e` sobe, migra e limpa o banco de teste sem passo manual
+- [x] O banco de desenvolvimento não é tocado ao rodar a suíte
+- [x] Um teste de exemplo prova que a FK composta recusa filho de outra unidade
+- [ ] ~~Um teste de exemplo prova o caminho de permissão negada num service~~ — adiado para a 0008, que é onde os asserts nascem; ver Registro
+- [x] Rodar a suíte duas vezes seguidas dá o mesmo resultado (sem resíduo entre execuções)
+- [x] A regra do que exige teste está em `.claude/rules/`, não só nesta spec
 
 ## Verificação
 
@@ -67,7 +67,13 @@ pnpm --filter @schdlr/api test:e2e
 
 ## Registro
 
-_Preenchido durante a execução._
+Suíte e2e passou de 6 para 9 testes, com banco real. Conferido na mão: rodar a suíte duas vezes seguidas dá o mesmo resultado, e uma linha plantada em `users` no banco de desenvolvimento sobreviveu intacta a uma execução completa.
 
-- **commits:**
+- **commits:** `feat(api): estratégia de testes (spec 0020)` — branch `feature/estrategia-de-testes`
+- **critério não atendido:** **teste de permissão negada foi adiado para a 0008.** Não existe service com assert ainda — `assertMemberOrOwnership` e companhia nascem lá, e o primeiro módulo a usá-los é a 0012. Um exemplo agora testaria um service fictício e viraria lixo quando a assinatura real aparecesse. Os critérios da 0008 já cobrem 403 para não-membro, para membro inativo e para TEACHER em rota de coordenação; o `rules/testing.md` passa a exigir os dois caminhos de todo assert.
 - **desvios:**
+  - **`onModuleDestroy` adicionado ao `DatabaseService`** (arquivo da 0001). O jest não encerrava: a app fechava sem desconectar o pool do Prisma. Vale para produção também, em shutdown gracioso.
+  - **`maxWorkers: 1` na config e2e.** Decorrência de truncate entre testes com um banco só — worker paralelo limpa a tabela do vizinho no meio da execução. Trocar isso exigiria um banco por worker, que não vale o custo neste tamanho de suíte.
+  - **`.env.test` é versionado**, ao contrário do `.env`. Não há segredo nele e a suíte precisa apontar para o mesmo banco em qualquer máquina.
+  - **Teste com banco mora em `test/`, não em `src/`**, mesmo quando o alvo é service e não rota. O jest unitário tem `rootDir: src` e roda sem banco; separar os dois é o que mantém `pnpm test` rápido.
+  - **Segurança no truncate:** ele recusa banco cujo nome não termine em `_test`, para um `.env` errado não esvaziar o banco de desenvolvimento.

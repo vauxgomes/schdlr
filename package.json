@@ -8,6 +8,7 @@
   "scripts": {
     "dev:api": "pnpm --filter @schdlr/api start:dev",
     "build:api": "pnpm --filter @schdlr/api build",
+    "test:api": "pnpm --filter @schdlr/api test:all",
     "db:generate": "pnpm --filter @schdlr/api db:generate",
     "db:migrate": "pnpm --filter @schdlr/api db:migrate",
     "db:migrate:deploy": "pnpm --filter @schdlr/api db:migrate:deploy",

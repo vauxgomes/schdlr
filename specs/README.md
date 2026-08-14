@@ -24,7 +24,7 @@ Reconstrução da API, uma spec por vez. Cada spec é autocontida: uma sessão n
 | **Fundação**                             |                                      |        |            |
 | [0001](0001-api-migration-inicial.md)    | Migration inicial e DatabaseService  | done   | —          |
 | [0002](0002-api-bootstrap.md)            | Bootstrap da aplicação               | done   | 0001       |
-| [0020](0020-api-estrategia-de-testes.md) | Estratégia de testes                 | todo   | 0002       |
+| [0020](0020-api-estrategia-de-testes.md) | Estratégia de testes                 | done   | 0002       |
 | **Identidade**                           |                                      |        |            |
 | [0003](0003-api-autenticacao.md)         | Cadastro e autenticação              | todo   | 0002       |
 | [0004](0004-api-email.md)                | Infraestrutura de e-mail             | todo   | 0002       |
