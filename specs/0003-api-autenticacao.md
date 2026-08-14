@@ -1,7 +1,7 @@
 ---
 id: 0003
 title: Cadastro e autenticação
-status: todo
+status: done
 depends_on: [0002]
 ---
 
@@ -45,26 +45,37 @@ Uma pessoa cria conta, entra, permanece logada e sai.
 
 ## Critérios de aceite
 
-- [ ] Registro com e-mail repetido responde 409
-- [ ] Login correto devolve access token e grava o cookie de refresh
-- [ ] Login errado responde 401 com a mesma mensagem para e-mail inexistente e senha errada
-- [ ] `/auth/refresh` com token válido devolve novo par e invalida o anterior
-- [ ] `/auth/refresh` com token já usado responde 401
-- [ ] Rota sem `@Public()` responde 401 sem token
-- [ ] O hash da senha nunca aparece em nenhuma resposta
-- [ ] O payload do JWT tem `sub` e `staffRole` e nenhum dado de unidade
+- [x] Registro com e-mail repetido responde 409
+- [x] Login correto devolve access token e grava o cookie de refresh
+- [x] Login errado responde 401 com a mesma mensagem para e-mail inexistente e senha errada
+- [x] `/auth/refresh` com token válido devolve novo par e invalida o anterior
+- [x] `/auth/refresh` com token já usado responde 401
+- [x] Rota sem `@Public()` responde 401 sem token
+- [x] O hash da senha nunca aparece em nenhuma resposta
+- [x] O payload do JWT tem `sub` e `staffRole` e nenhum dado de unidade
 
 ## Verificação
 
 ```bash
 pnpm --filter @schdlr/api exec tsc --noEmit
 pnpm --filter @schdlr/api lint
+pnpm --filter @schdlr/api test:all
 pnpm build:api
 ```
 
 ## Registro
 
-_Preenchido durante a execução._
+17 testes unitários e 24 e2e passando; os 8 critérios têm teste próprio em `test/auth.e2e-spec.ts`. Conferido também contra a app real: registro 201, login devolvendo token e gravando o cookie, refresh 200, `/` e `/health` ainda abertos. Os dados do teste de fumaça foram removidos do banco de desenvolvimento.
 
-- **commits:**
+- **commits:** `feat(api): cadastro e autenticação (spec 0003)` — branch `feature/autenticacao`
+- **quebra:** `JWT_SECRET` é obrigatório e exige 32 caracteres ou mais. Quem já tinha `.env` precisa gerar o valor — o comando está no `.env.example`. Sem ele a app falha no boot, com o nome da variável na mensagem.
 - **desvios:**
+  - **Registro não faz login automático.** Responde 201 com `{ id, name, email, staffRole, createdAt }` e nada de token. A spec não pedia, e emitir sessão no cadastro é decisão de produto.
+  - **`Subscription` TRIAL nasce sem `expiresAt`.** O default do schema já é TRIAL/ACTIVE, e definir prazo de trial é gestão de plano, que a spec exclui. Fica em aberto: hoje um trial não expira.
+  - **Transação implícita, via nested write.** `user.create` com `subscription: { create: {} }` é uma transação só, sem `$transaction` explícito.
+  - **Login recusa usuário inativo**, com a mesma resposta genérica. Não estava nos critérios, mas `isActive` existe no schema e deixar passar seria um buraco.
+  - **Defesa de timing no login:** quando o e-mail não existe, o bcrypt roda mesmo assim contra um hash descartável. Sem isso a diferença de latência entrega quais e-mails têm conta, contra a decisão de não confirmar existência de e-mail.
+  - **Reuso de refresh token revogado responde 401, e só.** A decisão registra que reuso é sinal de vazamento; a resposta padrão do mercado seria revogar toda a família de tokens do usuário. Não fiz porque não estava no escopo — vale uma spec própria junto com sessões ativas.
+  - **Cookie com `path=/auth`**, então ele acompanha só `refresh` e `logout`, e não toda requisição.
+  - **`@Public()` aplicado em `GET /` e `GET /health`**, como a 0002 tinha previsto no registro dela.
+  - **`createTestApp` agora aceita controllers extras.** O guard global só é testável se houver alguma rota sem `@Public()` — e nenhuma existe ainda no código de produção. Rota inexistente não serve: dá 404 do Express, sem o guard rodar.
