@@ -27,7 +27,7 @@ Reconstrução da API, uma spec por vez. Cada spec é autocontida: uma sessão n
 | [0020](0020-api-estrategia-de-testes.md) | Estratégia de testes                 | done   | 0002       |
 | **Identidade**                           |                                      |        |            |
 | [0003](0003-api-autenticacao.md)         | Cadastro e autenticação              | done   | 0002       |
-| [0004](0004-api-email.md)                | Infraestrutura de e-mail             | todo   | 0002       |
+| [0004](0004-api-email.md)                | Infraestrutura de e-mail             | done   | 0002       |
 | [0005](0005-api-recuperacao-senha.md)    | Recuperação de senha                 | todo   | 0003, 0004 |
 | [0006](0006-api-perfil.md)               | Perfil do usuário                    | todo   | 0003       |
 | **Tenant**                               |                                      |        |            |

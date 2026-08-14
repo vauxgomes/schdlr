@@ -1,11 +1,13 @@
 import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { EventEmitter2 } from '@nestjs/event-emitter'
 import { JwtService } from '@nestjs/jwt'
 import { Prisma, StaffRole } from '@prisma/client'
 import { compare, hash } from 'bcrypt'
 import { createHash, randomBytes } from 'node:crypto'
 import { Env } from '../../config/env'
 import { DatabaseService } from '../../infra/database/database.service'
+import { MailEvent, WelcomeMailPayload } from '../../infra/mail/mail.events'
 import { LoginInput } from './dto/login.dto'
 import { RegisterInput } from './dto/register.dto'
 
@@ -38,11 +40,12 @@ export class AuthService {
     private readonly db: DatabaseService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService<Env, true>,
+    private readonly events: EventEmitter2,
   ) {}
 
   async register(input: RegisterInput) {
     try {
-      return await this.db.user.create({
+      const user = await this.db.user.create({
         data: {
           name: input.name,
           email: input.email,
@@ -51,6 +54,12 @@ export class AuthService {
         },
         select: PUBLIC_USER,
       })
+
+      const welcome: WelcomeMailPayload = { name: user.name, email: user.email }
+
+      this.events.emit(MailEvent.Welcome, welcome)
+
+      return user
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
