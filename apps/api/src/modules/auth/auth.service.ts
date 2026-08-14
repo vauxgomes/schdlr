@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common'
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { EventEmitter2 } from '@nestjs/event-emitter'
 import { JwtService } from '@nestjs/jwt'
@@ -7,8 +12,14 @@ import { compare, hash } from 'bcrypt'
 import { createHash, randomBytes } from 'node:crypto'
 import { Env } from '../../config/env'
 import { DatabaseService } from '../../infra/database/database.service'
-import { MailEvent, WelcomeMailPayload } from '../../infra/mail/mail.events'
+import {
+  MailEvent,
+  PasswordResetMailPayload,
+  WelcomeMailPayload,
+} from '../../infra/mail/mail.events'
+import { ForgotPasswordInput } from './dto/forgot-password.dto'
 import { LoginInput } from './dto/login.dto'
+import { ResetPasswordInput } from './dto/reset-password.dto'
 import { RegisterInput } from './dto/register.dto'
 
 const BCRYPT_COST = 10
@@ -114,6 +125,61 @@ export class AuthService {
       where: { token: this.hashToken(rawToken), revokedAt: null },
       data: { revokedAt: new Date() },
     })
+  }
+
+  // Sem retorno e sem erro, exista ou não o e-mail: qualquer diferença aqui
+  // transformaria o endpoint num enumerador de quem usa o produto.
+  async forgotPassword(input: ForgotPasswordInput) {
+    const user = await this.db.user.findUnique({ where: { email: input.email } })
+
+    if (!user || !user.isActive) return
+
+    const token = randomBytes(32).toString('hex')
+    const expiresInMinutes = this.config.get('PASSWORD_RESET_TTL_MINUTES', { infer: true })
+
+    await this.db.passwordReset.create({
+      data: {
+        token: this.hashToken(token),
+        userId: user.id,
+        expiresAt: new Date(Date.now() + expiresInMinutes * 60 * 1000),
+      },
+    })
+
+    const webAppUrl = this.config.get('WEB_APP_URL', { infer: true })
+    const payload: PasswordResetMailPayload = {
+      name: user.name,
+      email: user.email,
+      resetUrl: `${webAppUrl}/reset-password?token=${token}`,
+      expiresInMinutes,
+    }
+
+    this.events.emit(MailEvent.PasswordReset, payload)
+  }
+
+  async resetPassword(input: ResetPasswordInput) {
+    const reset = await this.db.passwordReset.findUnique({
+      where: { token: this.hashToken(input.token) },
+      include: { user: true },
+    })
+
+    if (!reset || reset.usedAt || reset.expiresAt <= new Date() || !reset.user.isActive) {
+      throw new BadRequestException('Invalid or expired token')
+    }
+
+    const passwordHash = await hash(input.password, BCRYPT_COST)
+    const now = new Date()
+
+    // Marcar o token, trocar a senha e derrubar as sessões precisam valer
+    // juntos: se a recuperação foi feita por conta comprometida, um refresh
+    // token sobrevivente anularia o efeito da troca.
+    await this.db.$transaction([
+      this.db.passwordReset.update({ where: { id: reset.id }, data: { usedAt: now } }),
+      this.db.user.update({ where: { id: reset.userId }, data: { passwordHash } }),
+      this.db.refreshToken.updateMany({
+        where: { userId: reset.userId, revokedAt: null },
+        data: { revokedAt: now },
+      }),
+    ])
   }
 
   private async issueTokens(user: { id: string; staffRole: StaffRole | null }, meta: RequestMeta) {

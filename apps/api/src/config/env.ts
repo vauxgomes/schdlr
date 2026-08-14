@@ -5,9 +5,14 @@ export const EnvSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3001),
   DATABASE_URL: z.string().min(1),
   CORS_ORIGIN: z.string().min(1).default('http://localhost:3000'),
+  // Onde mora a UI, para montar links de e-mail. Não se confunde com
+  // CORS_ORIGIN, que responde outra pergunta: quem pode chamar esta API.
+  WEB_APP_URL: z.string().min(1).default('http://localhost:3000'),
+
   JWT_SECRET: z.string().min(32),
   JWT_EXPIRES_IN: z.string().min(1).default('15m'),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(7),
+  PASSWORD_RESET_TTL_MINUTES: z.coerce.number().int().positive().default(30),
 
   // SMTP_HOST ausente é um estado válido: sem ele o envio só loga.
   SMTP_HOST: z.string().min(1).optional(),

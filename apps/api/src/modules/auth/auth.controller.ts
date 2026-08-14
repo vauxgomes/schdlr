@@ -5,10 +5,14 @@ import { Public } from '../../common/decorators/public.decorator'
 import { Validate } from '../../common/decorators/validate.decorator'
 import { Env } from '../../config/env'
 import { AuthService, RequestMeta } from './auth.service'
+import { ForgotPasswordSchema } from './dto/forgot-password.dto'
 import { LoginSchema } from './dto/login.dto'
 import { RegisterSchema } from './dto/register.dto'
+import { ResetPasswordSchema } from './dto/reset-password.dto'
+import type { ForgotPasswordInput } from './dto/forgot-password.dto'
 import type { LoginInput } from './dto/login.dto'
 import type { RegisterInput } from './dto/register.dto'
+import type { ResetPasswordInput } from './dto/reset-password.dto'
 
 const REFRESH_COOKIE = 'refresh_token'
 
@@ -62,6 +66,22 @@ export class AuthController {
     this.setRefreshCookie(response, refreshToken)
 
     return { accessToken }
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Validate(ForgotPasswordSchema)
+  forgotPassword(@Body() input: ForgotPasswordInput) {
+    return this.authService.forgotPassword(input)
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Validate(ResetPasswordSchema)
+  resetPassword(@Body() input: ResetPasswordInput) {
+    return this.authService.resetPassword(input)
   }
 
   @Public()
