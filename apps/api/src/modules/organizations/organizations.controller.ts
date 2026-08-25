@@ -10,8 +10,8 @@ import {
   Post,
 } from '@nestjs/common'
 import { Validate } from '../../common/decorators/validate.decorator'
-import { CurrentUser } from '../auth/current-user.decorator'
-import type { AuthenticatedUser } from '../auth/jwt.strategy'
+import { CurrentUser } from '../auth/decorators/current-user.decorator'
+import type { AuthenticatedUser } from '../auth/strategies/jwt.strategy'
 import { CreateOrganizationSchema } from './dto/create-organization.dto'
 import { UpdateOrganizationSchema } from './dto/update-organization.dto'
 import type { CreateOrganizationInput } from './dto/create-organization.dto'

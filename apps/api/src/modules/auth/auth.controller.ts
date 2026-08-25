@@ -1,11 +1,11 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, Req, Res } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import type { CookieOptions, Request, Response } from 'express'
+import type { Request, Response } from 'express'
 import { Public } from '../../common/decorators/public.decorator'
 import { Validate } from '../../common/decorators/validate.decorator'
 import { Env } from '../../config/env'
 import { AuthService, RequestMeta } from './auth.service'
-import { REFRESH_COOKIE, readRefreshCookie } from './refresh-cookie'
+import { clearRefreshCookie, readRefreshCookie, setRefreshCookie } from './utils/refresh-cookie'
 import { ForgotPasswordSchema } from './dto/forgot-password.dto'
 import { LoginSchema } from './dto/login.dto'
 import { RegisterSchema } from './dto/register.dto'
@@ -85,26 +85,17 @@ export class AuthController {
   async logout(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
     await this.authService.logout(readRefreshCookie(request))
 
-    response.clearCookie(REFRESH_COOKIE, this.cookieOptions())
+    clearRefreshCookie(response, this.isProduction)
   }
 
   private setRefreshCookie(response: Response, token: string) {
-    const ttlDays = this.config.get('REFRESH_TOKEN_TTL_DAYS', { infer: true })
-
-    response.cookie(REFRESH_COOKIE, token, {
-      ...this.cookieOptions(),
-      maxAge: ttlDays * 24 * 60 * 60 * 1000,
+    setRefreshCookie(response, token, {
+      ttlDays: this.config.get('REFRESH_TOKEN_TTL_DAYS', { infer: true }),
+      secure: this.isProduction,
     })
   }
 
-  // `path` restrito a /auth: o cookie só acompanha refresh e logout, e não
-  // viaja em toda requisição da aplicação.
-  private cookieOptions(): CookieOptions {
-    return {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: this.config.get('NODE_ENV', { infer: true }) === 'production',
-      path: '/auth',
-    }
+  private get isProduction() {
+    return this.config.get('NODE_ENV', { infer: true }) === 'production'
   }
 }

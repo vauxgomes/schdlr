@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import { PassportStrategy } from '@nestjs/passport'
 import { StaffRole } from '@prisma/client'
 import { ExtractJwt, Strategy } from 'passport-jwt'
-import { Env } from '../../config/env'
+import { Env } from '../../../config/env'
 
 export type JwtPayload = {
   sub: string

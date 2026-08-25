@@ -1,5 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common'
-import { AuthenticatedUser } from './jwt.strategy'
+import { AuthenticatedUser } from '../strategies/jwt.strategy'
 
 // O que o JwtStrategy devolveu no validate(). Só existe em rota fechada:
 // numa rota @Public() o guard nem roda e `request.user` vem indefinido.
