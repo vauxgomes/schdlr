@@ -1,7 +1,7 @@
 ---
 id: 0008
 title: Unidade e camada de permissões
-status: doing
+status: done
 depends_on: [0007]
 ---
 
@@ -57,15 +57,15 @@ Esta spec é a mais importante do bloco: ela define o contrato de permissão que
 
 ## Critérios de aceite
 
-- [ ] Owner da organização acessa a unidade sem ser `UnitMember`
-- [ ] Não-membro e não-owner recebe 403
-- [ ] Membro com `isActive: false` recebe 403
-- [ ] TEACHER lê, mas não altera nada que exija coordenação
-- [ ] Slug repetido na mesma organização responde 409; em organização diferente, passa
-- [ ] Excluir unidade com membro ativo além do owner responde 409; sem outros membros, exclui
-- [ ] Criar unidade deixa o dono da organização como `UnitMember` ADMIN ativo
-- [ ] Rota sem `:unitId` não é afetada pelo guard
-- [ ] Unidade inexistente responde 404, não 403
+- [x] Owner da organização acessa a unidade sem ser `UnitMember`
+- [x] Não-membro e não-owner recebe 403
+- [x] Membro com `isActive: false` recebe 403
+- [x] TEACHER lê, mas não altera nada que exija coordenação
+- [x] Slug repetido na mesma organização responde 409; em organização diferente, passa
+- [x] Excluir unidade com membro ativo além do owner responde 409; sem outros membros, exclui
+- [x] Criar unidade deixa o dono da organização como `UnitMember` ADMIN ativo
+- [x] Rota sem `:unitId` não é afetada pelo guard
+- [x] Unidade inexistente responde 404, não 403
 
 ## Verificação
 
@@ -78,7 +78,12 @@ pnpm build:api
 
 ## Registro
 
-_Preenchido durante a execução._
+25 testes unitários e 67 e2e passando; os nove critérios têm teste em `test/units.e2e-spec.ts`. As lacunas foram fechadas no próprio arquivo da spec **antes** da implementação, em commit separado.
 
-- **commits:**
+- **commits:** `docs(spec): fecha as lacunas da 0008 antes de executá-la` e `feat(api): unidades e camada de permissões (spec 0008)` — branch `feature/unidade-permissoes`
 - **desvios:**
+  - **Dois controllers no mesmo módulo:** `OrganizationUnitsController` (`/organizations/:organizationId/units`, criar e listar) e `UnitsController` (`/units`, ler, alterar, excluir e `select`). A separação existe porque a autoridade muda: sob a organização quem manda é o dono, sob a unidade quem manda é o contexto do guard.
+  - **Excluir unidade apaga os `UnitMember` junto**, na mesma transação. A FK não é cascade, e sobraria a linha do próprio dono impedindo o delete.
+  - **A ordem dos dois guards globais é implícita**, e vem da ordem dos imports no `AppModule`: o `JwtAuthGuard` precisa resolver `request.user` antes do `UnitMemberGuard`. O guard devolve `true` quando não há usuário, então uma inversão não abriria acesso — mas deixaria o contexto vazio. Três testes quebram se alguém reordenar, o que é a rede que temos.
+  - **`assertCoordinatorOrOwnership` nasce sem uso** nesta spec: nenhuma rota de unidade é mutação operacional. Ela existe porque a 0018 a exige, e criar as três juntas evita que a assinatura mude depois.
+  - **`GET /units/select` devolve `organizationId` junto**, além de `{ id, name, slug }`: é a tela de escolha de unidade, e ela precisa saber a que organização cada uma pertence quando a pessoa alcança mais de uma.
