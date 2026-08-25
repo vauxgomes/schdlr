@@ -36,7 +36,7 @@ A **[0021](0021-api-rate-limiting-expiracao.md)** fica no fim, em bloco próprio
 | [0006](0006-api-perfil.md)                    | Perfil do usuário                    | done   | 0003       |
 | ↩ [0021](0021-api-rate-limiting-expiracao.md) | Rate limiting e expiração de tokens  | todo   | 0005       |
 | **Tenant**                                    |                                      |        |            |
-| [0007](0007-api-organizacao.md)               | Organização                          | todo   | 0003       |
+| [0007](0007-api-organizacao.md)               | Organização                          | done   | 0003       |
 | [0008](0008-api-unidade.md)                   | Unidade e camada de permissões       | todo   | 0007       |
 | [0009](0009-api-membros.md)                   | Membros da unidade                   | todo   | 0008       |
 | [0010](0010-api-convites.md)                  | Convites de unidade                  | todo   | 0009, 0004 |
