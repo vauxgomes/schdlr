@@ -13,6 +13,7 @@ export const EnvSchema = z.object({
   JWT_EXPIRES_IN: z.string().min(1).default('15m'),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(7),
   PASSWORD_RESET_TTL_MINUTES: z.coerce.number().int().positive().default(30),
+  UNIT_INVITE_TTL_DAYS: z.coerce.number().int().positive().default(7),
 
   // SMTP_HOST ausente é um estado válido: sem ele o envio só loga.
   SMTP_HOST: z.string().min(1).optional(),

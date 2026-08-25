@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { OnEvent } from '@nestjs/event-emitter'
 import { NotificationType } from '@prisma/client'
+import { UnitInviteEvent } from '../../events/unit-invite.events'
+import type { UnitInviteCreatedPayload } from '../../events/unit-invite.events'
 import { UnitMemberEvent } from '../../events/unit-member.events'
 import type { UnitMemberStatusPayload } from '../../events/unit-member.events'
 import { DatabaseService } from '../../infra/database/database.service'
@@ -14,6 +16,27 @@ export class NotificationsListener {
     private readonly notifications: NotificationsService,
     private readonly db: DatabaseService,
   ) {}
+
+  // O espelho do ouvinte de mail: só quem já tem conta recebe notificação.
+  @OnEvent(UnitInviteEvent.Created)
+  async handleUnitInviteCreated(payload: UnitInviteCreatedPayload) {
+    if (!payload.userId) return
+
+    try {
+      await this.notifications.create({
+        userId: payload.userId,
+        type: NotificationType.UNIT_INVITE,
+        payload: {
+          unitId: payload.unitId,
+          unitName: payload.unitName,
+          token: payload.token,
+        },
+        referenceId: payload.inviteId,
+      })
+    } catch (error) {
+      this.logger.error(`Failed to store UNIT_INVITE for user ${payload.userId}`, error)
+    }
+  }
 
   @OnEvent(UnitMemberEvent.Activated)
   handleActivated(payload: UnitMemberStatusPayload) {

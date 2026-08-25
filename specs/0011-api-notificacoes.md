@@ -66,3 +66,12 @@ Executada em modo `/spec next`, com commit automático. 25 unitários e 92 e2e p
   - **A listagem aceita `unreadOnly`**, que a spec não pediu. O contador e a lista precisavam concordar, e testar isso sem o filtro exigiria contar na mão no teste.
   - **`markRead` devolve `{ updated }`.** É o que torna a idempotência observável: a segunda chamada devolve zero em vez de repetir o efeito.
   - **O elo solto da 0009 foi fechado:** `unit-member.activated` e `unit-member.deactivated` agora têm ouvinte, e desativar um membro passa a notificá-lo de fato.
+
+## Notas posteriores
+
+Acrescentado depois do `done`, append-only: nada acima foi alterado.
+
+- **2026-08-14, spec 0010** — o payload de `UNIT_INVITE` declarado aqui mudou de
+  forma: `inviteId` saiu e entrou `token`. É com o token que o convidado aceita,
+  e a notificação é lida apenas por ele. O mapa em
+  `modules/notifications/notification-payloads.ts` é a fonte da verdade.

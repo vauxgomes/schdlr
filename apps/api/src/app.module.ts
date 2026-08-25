@@ -8,6 +8,7 @@ import { DatabaseModule } from './infra/database/database.module'
 import { MailModule } from './infra/mail/mail.module'
 import { AuthModule } from './modules/auth/auth.module'
 import { HealthModule } from './modules/health/health.module'
+import { InvitesModule } from './modules/invites/invites.module'
 import { MembersModule } from './modules/members/members.module'
 import { NotificationsModule } from './modules/notifications/notifications.module'
 import { OrganizationsModule } from './modules/organizations/organizations.module'
@@ -22,6 +23,7 @@ import { UsersModule } from './modules/users/users.module'
     MailModule,
     AuthModule,
     HealthModule,
+    InvitesModule,
     MembersModule,
     NotificationsModule,
     OrganizationsModule,

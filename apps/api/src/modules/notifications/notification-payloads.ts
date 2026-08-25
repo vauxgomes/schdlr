@@ -8,7 +8,9 @@ export const NotificationPayloadSchema = {
   [NotificationType.UNIT_INVITE]: z.object({
     unitId: z.string().min(1),
     unitName: z.string().min(1),
-    inviteId: z.string().min(1),
+    // Token, e não id: é com ele que se aceita, e a notificação é lida só
+    // pelo próprio convidado.
+    token: z.string().min(1),
   }),
   [NotificationType.MEMBER_ACTIVATED]: z.object({
     unitId: z.string().min(1),
