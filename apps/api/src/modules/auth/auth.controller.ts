@@ -44,7 +44,7 @@ export class AuthController {
   ) {
     const { refreshToken, ...result } = await this.authService.login(input, requestMeta(request))
 
-    this.setRefreshCookie(response, refreshToken)
+    setRefreshCookie(response, refreshToken, this.config)
 
     return result
   }
@@ -58,7 +58,7 @@ export class AuthController {
       requestMeta(request),
     )
 
-    this.setRefreshCookie(response, refreshToken)
+    setRefreshCookie(response, refreshToken, this.config)
 
     return { accessToken }
   }
@@ -85,17 +85,6 @@ export class AuthController {
   async logout(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
     await this.authService.logout(readRefreshCookie(request))
 
-    clearRefreshCookie(response, this.isProduction)
-  }
-
-  private setRefreshCookie(response: Response, token: string) {
-    setRefreshCookie(response, token, {
-      ttlDays: this.config.get('REFRESH_TOKEN_TTL_DAYS', { infer: true }),
-      secure: this.isProduction,
-    })
-  }
-
-  private get isProduction() {
-    return this.config.get('NODE_ENV', { infer: true }) === 'production'
+    clearRefreshCookie(response, this.config)
   }
 }
