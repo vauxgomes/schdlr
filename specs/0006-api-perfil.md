@@ -1,7 +1,7 @@
 ---
 id: 0006
 title: Perfil do usuário
-status: todo
+status: done
 depends_on: [0003]
 ---
 
@@ -30,22 +30,29 @@ Quem está logado vê e edita os próprios dados.
 
 ## Critérios de aceite
 
-- [ ] `GET /me` sem token responde 401
-- [ ] `GET /me` nunca inclui `passwordHash`
-- [ ] Troca de senha com senha atual errada responde 400/401 e não altera nada
-- [ ] Depois da troca, a sessão que trocou continua válida e as outras não
+- [x] `GET /me` sem token responde 401
+- [x] `GET /me` nunca inclui `passwordHash`
+- [x] Troca de senha com senha atual errada responde 400/401 e não altera nada
+- [x] Depois da troca, a sessão que trocou continua válida e as outras não
 
 ## Verificação
 
 ```bash
 pnpm --filter @schdlr/api exec tsc --noEmit
 pnpm --filter @schdlr/api lint
+pnpm --filter @schdlr/api test:all
 pnpm build:api
 ```
 
 ## Registro
 
-_Preenchido durante a execução._
+Executada em modo `/spec next 2`, com commit automático. 25 testes unitários e 42 e2e passando; os quatro critérios têm teste em `test/profile.e2e-spec.ts`.
 
-- **commits:**
+- **commits:** `feat(api): perfil do usuário (spec 0006)` — branch `feature/perfil-usuario`
 - **desvios:**
+  - **Módulo novo `src/modules/users/`**, com o controller em `@Controller('me')`. As rotas são sobre o usuário logado, mas o domínio é usuário — daí o nome do módulo não seguir o da rota.
+  - **Senha atual errada responde 400**, entre as duas opções que a spec permitia. A sessão está autenticada; o que está errado é o corpo. Mesma escolha do token inválido na 0005.
+  - **Três extrações de código da 0003**, para não duplicar decisão já tomada: `common/password.ts` (custo 10 do bcrypt), `common/token-hash.ts` (SHA-256) e `modules/auth/refresh-cookie.ts` (nome do cookie e leitura). O `AuthService` e o `AuthController` passaram a usá-las.
+  - **`@CurrentUser()` criado** em `modules/auth/`, primeira rota autenticada do projeto a precisar do usuário do token.
+  - **Preservar a sessão que trocou a senha depende do cookie de refresh.** Sem cookie na requisição, todas as sessões caem — o padrão seguro.
+  - **Parada de ambiente durante a execução:** o daemon do Docker estava desligado e o `globalSetup` da suíte não conseguiu criar o banco de teste. Resolvido subindo o Docker; nenhuma linha de código mudou por causa disso.

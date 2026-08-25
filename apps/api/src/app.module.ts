@@ -8,6 +8,7 @@ import { DatabaseModule } from './infra/database/database.module'
 import { MailModule } from './infra/mail/mail.module'
 import { AuthModule } from './modules/auth/auth.module'
 import { HealthModule } from './modules/health/health.module'
+import { UsersModule } from './modules/users/users.module'
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { HealthModule } from './modules/health/health.module'
     MailModule,
     AuthModule,
     HealthModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

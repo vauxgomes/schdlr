@@ -5,6 +5,7 @@ import { Public } from '../../common/decorators/public.decorator'
 import { Validate } from '../../common/decorators/validate.decorator'
 import { Env } from '../../config/env'
 import { AuthService, RequestMeta } from './auth.service'
+import { REFRESH_COOKIE, readRefreshCookie } from './refresh-cookie'
 import { ForgotPasswordSchema } from './dto/forgot-password.dto'
 import { LoginSchema } from './dto/login.dto'
 import { RegisterSchema } from './dto/register.dto'
@@ -14,14 +15,8 @@ import type { LoginInput } from './dto/login.dto'
 import type { RegisterInput } from './dto/register.dto'
 import type { ResetPasswordInput } from './dto/reset-password.dto'
 
-const REFRESH_COOKIE = 'refresh_token'
-
 function requestMeta(request: Request): RequestMeta {
   return { userAgent: request.get('user-agent'), ipAddress: request.ip }
-}
-
-function readRefreshCookie(request: Request) {
-  return (request.cookies as Record<string, string | undefined>)[REFRESH_COOKIE]
 }
 
 @Controller('auth')

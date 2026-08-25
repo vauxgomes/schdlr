@@ -8,8 +8,9 @@ import { ConfigService } from '@nestjs/config'
 import { EventEmitter2 } from '@nestjs/event-emitter'
 import { JwtService } from '@nestjs/jwt'
 import { Prisma, StaffRole } from '@prisma/client'
-import { compare, hash } from 'bcrypt'
-import { createHash, randomBytes } from 'node:crypto'
+import { randomBytes } from 'node:crypto'
+import { hashPassword, verifyPassword } from '../../common/password'
+import { hashToken } from '../../common/token-hash'
 import { Env } from '../../config/env'
 import { DatabaseService } from '../../infra/database/database.service'
 import {
@@ -22,7 +23,6 @@ import { LoginInput } from './dto/login.dto'
 import { ResetPasswordInput } from './dto/reset-password.dto'
 import { RegisterInput } from './dto/register.dto'
 
-const BCRYPT_COST = 10
 const UNIQUE_VIOLATION = 'P2002'
 const INVALID_CREDENTIALS = 'Invalid credentials'
 const INVALID_SESSION = 'Invalid session'
@@ -60,7 +60,7 @@ export class AuthService {
         data: {
           name: input.name,
           email: input.email,
-          passwordHash: await hash(input.password, BCRYPT_COST),
+          passwordHash: await hashPassword(input.password),
           subscription: { create: {} },
         },
         select: PUBLIC_USER,
@@ -85,7 +85,7 @@ export class AuthService {
 
   async login(input: LoginInput, meta: RequestMeta) {
     const user = await this.db.user.findUnique({ where: { email: input.email } })
-    const passwordMatches = await compare(input.password, user?.passwordHash ?? DUMMY_HASH)
+    const passwordMatches = await verifyPassword(input.password, user?.passwordHash ?? DUMMY_HASH)
 
     if (!user || !passwordMatches || !user.isActive) {
       throw new UnauthorizedException(INVALID_CREDENTIALS)
@@ -100,7 +100,7 @@ export class AuthService {
     if (!rawToken) throw new UnauthorizedException(INVALID_SESSION)
 
     const stored = await this.db.refreshToken.findUnique({
-      where: { token: this.hashToken(rawToken) },
+      where: { token: hashToken(rawToken) },
       include: { user: true },
     })
 
@@ -122,7 +122,7 @@ export class AuthService {
     if (!rawToken) return
 
     await this.db.refreshToken.updateMany({
-      where: { token: this.hashToken(rawToken), revokedAt: null },
+      where: { token: hashToken(rawToken), revokedAt: null },
       data: { revokedAt: new Date() },
     })
   }
@@ -139,7 +139,7 @@ export class AuthService {
 
     await this.db.passwordReset.create({
       data: {
-        token: this.hashToken(token),
+        token: hashToken(token),
         userId: user.id,
         expiresAt: new Date(Date.now() + expiresInMinutes * 60 * 1000),
       },
@@ -158,7 +158,7 @@ export class AuthService {
 
   async resetPassword(input: ResetPasswordInput) {
     const reset = await this.db.passwordReset.findUnique({
-      where: { token: this.hashToken(input.token) },
+      where: { token: hashToken(input.token) },
       include: { user: true },
     })
 
@@ -166,7 +166,7 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired token')
     }
 
-    const passwordHash = await hash(input.password, BCRYPT_COST)
+    const passwordHash = await hashPassword(input.password)
     const now = new Date()
 
     // Marcar o token, trocar a senha e derrubar as sessões precisam valer
@@ -189,7 +189,7 @@ export class AuthService {
 
     await this.db.refreshToken.create({
       data: {
-        token: this.hashToken(refreshToken),
+        token: hashToken(refreshToken),
         userId: user.id,
         expiresAt: new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000),
         userAgent: meta.userAgent,
@@ -202,9 +202,5 @@ export class AuthService {
 
   private publicUser(id: string) {
     return this.db.user.findUniqueOrThrow({ where: { id }, select: PUBLIC_USER })
-  }
-
-  private hashToken(token: string) {
-    return createHash('sha256').update(token).digest('hex')
   }
 }
