@@ -19,10 +19,9 @@ Reconstrução da API, uma spec por vez. Cada spec é autocontida: uma sessão n
 
 ## Índice
 
-**A tabela está em ordem de execução, não de numeração.** Duas specs nasceram depois das demais e aparecem no meio, marcadas com ↩ — procurar pelo fim da tabela não as encontra:
+**A tabela está em ordem de execução, não de numeração.** A **[0020](0020-api-estrategia-de-testes.md)** nasceu depois das demais e aparece no meio, marcada com ↩: vem antes da 0003 porque define como se testa contra banco, e é da autenticação em diante que mora o código cuja regressão passa despercebida.
 
-- **[0020](0020-api-estrategia-de-testes.md)** vem antes da 0003: é ela que define como se testa contra banco, e é da autenticação em diante que mora o código cuja regressão passa despercebida.
-- **[0021](0021-api-rate-limiting-expiracao.md)** fecha o que as specs 0003 a 0005 deixaram em aberto nos registros — rota pública sem limite e tabela de token que só cresce.
+A **[0021](0021-api-rate-limiting-expiracao.md)** fica no fim, em bloco próprio: o gatilho dela é o primeiro deploy exposto à internet, não uma dependência de código.
 
 | id                                            | spec                                 | status | depende de |
 | --------------------------------------------- | ------------------------------------ | ------ | ---------- |
@@ -52,6 +51,8 @@ Reconstrução da API, uma spec por vez. Cada spec é autocontida: uma sessão n
 | **Scheduling**                                |                                      |        |            |
 | [0018](0018-api-projeto.md)                   | Projeto                              | todo   | 0014, 0016 |
 | [0019](0019-api-membros-projeto.md)           | Membros do projeto                   | todo   | 0018       |
+| **Endurecimento**                             |                                      |        |            |
+| [0021](0021-api-rate-limiting-expiracao.md)   | Rate limiting e expiração de tokens  | todo   | 0005       |
 
 O id é uma sequência de criação, não de execução: quem manda na ordem é o `depends_on` e o lugar na tabela. Spec nova entra onde precisa rodar, e não no fim.
 

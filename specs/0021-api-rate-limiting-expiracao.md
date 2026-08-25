@@ -9,6 +9,14 @@ depends_on: [0005]
 
 Os endpoints públicos de autenticação deixam de aceitar abuso barato, e as tabelas de token param de crescer para sempre.
 
+## Quando executar
+
+**Antes do primeiro deploy alcançável pela internet** — não antes disso, e não muito depois.
+
+Adiada em 2026-08-14, depois de ser iniciada e revertida. O motivo: rate limiting protege superfície exposta, e não há deploy, nginx nem usuário; a limpeza resolve tabela que cresce, e as tabelas estão vazias. Mais decisivo, a pergunta central desta spec — quantos proxies confiar para descobrir o IP do cliente — **depende da topologia de deploy, que ainda não existe**. Executar agora seria decidir contra hipótese.
+
+Fica atrás das specs de domínio de propósito: a 0008 define o contrato de permissão que onze specs assumem pronto, e represá-la custa mais do que adiar endurecimento.
+
 ## Por que as duas coisas na mesma spec
 
 São o envelhecimento da superfície que as specs 0003 a 0005 construíram: as mesmas rotas públicas e as mesmas duas tabelas. `forgot-password` é o caso que junta os dois — é público, dispara e-mail e insere uma linha a cada chamada, então sem limite ele é ao mesmo tempo um amplificador de spam e uma fábrica de lixo em `password_resets`. Cada metade sozinha seria meia sessão.
@@ -38,7 +46,7 @@ São o envelhecimento da superfície que as specs 0003 a 0005 construíram: as m
 - CAPTCHA
 - Métricas e alarme de abuso
 
-**Dependências novas:** `@nestjs/throttler` e `@nestjs/schedule`. Instalar precisa de autorização — perguntar antes.
+**Dependências novas:** `@nestjs/throttler` e `@nestjs/schedule` — pacotes de primeira parte do NestJS, mesma família dos que já estão no `package.json`. Instalar avisando, sem perguntar.
 
 ## Decisões já tomadas
 
