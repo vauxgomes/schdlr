@@ -1,12 +1,12 @@
 import { MailTemplate } from '../mail-template'
-import { PasswordResetMailPayload } from '../mail.events'
+import { PasswordResetRequestedPayload } from '../../../events/user.events'
 
 // Conteúdo em português: é texto para o usuário final, não identificador.
 export function passwordResetTemplate({
   name,
   resetUrl,
   expiresInMinutes,
-}: PasswordResetMailPayload): MailTemplate {
+}: PasswordResetRequestedPayload): MailTemplate {
   return {
     subject: 'Redefinição de senha',
     html: `

@@ -64,3 +64,15 @@ Executada em modo `/spec next`, com commit automático. 25 unitários e 79 e2e p
   - **O pipe de validação passou a aceitar alvo** (`body` ou `query`), para a listagem validar o filtro com Zod como qualquer corpo. Usado como pipe de parâmetro no `@Query`, e não via `@Validate`: aquele decorator ocupa o `UsePipes` do handler, que é único, e corpo e query brigariam pelo mesmo lugar. Arquivo da 0002, sem mudar endereço nem decisão.
   - **`active` no filtro não usa `z.coerce.boolean()`**, que faria a string `'false'` virar `true` — mesma armadilha registrada na 0004 para `SMTP_SECURE`.
   - **Papel obrigatório validado no service**, como a spec decidiu, e não no schema Zod — que também conseguiria. Mantive a decisão porque o service é alcançado por outros caminhos além do corpo HTTP.
+
+## Notas posteriores
+
+Acrescentado depois do `done`, append-only: nada acima foi alterado.
+
+- **2026-08-14, convergência de nomes de evento** — o registro acima dizia que a
+  0011 deveria confirmar ou renomear `unit-member.active-changed`. Foi resolvido
+  antes, junto com os eventos da 0004: virou **dois** eventos, pelo mesmo motivo
+  que os endpoints foram separados — são transições diferentes, e o `type` no
+  payload era um discriminador disfarçado.
+  - `unit-member.activated` e `unit-member.deactivated`, em `src/events/unit-member.events.ts`
+  - o payload perdeu o campo `type`

@@ -12,7 +12,7 @@ describe('MailListener', () => {
   it('sends the welcome template to the address in the payload', async () => {
     const send = jest.fn().mockResolvedValue(undefined)
 
-    await new MailListener({ send } as unknown as MailService).handleWelcome(payload)
+    await new MailListener({ send } as unknown as MailService).handleUserRegistered(payload)
 
     expect(send).toHaveBeenCalledWith(
       expect.objectContaining({ to: 'vaux@schdlr.test', subject: 'Bem-vindo ao schdlr' }),
@@ -25,6 +25,6 @@ describe('MailListener', () => {
     const send = jest.fn().mockRejectedValue(new Error('ECONNREFUSED'))
     const listener = new MailListener({ send } as unknown as MailService)
 
-    await expect(listener.handleWelcome(payload)).resolves.toBeUndefined()
+    await expect(listener.handleUserRegistered(payload)).resolves.toBeUndefined()
   })
 })

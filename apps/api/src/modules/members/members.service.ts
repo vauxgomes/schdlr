@@ -5,12 +5,12 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { EventEmitter2 } from '@nestjs/event-emitter'
-import { MemberRole, NotificationType, Prisma, UnitMember } from '@prisma/client'
+import { MemberRole, Prisma, UnitMember } from '@prisma/client'
+import { UnitMemberEvent, UnitMemberStatusPayload } from '../../events/unit-member.events'
 import { DatabaseService } from '../../infra/database/database.service'
 import { UnitContext } from '../units/unit-context'
 import { assertManagement, assertMemberOrOwnership } from '../units/utils/permissions'
 import { ListMembersQuery } from './dto/update-member.dto'
-import { MemberActiveChangedPayload, MemberEvent } from './member.events'
 
 const MEMBER_LIST = {
   id: true,
@@ -97,14 +97,13 @@ export class MembersService {
     })
 
     if (isActive !== member.isActive) {
-      const payload: MemberActiveChangedPayload = {
+      const payload: UnitMemberStatusPayload = {
         userId: member.userId,
         unitId: context.unitId,
         memberId: member.id,
-        type: isActive ? NotificationType.MEMBER_ACTIVATED : NotificationType.MEMBER_DEACTIVATED,
       }
 
-      this.events.emit(MemberEvent.ActiveChanged, payload)
+      this.events.emit(isActive ? UnitMemberEvent.Activated : UnitMemberEvent.Deactivated, payload)
     }
 
     return updated

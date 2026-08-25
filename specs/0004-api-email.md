@@ -60,3 +60,22 @@ pnpm build:api
   - **Tipagem do payload é por declaração no ponto de emissão** (`const welcome: WelcomeMailPayload = ...`), e não por um emissor genérico tipado. O `EventEmitter2` aceita `any` na assinatura; um wrapper só para isso seria abstração especulativa com um evento só.
   - **`MailModule` não é `@Global()`.** Só o listener consome o service, e quem dispara usa o `EventEmitter2`, esse sim global.
 - **em aberto:** um evento hoje tem um ouvinte. Quando a 0010 e a 0011 entrarem, convite vai querer disparar e-mail e notificação a partir do mesmo evento — vale revisitar se o nome dos eventos continua sendo `mail.*` ou se passa a ser o fato de domínio (`unit.invited`), com o mail sendo um ouvinte entre outros.
+
+## Notas posteriores
+
+Acrescentado depois do `done`, append-only: nada acima foi alterado.
+
+- **2026-08-14, convergência de nomes de evento** — a pendência que o registro
+  acima previa foi resolvida na 0009, e não na 0010/0011: os eventos passaram a
+  ser nomeados pelo **fato de domínio**, não pelo canal.
+  - `mail.welcome` → `user.registered`
+  - `mail.password-reset` → `user.password-reset-requested`
+  - as constantes saíram de `infra/mail/mail.events.ts` para `src/events/user.events.ts`
+
+  O motivo: com nome de canal, quem emite decide o canal — e a 0010 precisa que
+  convite dispare e-mail **e** notificação a partir do mesmo fato. O tipo do
+  payload acompanhou (`WelcomeMailPayload` → `UserRegisteredPayload`).
+
+  Fica em aberto que `PasswordResetRequestedPayload` ainda carrega `resetUrl`,
+  que é apresentação e não fato de domínio. Movê-lo para o ouvinte exigiria
+  levar `WEB_APP_URL` para lá; não vale enquanto houver um consumidor só.

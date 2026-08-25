@@ -14,10 +14,10 @@ import { hashToken } from '../../common/token-hash'
 import { Env } from '../../config/env'
 import { DatabaseService } from '../../infra/database/database.service'
 import {
-  MailEvent,
-  PasswordResetMailPayload,
-  WelcomeMailPayload,
-} from '../../infra/mail/mail.events'
+  PasswordResetRequestedPayload,
+  UserEvent,
+  UserRegisteredPayload,
+} from '../../events/user.events'
 import { ForgotPasswordInput } from './dto/forgot-password.dto'
 import { LoginInput } from './dto/login.dto'
 import { ResetPasswordInput } from './dto/reset-password.dto'
@@ -66,9 +66,9 @@ export class AuthService {
         select: PUBLIC_USER,
       })
 
-      const welcome: WelcomeMailPayload = { name: user.name, email: user.email }
+      const registered: UserRegisteredPayload = { name: user.name, email: user.email }
 
-      this.events.emit(MailEvent.Welcome, welcome)
+      this.events.emit(UserEvent.Registered, registered)
 
       return user
     } catch (error) {
@@ -146,14 +146,14 @@ export class AuthService {
     })
 
     const webAppUrl = this.config.get('WEB_APP_URL', { infer: true })
-    const payload: PasswordResetMailPayload = {
+    const payload: PasswordResetRequestedPayload = {
       name: user.name,
       email: user.email,
       resetUrl: `${webAppUrl}/reset-password?token=${token}`,
       expiresInMinutes,
     }
 
-    this.events.emit(MailEvent.PasswordReset, payload)
+    this.events.emit(UserEvent.PasswordResetRequested, payload)
   }
 
   async resetPassword(input: ResetPasswordInput) {

@@ -1,8 +1,8 @@
 import { MailTemplate } from '../mail-template'
-import { WelcomeMailPayload } from '../mail.events'
+import { UserRegisteredPayload } from '../../../events/user.events'
 
 // Conteúdo em português: é texto para o usuário final, não identificador.
-export function welcomeTemplate({ name }: WelcomeMailPayload): MailTemplate {
+export function welcomeTemplate({ name }: UserRegisteredPayload): MailTemplate {
   return {
     subject: 'Bem-vindo ao schdlr',
     html: `

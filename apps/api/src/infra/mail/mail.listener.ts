@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { OnEvent } from '@nestjs/event-emitter'
 import { MailTemplate } from './mail-template'
-import { MailEvent } from './mail.events'
-import type { PasswordResetMailPayload, WelcomeMailPayload } from './mail.events'
+import { UserEvent } from '../../events/user.events'
+import type { PasswordResetRequestedPayload, UserRegisteredPayload } from '../../events/user.events'
 import { MailService } from './mail.service'
 import { passwordResetTemplate } from './templates/password-reset.template'
 import { welcomeTemplate } from './templates/welcome.template'
@@ -13,13 +13,13 @@ export class MailListener {
 
   constructor(private readonly mail: MailService) {}
 
-  @OnEvent(MailEvent.Welcome)
-  handleWelcome(payload: WelcomeMailPayload) {
+  @OnEvent(UserEvent.Registered)
+  handleUserRegistered(payload: UserRegisteredPayload) {
     return this.deliver(payload.email, welcomeTemplate(payload))
   }
 
-  @OnEvent(MailEvent.PasswordReset)
-  handlePasswordReset(payload: PasswordResetMailPayload) {
+  @OnEvent(UserEvent.PasswordResetRequested)
+  handlePasswordResetRequested(payload: PasswordResetRequestedPayload) {
     return this.deliver(payload.email, passwordResetTemplate(payload))
   }
 
