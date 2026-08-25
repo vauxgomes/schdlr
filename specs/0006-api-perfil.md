@@ -56,3 +56,12 @@ Executada em modo `/spec next 2`, com commit automático. 25 testes unitários e
   - **`@CurrentUser()` criado** em `modules/auth/`, primeira rota autenticada do projeto a precisar do usuário do token.
   - **Preservar a sessão que trocou a senha depende do cookie de refresh.** Sem cookie na requisição, todas as sessões caem — o padrão seguro.
   - **Parada de ambiente durante a execução:** o daemon do Docker estava desligado e o `globalSetup` da suíte não conseguiu criar o banco de teste. Resolvido subindo o Docker; nenhuma linha de código mudou por causa disso.
+
+## Notas posteriores
+
+Acrescentado depois do `done`, append-only: nada acima foi alterado.
+
+- **2026-08-14, reorganização de pastas** — os dois arquivos que esta spec citou
+  no registro mudaram de endereço, sem mudança de comportamento:
+  - `@CurrentUser()` → `src/modules/auth/decorators/current-user.decorator.ts`
+  - cookie de refresh → `src/modules/auth/utils/refresh-cookie.ts`

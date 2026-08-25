@@ -93,3 +93,15 @@ quem lê esta spec como contexto não escrever código contra um retrato vencido
 
   Comportamento inalterado; os testes desta spec continuam passando. O
   `@CurrentUser()` também nasceu ali, em `src/modules/auth/`.
+
+- **2026-08-14, reorganização de pastas** — os arquivos que esta spec criou
+  mudaram de endereço dentro do módulo, sem mudança de comportamento:
+  - `JwtStrategy` → `src/modules/auth/strategies/jwt.strategy.ts`
+  - `JwtAuthGuard` → `src/modules/auth/guards/jwt-auth.guard.ts`
+  - cookie de refresh → `src/modules/auth/utils/refresh-cookie.ts`, que passou a
+    deter também a política antes escrita em métodos privados do controller
+    (`httpOnly`, `sameSite`, `secure`, `path=/auth`, `maxAge`) e as funções
+    `setRefreshCookie` e `clearRefreshCookie`.
+
+  O layout por tipo (`guards/`, `strategies/`, `decorators/`, `utils/`) virou
+  convenção em `.claude/rules/code-quality.md`.
