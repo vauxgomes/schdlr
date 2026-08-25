@@ -13,7 +13,7 @@ Reconstrução da API, uma spec por vez. Cada spec é autocontida: uma sessão n
 
 - **Uma spec = uma sessão = um commit de implementação.** Se estourar isso, a spec estava grande demais — divida.
 - A spec é commitada **antes** da implementação (`docs(spec): ...`); a implementação referencia o id (`feat(api): ... (spec 0007)`).
-- **Spec com `status: done` não se edita.** Requisito novo vira spec nova, senão o registro vira ficção.
+- **Spec com `status: done` não se edita.** Requisito, escopo, decisões e registro são imutáveis — requisito novo vira spec nova, senão o registro vira ficção. **Única exceção:** acrescentar ao fim uma **nota posterior datada**, quando uma spec seguinte mover ou invalidar algo que esta decidiu ou listou. A nota é append-only e nunca reescreve o que está acima.
 - **Nome do arquivo: `NNNN-<área>-<slug>.md`.** O id é uma sequência única e global, não uma por área — specs do front dependem das da API, e `depends_on: [0014]` precisa ser inequívoco. Áreas: `api`, `web`.
 - `specs/` é versionado. `.plan/` (exploração) e `.handoff/` continuam locais.
 

@@ -79,3 +79,17 @@ pnpm build:api
   - **Cookie com `path=/auth`**, então ele acompanha só `refresh` e `logout`, e não toda requisição.
   - **`@Public()` aplicado em `GET /` e `GET /health`**, como a 0002 tinha previsto no registro dela.
   - **`createTestApp` agora aceita controllers extras.** O guard global só é testável se houver alguma rota sem `@Public()` — e nenhuma existe ainda no código de produção. Rota inexistente não serve: dá 404 do Express, sem o guard rodar.
+
+## Notas posteriores
+
+Acrescentado depois do `done`, append-only: nada acima foi alterado. Serve para
+quem lê esta spec como contexto não escrever código contra um retrato vencido.
+
+- **2026-08-14, spec 0006** — duas decisões desta spec mudaram de arquivo, para
+  não ficarem duplicadas quando `PATCH /me/password` passou a precisar delas:
+  - custo 10 do bcrypt → `src/common/password.ts` (`hashPassword`, `verifyPassword`)
+  - SHA-256 do token → `src/common/token-hash.ts` (`hashToken`)
+  - nome e leitura do cookie de refresh saíram do controller → `src/modules/auth/refresh-cookie.ts`
+
+  Comportamento inalterado; os testes desta spec continuam passando. O
+  `@CurrentUser()` também nasceu ali, em `src/modules/auth/`.
