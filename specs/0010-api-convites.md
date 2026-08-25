@@ -2,7 +2,7 @@
 id: 0010
 title: Convites de unidade
 status: todo
-depends_on: [0009, 0004]
+depends_on: [0009, 0004, 0011]
 ---
 
 ## Objetivo
@@ -13,6 +13,7 @@ Convidar alguém para uma unidade, por e-mail se ainda não tiver conta, por not
 
 - `apps/api/prisma/schema.prisma` — model `UnitInvite`, enum `InviteStatus`
 - O módulo de mail da spec 0004
+- O serviço de criação de notificação da spec 0011 — é ele que grava; esta spec só emite o evento
 
 ## Escopo
 
