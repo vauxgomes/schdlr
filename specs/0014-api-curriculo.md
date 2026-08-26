@@ -1,7 +1,7 @@
 ---
 id: 0014
 title: Currículo e disciplinas do currículo
-status: todo
+status: done
 depends_on: [0012, 0013]
 ---
 
@@ -38,12 +38,12 @@ A grade: quais disciplinas um curso tem, em que período e com quantas aulas por
 
 ## Critérios de aceite
 
-- [ ] Criar currículo em curso de outra unidade responde 404/403, não erro de banco
-- [ ] Adicionar a mesma disciplina duas vezes ao currículo responde 409
-- [ ] Adicionar disciplina de outra unidade é rejeitado com erro tratado
-- [ ] `weeklyLessons` e `level` aceitam apenas inteiros positivos
-- [ ] A listagem devolve a grade agrupada por `level`, ordenada
-- [ ] Excluir currículo com projeto responde 409
+- [x] Criar currículo em curso de outra unidade responde 404/403, não erro de banco
+- [x] Adicionar a mesma disciplina duas vezes ao currículo responde 409
+- [x] Adicionar disciplina de outra unidade é rejeitado com erro tratado
+- [x] `weeklyLessons` e `level` aceitam apenas inteiros positivos
+- [x] A listagem devolve a grade agrupada por `level`, ordenada
+- [x] Excluir currículo com projeto responde 409
 
 ## Verificação
 
@@ -55,7 +55,25 @@ pnpm build:api
 
 ## Registro
 
-_Preenchido durante a execução._
+Executada em sequência (`/spec next 3`), na branch `feature/catalogo-academico`. Um módulo (`modules/curricula/`) com dois controllers e dois services: o currículo e a grade têm ciclo de vida próprio, e um service com dez métodos esconderia isso. 30 unitários e 169 e2e passando; os seis critérios têm teste.
 
-- **commits:**
+- **commits:** `feat(api): currículo e disciplinas do currículo (spec 0014)`
 - **desvios:**
+  - **A rota da grade é o aninhamento inteiro:**
+    `/units/:unitId/courses/:courseId/curricula/:curriculumId/disciplines`. A
+    spec fixou o currículo sob o curso "refletindo a FK composta" mas não disse
+    onde ficam os itens; a mesma regra aplicada de novo dá isto. É longo, e a
+    alternativa (`/units/:unitId/curricula/:curriculumId/disciplines`) teria
+    dois endereços para o mesmo agregado — pior.
+  - **Excluir currículo leva a grade junto, na mesma transação.** O item não
+    tem vida fora do currículo. O 409 fica para o que é história de verdade:
+    projeto vinculado, ou item já ofertado — os dois são conferidos antes.
+  - **`disciplineId` não se altera no `PATCH` do item.** O unique
+    `[curriculumId, disciplineId]` faz da disciplina a identidade da linha:
+    trocar seria remover e adicionar, e é isso que o cliente deve fazer.
+  - **A listagem de currículos é paginada e vem por nome decrescente**, para a
+    matriz mais recente aparecer primeiro. Paginar veio do molde da 0012; a
+    ordem é escolha desta spec.
+  - **Não há `GET select` de currículo.** Não está no escopo. A 0018 vai
+    precisar de um para escolher a matriz do projeto — entra lá.
+  - **O teste-rede da 0022 cresceu com as seis mutações deste módulo.**

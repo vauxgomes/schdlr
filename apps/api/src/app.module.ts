@@ -9,6 +9,7 @@ import { DatabaseModule } from './infra/database/database.module'
 import { MailModule } from './infra/mail/mail.module'
 import { AuthModule } from './modules/auth/auth.module'
 import { CoursesModule } from './modules/courses/courses.module'
+import { CurriculaModule } from './modules/curricula/curricula.module'
 import { DisciplinesModule } from './modules/disciplines/disciplines.module'
 import { HealthModule } from './modules/health/health.module'
 import { InvitesModule } from './modules/invites/invites.module'
@@ -27,6 +28,7 @@ import { UsersModule } from './modules/users/users.module'
     MailModule,
     AuthModule,
     CoursesModule,
+    CurriculaModule,
     DisciplinesModule,
     HealthModule,
     InvitesModule,

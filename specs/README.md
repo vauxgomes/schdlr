@@ -47,7 +47,7 @@ A **[0021](0021-api-rate-limiting-expiracao.md)** fica no fim, em bloco próprio
 | **Acadêmico**                                 |                                      |        |                  |
 | [0012](0012-api-curso.md)                     | Curso — define o padrão de módulo    | done   | 0008             |
 | [0013](0013-api-disciplina.md)                | Disciplina                           | done   | 0012             |
-| [0014](0014-api-curriculo.md)                 | Currículo e disciplinas do currículo | todo   | 0012, 0013       |
+| [0014](0014-api-curriculo.md)                 | Currículo e disciplinas do currículo | done   | 0012, 0013       |
 | [0015](0015-api-local.md)                     | Local                                | todo   | 0012             |
 | [0016](0016-api-periodo.md)                   | Período letivo                       | todo   | 0012             |
 | [0017](0017-api-grade-horarios.md)            | Grade de horários                    | todo   | 0012             |

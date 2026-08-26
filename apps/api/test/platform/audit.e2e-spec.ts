@@ -137,8 +137,33 @@ describe('Audit trail (e2e)', () => {
     await as(admin, server().patch(`/units/${unitId}/disciplines/${disciplineId}`)).send({
       workload: 120,
     })
+
+    const course2 = await as(admin, server().post(`/units/${unitId}/courses`)).send({
+      name: 'Computer Networks',
+      code: 'REDES',
+    })
+    const course2Id = (course2.body as { id: string }).id
+    const curricula = `/units/${unitId}/courses/${course2Id}/curricula`
+
+    const curriculum = await as(admin, server().post(curricula)).send({ name: '2026.1' })
+    const curriculumId = (curriculum.body as { id: string }).id
+
+    await as(admin, server().patch(`${curricula}/${curriculumId}`)).send({ name: '2026.2' })
+
+    const item = await as(admin, server().post(`${curricula}/${curriculumId}/disciplines`)).send({
+      disciplineId,
+      level: 1,
+      weeklyLessons: 4,
+    })
+    const itemId = (item.body as { id: string }).id
+
+    await as(admin, server().patch(`${curricula}/${curriculumId}/disciplines/${itemId}`)).send({
+      weeklyLessons: 6,
+    })
+    await as(admin, server().delete(`${curricula}/${curriculumId}/disciplines/${itemId}`))
+    await as(admin, server().delete(`${curricula}/${curriculumId}`))
     await as(admin, server().delete(`/units/${unitId}/disciplines/${disciplineId}`))
-    await waitFor(() => collected.entries.length >= 10)
+    await waitFor(() => collected.entries.length >= 17)
 
     expect(actions()).toEqual([
       'unit.updated',
@@ -150,6 +175,13 @@ describe('Audit trail (e2e)', () => {
       'course.deleted',
       'discipline.created',
       'discipline.updated',
+      'course.created',
+      'curriculum.created',
+      'curriculum.updated',
+      'curriculum-discipline.added',
+      'curriculum-discipline.updated',
+      'curriculum-discipline.removed',
+      'curriculum.deleted',
       'discipline.deleted',
     ])
   })
