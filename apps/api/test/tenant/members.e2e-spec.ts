@@ -1,8 +1,9 @@
 import { MemberRole } from '@prisma/client'
 import request from 'supertest'
-import { createTestApp, TestContext } from './support/app'
-import { registerAndLogin, TestSession } from './support/auth'
-import { truncateAll } from './support/database'
+
+import { createTestApp, TestContext } from '../support/app'
+import { registerAndLogin, TestSession } from '../support/auth'
+import { truncateAll } from '../support/database'
 
 describe('Unit members (e2e)', () => {
   let context: TestContext

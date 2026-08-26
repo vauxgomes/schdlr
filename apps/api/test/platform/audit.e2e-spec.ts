@@ -3,12 +3,13 @@ import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import request from 'supertest'
-import { AuditEntry } from '../src/infra/audit/audit-entry'
-import { AUDIT_SINKS, AuditSink } from '../src/infra/audit/sinks/audit-sink'
-import { FileAuditSink } from '../src/infra/audit/sinks/file-audit.sink'
-import { createTestApp, TestContext } from './support/app'
-import { registerAndLogin, TestSession } from './support/auth'
-import { truncateAll } from './support/database'
+
+import { AuditEntry } from '../../src/infra/audit/audit-entry'
+import { AUDIT_SINKS, AuditSink } from '../../src/infra/audit/sinks/audit-sink'
+import { FileAuditSink } from '../../src/infra/audit/sinks/file-audit.sink'
+import { createTestApp, TestContext } from '../support/app'
+import { registerAndLogin, TestSession } from '../support/auth'
+import { truncateAll } from '../support/database'
 
 // O registro é fire-and-forget e resolve o nome do ator no banco, então um
 // tick não basta: espera-se a condição, não o relógio.

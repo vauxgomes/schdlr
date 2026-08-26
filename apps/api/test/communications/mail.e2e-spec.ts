@@ -1,10 +1,11 @@
 import { Logger } from '@nestjs/common'
 import request from 'supertest'
-import { MailService } from '../src/infra/mail/mail.service'
-import { createTestApp, TestContext } from './support/app'
-import { truncateAll } from './support/database'
 
-const CREDENTIALS = { name: 'Vaux', email: 'vaux@schdlr.test', password: 'sup3r-secret' }
+import { MailService } from '../../src/infra/mail/mail.service'
+import { createTestApp, TestContext } from '../support/app'
+import { truncateAll } from '../support/database'
+
+const CREDENTIALS = { name: 'Developer', email: 'developer@schdlr.test', password: 'sup3r-secret' }
 
 // Dá um tick para o listener assíncrono terminar: `emit` devolve antes da
 // entrega, que é justamente o ponto de o e-mail não segurar a resposta.

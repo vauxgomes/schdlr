@@ -3,9 +3,10 @@ import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import { App } from 'supertest/types'
 import { z } from 'zod'
+
 import type { Request } from 'express'
-import { configureApp } from '../src/app.setup'
-import { Validate } from '../src/common/decorators/validate.decorator'
+import { configureApp } from '../../src/app.setup'
+import { Validate } from '../../src/common/decorators/validate.decorator'
 
 const ProbeSchema = z.object({ name: z.string().min(3), age: z.coerce.number().int() })
 
@@ -57,10 +58,10 @@ describe('Bootstrap (e2e)', () => {
   it('strips keys the schema does not declare', async () => {
     const response = await request(app.getHttpServer())
       .post('/probe')
-      .send({ name: 'vaux', age: 3, role: 'ADMIN' })
+      .send({ name: 'developer', age: 3, role: 'ADMIN' })
 
     expect(response.status).toBe(201)
-    expect(response.body).toEqual({ name: 'vaux', age: 3 })
+    expect(response.body).toEqual({ name: 'developer', age: 3 })
   })
 
   it('parses cookies into the request', async () => {

@@ -15,7 +15,7 @@ function buildService(env: Partial<Env>) {
 }
 
 describe('MailService', () => {
-  const message = { to: 'vaux@schdlr.test', subject: 'Hello', html: '<p>Hi</p>' }
+  const message = { to: 'developer@schdlr.test', subject: 'Hello', html: '<p>Hi</p>' }
   let log: jest.SpyInstance
 
   beforeEach(() => {
@@ -36,7 +36,7 @@ describe('MailService', () => {
       service.onModuleInit()
 
       await expect(service.send(message)).resolves.toBeUndefined()
-      expect(log).toHaveBeenCalledWith(expect.stringContaining('vaux@schdlr.test'))
+      expect(log).toHaveBeenCalledWith(expect.stringContaining('developer@schdlr.test'))
     })
   })
 

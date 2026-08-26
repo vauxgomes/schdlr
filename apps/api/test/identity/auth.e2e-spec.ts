@@ -1,9 +1,10 @@
 import { Controller, Get } from '@nestjs/common'
 import request from 'supertest'
-import { createTestApp, TestContext } from './support/app'
-import { truncateAll } from './support/database'
 
-const CREDENTIALS = { name: 'Vaux', email: 'vaux@schdlr.test', password: 'sup3r-secret' }
+import { createTestApp, TestContext } from '../support/app'
+import { truncateAll } from '../support/database'
+
+const CREDENTIALS = { name: 'Developer', email: 'developer@schdlr.test', password: 'sup3r-secret' }
 
 // Rota qualquer sem @Public(), só para o guard global ter onde incidir. Sem ela
 // o teste bateria numa rota inexistente e receberia 404 do Express, sem o guard
@@ -55,7 +56,7 @@ describe('Auth (e2e)', () => {
       const response = await register()
 
       expect(response.status).toBe(201)
-      expect(response.body).toMatchObject({ name: 'Vaux', email: CREDENTIALS.email })
+      expect(response.body).toMatchObject({ name: 'Developer', email: CREDENTIALS.email })
 
       const subscription = await context.db.subscription.findFirstOrThrow()
 

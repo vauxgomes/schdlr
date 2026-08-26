@@ -79,8 +79,8 @@ A 0012 define o molde de módulo que 0013 a 0017 copiam. Se a linha de auditoria
 ```
 
 ```
-2026-08-14T22:31:04.512Z audit/1 outcome=ok actor=cme3k1x2q0001 actor.name="Vaux Gomes" member=cmr9v2 unit=cmu7k1 action=member.roles-changed subject=unit_member:cmm4p8 req=01J8ZQ4F data={"roles":["COORDINATOR"]}
-2026-08-14T22:33:10.004Z audit/1 outcome=denied actor=cme3k1x2q0001 actor.name="Vaux Gomes" member=- unit=cmu7k1 action=access.denied subject=route:PATCH_/units/:unitId/members/:memberId/roles req=01J8ZQ7B data={"assert":"assertManagement"}
+2026-08-14T22:31:04.512Z audit/1 outcome=ok actor=cme3k1x2q0001 actor.name="Developer Example" member=cmr9v2 unit=cmu7k1 action=member.roles-changed subject=unit_member:cmm4p8 req=01J8ZQ4F data={"roles":["COORDINATOR"]}
+2026-08-14T22:33:10.004Z audit/1 outcome=denied actor=cme3k1x2q0001 actor.name="Developer Example" member=- unit=cmu7k1 action=access.denied subject=route:PATCH_/units/:unitId/members/:memberId/roles req=01J8ZQ7B data={"assert":"assertManagement"}
 ```
 
 ```regex

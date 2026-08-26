@@ -8,7 +8,7 @@ import { MailService } from './mail.service'
 const config = { get: () => 'http://localhost:3000' } as unknown as ConfigService<Env, true>
 
 describe('MailListener', () => {
-  const payload = { name: 'Vaux', email: 'vaux@schdlr.test' }
+  const payload = { name: 'Developer', email: 'developer@schdlr.test' }
 
   beforeEach(() => {
     jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined)
@@ -20,7 +20,7 @@ describe('MailListener', () => {
     await new MailListener({ send } as unknown as MailService, config).handleUserRegistered(payload)
 
     expect(send).toHaveBeenCalledWith(
-      expect.objectContaining({ to: 'vaux@schdlr.test', subject: 'Bem-vindo ao schdlr' }),
+      expect.objectContaining({ to: 'developer@schdlr.test', subject: 'Bem-vindo ao schdlr' }),
     )
   })
 

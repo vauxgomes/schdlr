@@ -1,9 +1,10 @@
 import { MemberRole, NotificationType } from '@prisma/client'
 import request from 'supertest'
-import { NotificationsService } from '../src/modules/notifications/notifications.service'
-import { createTestApp, TestContext } from './support/app'
-import { registerAndLogin, TestSession } from './support/auth'
-import { truncateAll } from './support/database'
+
+import { NotificationsService } from '../../src/modules/notifications/notifications.service'
+import { createTestApp, TestContext } from '../support/app'
+import { registerAndLogin, TestSession } from '../support/auth'
+import { truncateAll } from '../support/database'
 
 const flush = () => new Promise((resolve) => setImmediate(resolve))
 

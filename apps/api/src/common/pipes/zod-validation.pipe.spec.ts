@@ -9,12 +9,15 @@ describe('ZodValidationPipe', () => {
   const param: ArgumentMetadata = { type: 'param' }
 
   it('returns the parsed value for a valid body', () => {
-    expect(pipe.transform({ name: 'vaux', age: '3' }, body)).toEqual({ name: 'vaux', age: 3 })
+    expect(pipe.transform({ name: 'developer', age: '3' }, body)).toEqual({
+      name: 'developer',
+      age: 3,
+    })
   })
 
   it('strips keys the schema does not declare', () => {
-    expect(pipe.transform({ name: 'vaux', age: 3, role: 'ADMIN' }, body)).toEqual({
-      name: 'vaux',
+    expect(pipe.transform({ name: 'developer', age: 3, role: 'ADMIN' }, body)).toEqual({
+      name: 'developer',
       age: 3,
     })
   })

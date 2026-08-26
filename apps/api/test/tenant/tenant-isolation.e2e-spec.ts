@@ -1,6 +1,6 @@
-import { createTestApp, TestContext } from './support/app'
-import { truncateAll } from './support/database'
-import { createOrganization, createUnit } from './support/factories'
+import { createTestApp, TestContext } from '../support/app'
+import { truncateAll } from '../support/database'
+import { createOrganization, createUnit } from '../support/factories'
 
 const FOREIGN_KEY_VIOLATION = 'P2003'
 

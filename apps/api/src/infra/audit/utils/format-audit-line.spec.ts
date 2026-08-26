@@ -10,7 +10,7 @@ const base: AuditEntry = {
   timestamp: new Date('2026-08-14T22:31:04.512Z'),
   outcome: 'ok',
   actorId: 'cme3k1x2q0001',
-  actorName: 'Vaux Gomes',
+  actorName: 'Developer Example',
   memberId: 'cmr9v2',
   unitId: 'cmu7k1',
   action: 'member.roles-changed',
@@ -23,7 +23,7 @@ const base: AuditEntry = {
 describe('formatAuditLine', () => {
   it('produces the documented line', () => {
     expect(formatAuditLine(base)).toBe(
-      '2026-08-14T22:31:04.512Z audit/1 outcome=ok actor=cme3k1x2q0001 actor.name="Vaux Gomes" ' +
+      '2026-08-14T22:31:04.512Z audit/1 outcome=ok actor=cme3k1x2q0001 actor.name="Developer Example" ' +
         'member=cmr9v2 unit=cmu7k1 action=member.roles-changed subject=unit_member:cmm4p8 ' +
         'req=01J8ZQ4F data={"roles":["COORDINATOR"]}',
     )

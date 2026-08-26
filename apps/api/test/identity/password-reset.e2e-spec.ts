@@ -1,10 +1,11 @@
 import { createHash } from 'node:crypto'
 import request from 'supertest'
-import { MailService } from '../src/infra/mail/mail.service'
-import { createTestApp, TestContext } from './support/app'
-import { truncateAll } from './support/database'
 
-const CREDENTIALS = { name: 'Vaux', email: 'vaux@schdlr.test', password: 'sup3r-secret' }
+import { MailService } from '../../src/infra/mail/mail.service'
+import { createTestApp, TestContext } from '../support/app'
+import { truncateAll } from '../support/database'
+
+const CREDENTIALS = { name: 'Developer', email: 'developer@schdlr.test', password: 'sup3r-secret' }
 const NEW_PASSWORD = 'brand-new-secret'
 
 const flush = () => new Promise((resolve) => setImmediate(resolve))

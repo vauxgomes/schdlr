@@ -1,8 +1,9 @@
 import request from 'supertest'
-import { createTestApp, TestContext } from './support/app'
-import { truncateAll } from './support/database'
 
-const CREDENTIALS = { name: 'Vaux', email: 'vaux@schdlr.test', password: 'sup3r-secret' }
+import { createTestApp, TestContext } from '../support/app'
+import { truncateAll } from '../support/database'
+
+const CREDENTIALS = { name: 'Developer', email: 'developer@schdlr.test', password: 'sup3r-secret' }
 const NEW_PASSWORD = 'brand-new-secret'
 
 type Session = { accessToken: string; refreshCookie: string }
@@ -65,16 +66,18 @@ describe('Profile (e2e)', () => {
   describe('PATCH /me', () => {
     it('changes the name', async () => {
       const session = await openSession()
-      const response = await asUser(session, server().patch('/me')).send({ name: 'Vaux Gomes' })
+      const response = await asUser(session, server().patch('/me')).send({
+        name: 'Developer Renamed',
+      })
 
       expect(response.status).toBe(200)
-      expect(response.body).toMatchObject({ name: 'Vaux Gomes' })
+      expect(response.body).toMatchObject({ name: 'Developer Renamed' })
 
       const stored = await context.db.user.findUniqueOrThrow({
         where: { email: CREDENTIALS.email },
       })
 
-      expect(stored.name).toBe('Vaux Gomes')
+      expect(stored.name).toBe('Developer Renamed')
     })
 
     it('rejects a name the schema refuses', async () => {
