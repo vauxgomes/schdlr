@@ -126,7 +126,19 @@ describe('Audit trail (e2e)', () => {
 
     await as(admin, server().patch(`/units/${unitId}/courses/${courseId}`)).send({ name: 'TADS' })
     await as(admin, server().delete(`/units/${unitId}/courses/${courseId}`))
-    await waitFor(() => collected.entries.length >= 7)
+
+    const discipline = await as(admin, server().post(`/units/${unitId}/disciplines`)).send({
+      name: 'Object Oriented Programming',
+      code: 'POO',
+      workload: 80,
+    })
+    const disciplineId = (discipline.body as { id: string }).id
+
+    await as(admin, server().patch(`/units/${unitId}/disciplines/${disciplineId}`)).send({
+      workload: 120,
+    })
+    await as(admin, server().delete(`/units/${unitId}/disciplines/${disciplineId}`))
+    await waitFor(() => collected.entries.length >= 10)
 
     expect(actions()).toEqual([
       'unit.updated',
@@ -136,6 +148,9 @@ describe('Audit trail (e2e)', () => {
       'course.created',
       'course.updated',
       'course.deleted',
+      'discipline.created',
+      'discipline.updated',
+      'discipline.deleted',
     ])
   })
 

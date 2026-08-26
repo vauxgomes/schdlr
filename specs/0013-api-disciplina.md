@@ -1,7 +1,7 @@
 ---
 id: 0013
 title: Disciplina
-status: todo
+status: done
 depends_on: [0012]
 ---
 
@@ -37,11 +37,11 @@ O catálogo de disciplinas da unidade.
 
 ## Critérios de aceite
 
-- [ ] Código repetido na mesma unidade responde 409
-- [ ] `workload` aceita apenas inteiro positivo
-- [ ] `requiredLocationType` aceita `null` e os valores do enum
-- [ ] Excluir disciplina vinculada a currículo responde 409
-- [ ] TEACHER não cria nem altera
+- [x] Código repetido na mesma unidade responde 409
+- [x] `workload` aceita apenas inteiro positivo
+- [x] `requiredLocationType` aceita `null` e os valores do enum
+- [x] Excluir disciplina vinculada a currículo responde 409
+- [x] TEACHER não cria nem altera
 
 ## Verificação
 
@@ -53,7 +53,11 @@ pnpm build:api
 
 ## Registro
 
-_Preenchido durante a execução._
+Executada em sequência (`/spec next 3`), na branch `feature/catalogo-academico`. Cópia direta do molde da 0012: mesmo trio de DTOs, mesma ordem de rotas, mesmo `findInUnit` privado, mesma forma de listagem. 30 unitários e 149 e2e passando; os cinco critérios têm teste.
 
-- **commits:**
+- **commits:** `feat(api): módulo de disciplinas (spec 0013)`
 - **desvios:**
+  - **O `try/catch` de `P2002` virou `withUniqueConflict(message, operation)` em `src/common/unique-violation.ts`.** Esta era a terceira cópia do mesmo bloco de doze linhas (organizations, units, courses), e faltavam mais três módulos do catálogo. Os três serviços anteriores passaram a usar o helper. A 0012 recebeu nota datada, porque o "helper privado" que o Registro dela descreve mudou de endereço.
+  - **`select` de disciplina devolve `color` além de `{ id, name, code }`.** O molde da 0012 diz "só o essencial"; aqui a cor é essencial, porque quem escolhe a disciplina no quadro pinta a célula com ela, e uma segunda consulta só para isso não se justifica. O critério continua sendo "o que a tela precisa para desenhar a opção", não uma lista fixa de três campos.
+  - **`color` não é validada como cor.** A spec diz "livre, sem paleta fixa no backend" — o schema Zod garante só string curta e não vazia. Se o front passar `banana`, o banco aceita.
+  - **O teste-rede da 0022 cresceu com as três mutações de disciplina.**

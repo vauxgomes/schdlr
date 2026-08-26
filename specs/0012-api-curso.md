@@ -94,3 +94,17 @@ O molde que 0013, 0015, 0016 e 0017 copiam ficou assim:
     todo mundo.
   - **Sem filtro de busca por nome ou código na listagem.** Não está no escopo
     e ninguém consome ainda; entra quando a tela pedir.
+
+
+---
+
+## Nota posterior — 2026-08-26 (spec 0013)
+
+O **conflito de `code` deixou de ser helper privado do service**. A 0013 era a
+terceira cópia do mesmo `try/catch` de `P2002` e o bloco virou
+`withUniqueConflict(message, operation)`, em `src/common/unique-violation.ts`.
+`CoursesService` passou a chamá-lo, e `OrganizationsService` e `UnitsService`
+junto. A decisão em si não mudou — o conflito continua nascendo do `catch` do
+unique do banco, e não de uma consulta prévia, que seria corrida. Só o endereço
+mudou: quem copiar o molde daqui em diante importa o helper em vez de
+reescrever o bloco.

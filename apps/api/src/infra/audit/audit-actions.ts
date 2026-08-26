@@ -19,6 +19,9 @@ export const AuditAction = {
   CourseCreated: 'course.created',
   CourseUpdated: 'course.updated',
   CourseDeleted: 'course.deleted',
+  DisciplineCreated: 'discipline.created',
+  DisciplineUpdated: 'discipline.updated',
+  DisciplineDeleted: 'discipline.deleted',
   AccessDenied: 'access.denied',
 } as const
 

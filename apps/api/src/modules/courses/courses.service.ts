@@ -1,5 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
-import { Course, Prisma } from '@prisma/client'
+import { Course } from '@prisma/client'
+import { withUniqueConflict } from '../../common/unique-violation'
 import { AuditAction } from '../../infra/audit/audit-actions'
 import { AuditService } from '../../infra/audit/audit.service'
 import { DatabaseService } from '../../infra/database/database.service'
@@ -9,7 +10,7 @@ import { CreateCourseInput } from './dto/create-course.dto'
 import { ListCoursesQuery } from './dto/list-courses.dto'
 import { UpdateCourseInput } from './dto/update-course.dto'
 
-const UNIQUE_VIOLATION = 'P2002'
+const CODE_TAKEN = 'A course with this code already exists in this unit'
 
 @Injectable()
 export class CoursesService {
@@ -21,7 +22,7 @@ export class CoursesService {
   async create(context: UnitContext, input: CreateCourseInput) {
     assertManagement(context)
 
-    const course = await this.withCodeConflict(() =>
+    const course = await withUniqueConflict(CODE_TAKEN, () =>
       this.db.course.create({ data: { unitId: context.unitId, ...input } }),
     )
 
@@ -73,7 +74,7 @@ export class CoursesService {
 
     await this.findInUnit(context, courseId)
 
-    const course = await this.withCodeConflict(() =>
+    const course = await withUniqueConflict(CODE_TAKEN, () =>
       this.db.course.update({ where: { id: courseId }, data: input }),
     )
 
@@ -111,20 +112,5 @@ export class CoursesService {
     if (!course) throw new NotFoundException('Course not found')
 
     return course
-  }
-
-  private async withCodeConflict<T>(operation: () => Promise<T>): Promise<T> {
-    try {
-      return await operation()
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === UNIQUE_VIOLATION
-      ) {
-        throw new ConflictException('A course with this code already exists in this unit')
-      }
-
-      throw error
-    }
   }
 }

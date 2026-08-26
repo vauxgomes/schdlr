@@ -4,8 +4,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
-import { MemberRole, Prisma } from '@prisma/client'
+import { MemberRole } from '@prisma/client'
 import { slugify } from '../../common/slug'
+import { withUniqueConflict } from '../../common/unique-violation'
 import { AuditAction } from '../../infra/audit/audit-actions'
 import { AuditService } from '../../infra/audit/audit.service'
 import { DatabaseService } from '../../infra/database/database.service'
@@ -14,7 +15,7 @@ import { UpdateUnitInput } from './dto/update-unit.dto'
 import { UnitContext } from './unit-context'
 import { assertManagement, assertMemberOrOwnership } from './utils/permissions'
 
-const UNIQUE_VIOLATION = 'P2002'
+const NAME_TAKEN = 'A unit with this name already exists in this organization'
 
 @Injectable()
 export class UnitsService {
@@ -28,8 +29,8 @@ export class UnitsService {
   async create(userId: string, organizationId: string, input: CreateUnitInput) {
     const ownerId = await this.assertOrganizationOwnership(userId, organizationId)
 
-    try {
-      const unit = await this.db.unit.create({
+    const unit = await withUniqueConflict(NAME_TAKEN, () =>
+      this.db.unit.create({
         data: {
           organizationId,
           name: input.name,
@@ -39,25 +40,16 @@ export class UnitsService {
           // registrar quem criou o projeto, e o campo não é opcional.
           members: { create: { userId: ownerId, roles: [MemberRole.ADMIN] } },
         },
-      })
+      }),
+    )
 
-      this.audit.record(
-        AuditAction.UnitCreated,
-        { type: 'unit', id: unit.id },
-        { name: unit.name, slug: unit.slug, organizationId },
-      )
+    this.audit.record(
+      AuditAction.UnitCreated,
+      { type: 'unit', id: unit.id },
+      { name: unit.name, slug: unit.slug, organizationId },
+    )
 
-      return unit
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === UNIQUE_VIOLATION
-      ) {
-        throw new ConflictException('A unit with this name already exists in this organization')
-      }
-
-      throw error
-    }
+    return unit
   }
 
   async listByOrganization(userId: string, organizationId: string) {

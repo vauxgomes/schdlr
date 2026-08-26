@@ -4,15 +4,16 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
-import { Organization, Prisma } from '@prisma/client'
+import { Organization } from '@prisma/client'
 import { slugify } from '../../common/slug'
+import { withUniqueConflict } from '../../common/unique-violation'
 import { AuditAction } from '../../infra/audit/audit-actions'
 import { AuditService } from '../../infra/audit/audit.service'
 import { DatabaseService } from '../../infra/database/database.service'
 import { CreateOrganizationInput } from './dto/create-organization.dto'
 import { UpdateOrganizationInput } from './dto/update-organization.dto'
 
-const UNIQUE_VIOLATION = 'P2002'
+const NAME_TAKEN = 'An organization with this name already exists'
 
 @Injectable()
 export class OrganizationsService {
@@ -22,28 +23,19 @@ export class OrganizationsService {
   ) {}
 
   async create(userId: string, input: CreateOrganizationInput) {
-    try {
-      const organization = await this.db.organization.create({
+    const organization = await withUniqueConflict(NAME_TAKEN, () =>
+      this.db.organization.create({
         data: { name: input.name, slug: slugify(input.name), ownerId: userId },
-      })
+      }),
+    )
 
-      this.audit.record(
-        AuditAction.OrganizationCreated,
-        { type: 'organization', id: organization.id },
-        { name: organization.name, slug: organization.slug },
-      )
+    this.audit.record(
+      AuditAction.OrganizationCreated,
+      { type: 'organization', id: organization.id },
+      { name: organization.name, slug: organization.slug },
+    )
 
-      return organization
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === UNIQUE_VIOLATION
-      ) {
-        throw new ConflictException('An organization with this name already exists')
-      }
-
-      throw error
-    }
+    return organization
   }
 
   // O `where` carrega o ownerId: é ele que impede a organização do vizinho de
