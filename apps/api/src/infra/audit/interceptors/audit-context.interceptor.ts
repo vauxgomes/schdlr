@@ -1,10 +1,10 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common'
 import type { Request } from 'express'
 import { randomUUID } from 'node:crypto'
-import { AuthenticatedUser } from '../../modules/auth/strategies/jwt.strategy'
-import { UNIT_CONTEXT, UnitContext } from '../../modules/units/unit-context'
-import { auditStorage } from './audit-context'
-import { AuditService } from './audit.service'
+import { AuthenticatedUser } from '../../../modules/auth/strategies/jwt.strategy'
+import { UNIT_CONTEXT, UnitContext } from '../../../modules/units/unit-context'
+import { auditStorage } from '../audit-context'
+import { AuditService } from '../audit.service'
 
 @Injectable()
 export class AuditContextInterceptor implements NestInterceptor {

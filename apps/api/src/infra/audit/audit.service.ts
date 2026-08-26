@@ -1,7 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { AuditAction, AuditEntry } from './audit-actions'
+import { AuditAction } from './audit-actions'
+import { AuditEntry } from './audit-entry'
 import { AuditSubjectRef, currentAuditContext } from './audit-context'
-import { AUDIT_SINKS, AuditSink } from './audit-sink'
+import { AUDIT_SINKS, AuditSink } from './sinks/audit-sink'
 import { DatabaseService } from '../database/database.service'
 
 @Injectable()

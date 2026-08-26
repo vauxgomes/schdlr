@@ -1,9 +1,9 @@
 import { Logger } from '@nestjs/common'
 import { createWriteStream, mkdirSync, WriteStream } from 'node:fs'
 import { join } from 'node:path'
-import { AuditEntry } from './audit-actions'
+import { AuditEntry } from '../audit-entry'
 import { AuditSink } from './audit-sink'
-import { formatAuditLine } from './format-audit-line'
+import { formatAuditLine } from '../utils/format-audit-line'
 
 export class FileAuditSink implements AuditSink {
   private readonly logger = new Logger(FileAuditSink.name)

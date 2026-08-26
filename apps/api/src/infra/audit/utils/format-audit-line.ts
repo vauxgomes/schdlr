@@ -1,4 +1,4 @@
-import { AuditEntry } from './audit-actions'
+import { AuditEntry } from '../audit-entry'
 
 // Gramática de campo fixo, documentada na spec 0022. Ordem e presença dos
 // campos são contrato: consumidor lê por regex, e campo que some desloca tudo

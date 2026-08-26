@@ -20,17 +20,3 @@ export const AuditAction = {
 } as const
 
 export type AuditAction = (typeof AuditAction)[keyof typeof AuditAction]
-
-export type AuditEntry = {
-  timestamp: Date
-  outcome: 'ok' | 'denied'
-  actorId: string
-  actorName: string
-  memberId: string | null
-  unitId: string | null
-  action: AuditAction
-  subjectType: string
-  subjectId: string
-  requestId: string
-  data: Record<string, unknown>
-}

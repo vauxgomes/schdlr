@@ -1,4 +1,4 @@
-import { AuditEntry } from './audit-actions'
+import { AuditEntry } from '../audit-entry'
 import { formatAuditLine } from './format-audit-line'
 
 // O regex publicado na spec 0022. Se este teste quebrar, todo consumidor da

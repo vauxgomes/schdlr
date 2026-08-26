@@ -2,10 +2,10 @@ import { Global, Module } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { APP_INTERCEPTOR } from '@nestjs/core'
 import { Env } from '../../config/env'
-import { AUDIT_SINKS, AuditSink } from './audit-sink'
-import { AuditContextInterceptor } from './audit.interceptor'
+import { AUDIT_SINKS, AuditSink } from './sinks/audit-sink'
+import { AuditContextInterceptor } from './interceptors/audit-context.interceptor'
 import { AuditService } from './audit.service'
-import { FileAuditSink } from './file-audit.sink'
+import { FileAuditSink } from './sinks/file-audit.sink'
 
 // Global porque quase todo service de domínio registra. Importar em cada
 // módulo seria ruído, pelo mesmo motivo do DatabaseModule.

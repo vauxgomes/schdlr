@@ -1,4 +1,4 @@
-import { AuditEntry } from './audit-actions'
+import { AuditEntry } from '../audit-entry'
 
 export const AUDIT_SINKS = Symbol('AUDIT_SINKS')
 
