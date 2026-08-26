@@ -1,7 +1,7 @@
 ---
 id: 0022
 title: Trilha de auditoria em arquivo
-status: todo
+status: done
 depends_on: [0010]
 ---
 
@@ -97,16 +97,16 @@ A 0012 define o molde de módulo que 0013 a 0017 copiam. Se a linha de auditoria
 
 ## Critérios de aceite
 
-- [ ] Cada mutação existente produz exatamente uma entrada `outcome=ok`, com ator, ação e alvo
-- [ ] O ator vem do token, nunca do corpo da requisição
-- [ ] Um 403 produz exatamente uma entrada `outcome=denied`; um `assert` que passa não produz nada
-- [ ] Falha do sink não derruba a operação auditada
-- [ ] Ação fora do vocabulário não compila
-- [ ] A linha casa com o regex publicado — com campos nulos, e com nome contendo acento, espaço e aspas
-- [ ] Sem `AUDIT_LOG_PATH` a aplicação sobe e nada é escrito
-- [ ] Com `AUDIT_LOG_PATH`, a linha aparece no arquivo do dia
-- [ ] Acrescentar um sink não exige tocar em nenhum service — provado por um sink de teste registrado ao lado do de arquivo
-- [ ] O teste-rede quebra quando um módulo muta sem registrar
+- [x] Cada mutação existente produz exatamente uma entrada `outcome=ok`, com ator, ação e alvo
+- [x] O ator vem do token, nunca do corpo da requisição
+- [x] Um 403 produz exatamente uma entrada `outcome=denied`; um `assert` que passa não produz nada
+- [x] Falha do sink não derruba a operação auditada
+- [x] Ação fora do vocabulário não compila
+- [x] A linha casa com o regex publicado — com campos nulos, e com nome contendo acento, espaço e aspas
+- [x] Sem `AUDIT_LOG_PATH` a aplicação sobe e nada é escrito
+- [x] Com `AUDIT_LOG_PATH`, a linha aparece no arquivo do dia
+- [x] Acrescentar um sink não exige tocar em nenhum service — provado por um sink de teste registrado ao lado do de arquivo
+- [x] O teste-rede quebra quando um módulo muta sem registrar
 
 ## Verificação
 
@@ -119,7 +119,13 @@ pnpm build:api
 
 ## Registro
 
-_Preenchido durante a execução._
+Executada em modo `/spec next`, com commit automático. 30 unitários e 110 e2e passando; os dez critérios têm teste.
 
-- **commits:**
+- **commits:** `feat(api): trilha de auditoria em arquivo (spec 0022)` — branch `feature/auditoria`
 - **desvios:**
+  - **O `assert` alcança a auditoria por uma capacidade no próprio `AsyncLocalStorage`**, não por singleton mutável nem por injeção. O interceptor coloca `recordDenied` no contexto da requisição; o assert continua função pura e só lê o que a requisição carrega. Era o ponto que a spec deixava em aberto ao dizer "registro de negação nos `assert*`" sem dizer como uma função pura chegaria ao service.
+  - **O nome do ator é resolvido no momento do registro**, não no interceptor. Resolver no interceptor custaria uma consulta em toda requisição; assim só os caminhos auditados pagam.
+  - **`unit` vem nulo em `organization.*` e em `unit.created`.** São ações que acontecem sob a organização, em rota sem `:unitId` — não há contexto de unidade a registrar. Quem procura a história de uma unidade precisa aceitar `subject=unit:<id>` além de `unit=<id>`. Está documentado no teste.
+  - **`AUDIT_LOG_PATH` fica sem valor no `.env` e no `.env.test`**, de propósito: é o que mantém a suíte silenciosa e evita lixo no diretório do projeto. O e2e cria um diretório temporário e registra o `FileAuditSink` apontado para ele.
+  - **O registro é assíncrono e fire-and-forget**, consequência direta do _fail open_. Isso apareceu no teste: um `setImmediate` não espera a consulta do nome, e a asserção corria antes da escrita. Os testes passaram a esperar por condição. Vale para quem for consumir a trilha: a linha aparece logo depois da resposta, não junto dela.
+  - **`AuditModule` é `@Global()`**, como o de banco: quase todo service de domínio registra, e importar em cada módulo seria ruído.

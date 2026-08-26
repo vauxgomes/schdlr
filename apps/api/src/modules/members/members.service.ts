@@ -7,6 +7,8 @@ import {
 import { EventEmitter2 } from '@nestjs/event-emitter'
 import { MemberRole, Prisma, UnitMember } from '@prisma/client'
 import { UnitMemberEvent, UnitMemberStatusPayload } from '../../events/unit-member.events'
+import { AuditAction } from '../../infra/audit/audit-actions'
+import { AuditService } from '../../infra/audit/audit.service'
 import { DatabaseService } from '../../infra/database/database.service'
 import { UnitContext } from '../units/unit-context'
 import { assertManagement, assertMemberOrOwnership } from '../units/utils/permissions'
@@ -25,6 +27,7 @@ export class MembersService {
   constructor(
     private readonly db: DatabaseService,
     private readonly events: EventEmitter2,
+    private readonly audit: AuditService,
   ) {}
 
   list(context: UnitContext, query: ListMembersQuery) {
@@ -72,11 +75,19 @@ export class MembersService {
       throw new ConflictException('You cannot drop your own ADMIN role')
     }
 
-    return this.db.unitMember.update({
+    const updated = await this.db.unitMember.update({
       where: { id: member.id },
       data: { roles },
       select: MEMBER_LIST,
     })
+
+    this.audit.record(
+      AuditAction.MemberRolesChanged,
+      { type: 'unit_member', id: member.id },
+      { roles },
+    )
+
+    return updated
   }
 
   async updateStatus(context: UnitContext, memberId: string, isActive: boolean) {
@@ -97,6 +108,12 @@ export class MembersService {
     })
 
     if (isActive !== member.isActive) {
+      this.audit.record(
+        isActive ? AuditAction.MemberActivated : AuditAction.MemberDeactivated,
+        { type: 'unit_member', id: member.id },
+        { userId: member.userId },
+      )
+
       const payload: UnitMemberStatusPayload = {
         userId: member.userId,
         unitId: context.unitId,

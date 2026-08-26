@@ -11,6 +11,8 @@ import { InviteStatus, Prisma } from '@prisma/client'
 import { randomBytes } from 'node:crypto'
 import { Env } from '../../config/env'
 import { UnitInviteCreatedPayload, UnitInviteEvent } from '../../events/unit-invite.events'
+import { AuditAction } from '../../infra/audit/audit-actions'
+import { AuditService } from '../../infra/audit/audit.service'
 import { DatabaseService } from '../../infra/database/database.service'
 import { UnitContext } from '../units/unit-context'
 import { assertManagement } from '../units/utils/permissions'
@@ -33,6 +35,7 @@ export class InvitesService {
     private readonly db: DatabaseService,
     private readonly config: ConfigService<Env, true>,
     private readonly events: EventEmitter2,
+    private readonly audit: AuditService,
   ) {}
 
   async create(context: UnitContext, userId: string, input: CreateInviteInput) {
@@ -66,6 +69,12 @@ export class InvitesService {
 
     await this.announce(invite.id)
 
+    this.audit.record(
+      AuditAction.InviteCreated,
+      { type: 'unit_invite', id: invite.id },
+      { email: invite.email, roles: invite.roles },
+    )
+
     return this.db.unitInvite.findUniqueOrThrow({ where: { id: invite.id }, select: INVITE_LIST })
   }
 
@@ -86,11 +95,15 @@ export class InvitesService {
 
     if (invite.invitedById !== userId) assertManagement(context)
 
-    return this.db.unitInvite.update({
+    const revoked = await this.db.unitInvite.update({
       where: { id: invite.id },
       data: { status: InviteStatus.REVOKED, resolvedAt: new Date(), resolvedById: userId },
       select: INVITE_LIST,
     })
+
+    this.audit.record(AuditAction.InviteRevoked, { type: 'unit_invite', id: invite.id })
+
+    return revoked
   }
 
   async resend(context: UnitContext, userId: string, inviteId: string) {
@@ -109,6 +122,8 @@ export class InvitesService {
     })
 
     await this.announce(invite.id)
+
+    this.audit.record(AuditAction.InviteResent, { type: 'unit_invite', id: invite.id })
 
     return this.db.unitInvite.findUniqueOrThrow({ where: { id: invite.id }, select: INVITE_LIST })
   }
@@ -153,6 +168,12 @@ export class InvitesService {
       }),
     ])
 
+    this.audit.record(
+      AuditAction.InviteAccepted,
+      { type: 'unit_invite', id: invite.id },
+      { unitId: invite.unitId, memberId: member.id, roles: invite.roles },
+    )
+
     return member
   }
 
@@ -169,6 +190,8 @@ export class InvitesService {
         resolvedById: user.id,
       },
     })
+
+    this.audit.record(AuditAction.InviteRejected, { type: 'unit_invite', id: invite.id })
   }
 
   // Aceitar e recusar são do convidado: a autorização é o token mais a

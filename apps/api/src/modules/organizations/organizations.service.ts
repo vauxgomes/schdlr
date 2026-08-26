@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common'
 import { Organization, Prisma } from '@prisma/client'
 import { slugify } from '../../common/slug'
+import { AuditAction } from '../../infra/audit/audit-actions'
+import { AuditService } from '../../infra/audit/audit.service'
 import { DatabaseService } from '../../infra/database/database.service'
 import { CreateOrganizationInput } from './dto/create-organization.dto'
 import { UpdateOrganizationInput } from './dto/update-organization.dto'
@@ -14,13 +16,24 @@ const UNIQUE_VIOLATION = 'P2002'
 
 @Injectable()
 export class OrganizationsService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly audit: AuditService,
+  ) {}
 
   async create(userId: string, input: CreateOrganizationInput) {
     try {
-      return await this.db.organization.create({
+      const organization = await this.db.organization.create({
         data: { name: input.name, slug: slugify(input.name), ownerId: userId },
       })
+
+      this.audit.record(
+        AuditAction.OrganizationCreated,
+        { type: 'organization', id: organization.id },
+        { name: organization.name, slug: organization.slug },
+      )
+
+      return organization
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -59,7 +72,11 @@ export class OrganizationsService {
 
     // O slug não acompanha a troca de nome: ele está na URL, e reescrevê-lo
     // quebraria todo link já compartilhado.
-    return this.db.organization.update({ where: { id }, data: input })
+    const organization = await this.db.organization.update({ where: { id }, data: input })
+
+    this.audit.record(AuditAction.OrganizationUpdated, { type: 'organization', id }, { ...input })
+
+    return organization
   }
 
   async remove(userId: string, id: string) {
@@ -72,6 +89,8 @@ export class OrganizationsService {
     }
 
     await this.db.organization.delete({ where: { id } })
+
+    this.audit.record(AuditAction.OrganizationDeleted, { type: 'organization', id })
   }
 
   private async assertOwnership(userId: string, id: string): Promise<Organization> {

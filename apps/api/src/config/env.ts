@@ -15,6 +15,10 @@ export const EnvSchema = z.object({
   PASSWORD_RESET_TTL_MINUTES: z.coerce.number().int().positive().default(30),
   UNIT_INVITE_TTL_DAYS: z.coerce.number().int().positive().default(7),
 
+  // Diretório da trilha de auditoria. Ausente, nada é escrito e a aplicação
+  // sobe igual — é o que mantém a suíte de teste silenciosa.
+  AUDIT_LOG_PATH: z.string().min(1).optional(),
+
   // SMTP_HOST ausente é um estado válido: sem ele o envio só loga.
   SMTP_HOST: z.string().min(1).optional(),
   SMTP_PORT: z.coerce.number().int().positive().default(587),

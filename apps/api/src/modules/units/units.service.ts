@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common'
 import { MemberRole, Prisma } from '@prisma/client'
 import { slugify } from '../../common/slug'
+import { AuditAction } from '../../infra/audit/audit-actions'
+import { AuditService } from '../../infra/audit/audit.service'
 import { DatabaseService } from '../../infra/database/database.service'
 import { CreateUnitInput } from './dto/create-unit.dto'
 import { UpdateUnitInput } from './dto/update-unit.dto'
@@ -16,7 +18,10 @@ const UNIQUE_VIOLATION = 'P2002'
 
 @Injectable()
 export class UnitsService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly audit: AuditService,
+  ) {}
 
   // Criar e listar vivem sob a organização: a autoridade aqui é o dono, e
   // ainda não existe contexto de unidade para o guard resolver.
@@ -24,7 +29,7 @@ export class UnitsService {
     const ownerId = await this.assertOrganizationOwnership(userId, organizationId)
 
     try {
-      return await this.db.unit.create({
+      const unit = await this.db.unit.create({
         data: {
           organizationId,
           name: input.name,
@@ -35,6 +40,14 @@ export class UnitsService {
           members: { create: { userId: ownerId, roles: [MemberRole.ADMIN] } },
         },
       })
+
+      this.audit.record(
+        AuditAction.UnitCreated,
+        { type: 'unit', id: unit.id },
+        { name: unit.name, slug: unit.slug, organizationId },
+      )
+
+      return unit
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -75,10 +88,14 @@ export class UnitsService {
     return this.db.unit.findUniqueOrThrow({ where: { id: context.unitId } })
   }
 
-  update(context: UnitContext, input: UpdateUnitInput) {
+  async update(context: UnitContext, input: UpdateUnitInput) {
     assertManagement(context)
 
-    return this.db.unit.update({ where: { id: context.unitId }, data: input })
+    const unit = await this.db.unit.update({ where: { id: context.unitId }, data: input })
+
+    this.audit.record(AuditAction.UnitUpdated, { type: 'unit', id: context.unitId }, { ...input })
+
+    return unit
   }
 
   async remove(context: UnitContext) {
@@ -103,6 +120,8 @@ export class UnitsService {
       this.db.unitMember.deleteMany({ where: { unitId: context.unitId } }),
       this.db.unit.delete({ where: { id: context.unitId } }),
     ])
+
+    this.audit.record(AuditAction.UnitDeleted, { type: 'unit', id: context.unitId })
   }
 
   private async assertOrganizationOwnership(userId: string, organizationId: string) {

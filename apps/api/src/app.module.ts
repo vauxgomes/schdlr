@@ -4,6 +4,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { validateEnv } from './config/env'
+import { AuditModule } from './infra/audit/audit.module'
 import { DatabaseModule } from './infra/database/database.module'
 import { MailModule } from './infra/mail/mail.module'
 import { AuthModule } from './modules/auth/auth.module'
@@ -20,6 +21,7 @@ import { UsersModule } from './modules/users/users.module'
     ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
     EventEmitterModule.forRoot(),
     DatabaseModule,
+    AuditModule,
     MailModule,
     AuthModule,
     HealthModule,
