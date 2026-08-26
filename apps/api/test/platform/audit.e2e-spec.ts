@@ -1,4 +1,4 @@
-import { MemberRole } from '@prisma/client'
+import { LocationType, MemberRole } from '@prisma/client'
 import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -163,7 +163,18 @@ describe('Audit trail (e2e)', () => {
     await as(admin, server().delete(`${curricula}/${curriculumId}/disciplines/${itemId}`))
     await as(admin, server().delete(`${curricula}/${curriculumId}`))
     await as(admin, server().delete(`/units/${unitId}/disciplines/${disciplineId}`))
-    await waitFor(() => collected.entries.length >= 17)
+
+    const location = await as(admin, server().post(`/units/${unitId}/locations`)).send({
+      name: 'Sala 101',
+      type: LocationType.CLASSROOM,
+    })
+    const locationId = (location.body as { id: string }).id
+
+    await as(admin, server().patch(`/units/${unitId}/locations/${locationId}`)).send({
+      capacity: 40,
+    })
+    await as(admin, server().delete(`/units/${unitId}/locations/${locationId}`))
+    await waitFor(() => collected.entries.length >= 20)
 
     expect(actions()).toEqual([
       'unit.updated',
@@ -183,6 +194,9 @@ describe('Audit trail (e2e)', () => {
       'curriculum-discipline.removed',
       'curriculum.deleted',
       'discipline.deleted',
+      'location.created',
+      'location.updated',
+      'location.deleted',
     ])
   })
 

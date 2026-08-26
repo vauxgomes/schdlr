@@ -13,6 +13,7 @@ import { CurriculaModule } from './modules/curricula/curricula.module'
 import { DisciplinesModule } from './modules/disciplines/disciplines.module'
 import { HealthModule } from './modules/health/health.module'
 import { InvitesModule } from './modules/invites/invites.module'
+import { LocationsModule } from './modules/locations/locations.module'
 import { MembersModule } from './modules/members/members.module'
 import { NotificationsModule } from './modules/notifications/notifications.module'
 import { OrganizationsModule } from './modules/organizations/organizations.module'
@@ -32,6 +33,7 @@ import { UsersModule } from './modules/users/users.module'
     DisciplinesModule,
     HealthModule,
     InvitesModule,
+    LocationsModule,
     MembersModule,
     NotificationsModule,
     OrganizationsModule,

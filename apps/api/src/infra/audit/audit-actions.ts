@@ -28,6 +28,9 @@ export const AuditAction = {
   CurriculumDisciplineAdded: 'curriculum-discipline.added',
   CurriculumDisciplineUpdated: 'curriculum-discipline.updated',
   CurriculumDisciplineRemoved: 'curriculum-discipline.removed',
+  LocationCreated: 'location.created',
+  LocationUpdated: 'location.updated',
+  LocationDeleted: 'location.deleted',
   AccessDenied: 'access.denied',
 } as const
 
