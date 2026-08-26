@@ -16,6 +16,9 @@ export const AuditAction = {
   InviteResent: 'invite.resent',
   InviteAccepted: 'invite.accepted',
   InviteRejected: 'invite.rejected',
+  CourseCreated: 'course.created',
+  CourseUpdated: 'course.updated',
+  CourseDeleted: 'course.deleted',
   AccessDenied: 'access.denied',
 } as const
 

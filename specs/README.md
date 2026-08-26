@@ -45,7 +45,7 @@ A **[0021](0021-api-rate-limiting-expiracao.md)** fica no fim, em bloco próprio
 | [0010](0010-api-convites.md)                  | Convites de unidade                  | done   | 0009, 0004, 0011 |
 | ↩ [0022](0022-api-auditoria.md)               | Trilha de auditoria em arquivo       | done   | 0010             |
 | **Acadêmico**                                 |                                      |        |                  |
-| [0012](0012-api-curso.md)                     | Curso — define o padrão de módulo    | todo   | 0008             |
+| [0012](0012-api-curso.md)                     | Curso — define o padrão de módulo    | done   | 0008             |
 | [0013](0013-api-disciplina.md)                | Disciplina                           | todo   | 0012             |
 | [0014](0014-api-curriculo.md)                 | Currículo e disciplinas do currículo | todo   | 0012, 0013       |
 | [0015](0015-api-local.md)                     | Local                                | todo   | 0012             |

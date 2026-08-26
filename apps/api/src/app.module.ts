@@ -8,6 +8,7 @@ import { AuditModule } from './infra/audit/audit.module'
 import { DatabaseModule } from './infra/database/database.module'
 import { MailModule } from './infra/mail/mail.module'
 import { AuthModule } from './modules/auth/auth.module'
+import { CoursesModule } from './modules/courses/courses.module'
 import { HealthModule } from './modules/health/health.module'
 import { InvitesModule } from './modules/invites/invites.module'
 import { MembersModule } from './modules/members/members.module'
@@ -24,6 +25,7 @@ import { UsersModule } from './modules/users/users.module'
     AuditModule,
     MailModule,
     AuthModule,
+    CoursesModule,
     HealthModule,
     InvitesModule,
     MembersModule,

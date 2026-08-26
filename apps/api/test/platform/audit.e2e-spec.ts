@@ -117,13 +117,25 @@ describe('Audit trail (e2e)', () => {
       email: 'newcomer@schdlr.test',
       roles: [MemberRole.TEACHER],
     })
-    await waitFor(() => collected.entries.length >= 4)
+
+    const course = await as(admin, server().post(`/units/${unitId}/courses`)).send({
+      name: 'Systems Analysis',
+      code: 'TADS',
+    })
+    const courseId = (course.body as { id: string }).id
+
+    await as(admin, server().patch(`/units/${unitId}/courses/${courseId}`)).send({ name: 'TADS' })
+    await as(admin, server().delete(`/units/${unitId}/courses/${courseId}`))
+    await waitFor(() => collected.entries.length >= 7)
 
     expect(actions()).toEqual([
       'unit.updated',
       'member.roles-changed',
       'member.deactivated',
       'invite.created',
+      'course.created',
+      'course.updated',
+      'course.deleted',
     ])
   })
 

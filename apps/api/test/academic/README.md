@@ -1,3 +1,3 @@
 # test/academic
 
-Vazia de propósito. Cursos, disciplinas, currículos, locais, períodos e grades de horário. Nasce com a spec 0012.
+Cursos, disciplinas, currículos, locais, períodos e grades de horário. Nasceu com a spec 0012, que é o molde que os módulos seguintes do catálogo copiam.
