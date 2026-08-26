@@ -74,3 +74,14 @@ Levantadas durante a execução e registradas no "Registro" das specs de origem.
 | Nome dos eventos: `mail.*` ou o fato de domínio (`unit.invited`) | 0004   | a 0010 e a 0011, quando o mesmo fato tiver dois ouvintes |
 | Sessões ativas e revogação em cascata no reuso de refresh token  | 0003   | decisão de produto sobre expor sessões ao usuário        |
 | Prazo do plano TRIAL — hoje uma assinatura de teste não expira   | 0003   | gestão de planos, que ainda não tem spec                 |
+| Teste instável: `invites › accepting › refuses a revoked invite` | 0022   | investigação própria — ver abaixo                        |
+
+**Instabilidade conhecida na suíte e2e.** Detectada em 2026-08-14, reproduz em
+cerca de uma execução a cada quatro. Suspeita principal: a partir da 0022 o
+registro de auditoria é assíncrono e dispara uma consulta **depois** da
+resposta HTTP — o `truncateAll` do teste seguinte pode competir com essa
+escrita em voo. Também há `findFirstOrThrow()` sem `orderBy` em vários testes
+de convite, que é ordem indefinida por natureza.
+
+Em desenvolvimento custa tempo; depois do primeiro lançamento custa confiança,
+porque uma suíte que falha às vezes deixa de ser sinal. Investigar antes disso.
