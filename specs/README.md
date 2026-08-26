@@ -21,6 +21,8 @@ Reconstrução da API, uma spec por vez. Cada spec é autocontida: uma sessão n
 
 **A tabela está em ordem de execução, não de numeração.** A **[0020](0020-api-estrategia-de-testes.md)** nasceu depois das demais e aparece no meio, marcada com ↩: vem antes da 0003 porque define como se testa contra banco, e é da autenticação em diante que mora o código cuja regressão passa despercebida.
 
+A **[0022](0022-api-auditoria.md)** também aparece fora de ordem, no fim do bloco Tenant: precisa rodar **antes da 0012**, que define o molde copiado por cinco módulos do catálogo.
+
 A **[0021](0021-api-rate-limiting-expiracao.md)** fica no fim, em bloco próprio: o gatilho dela é o primeiro deploy exposto à internet, não uma dependência de código.
 
 | id                                            | spec                                 | status | depende de       |
@@ -39,8 +41,9 @@ A **[0021](0021-api-rate-limiting-expiracao.md)** fica no fim, em bloco próprio
 | [0007](0007-api-organizacao.md)               | Organização                          | done   | 0003             |
 | [0008](0008-api-unidade.md)                   | Unidade e camada de permissões       | done   | 0007             |
 | [0009](0009-api-membros.md)                   | Membros da unidade                   | done   | 0008             |
-| [0011](0011-api-notificacoes.md)              | Notificações                         | todo   | 0003             |
+| [0011](0011-api-notificacoes.md)              | Notificações                         | done   | 0003             |
 | [0010](0010-api-convites.md)                  | Convites de unidade                  | done   | 0009, 0004, 0011 |
+| ↩ [0022](0022-api-auditoria.md)               | Trilha de auditoria em arquivo       | todo   | 0010             |
 | **Acadêmico**                                 |                                      |        |                  |
 | [0012](0012-api-curso.md)                     | Curso — define o padrão de módulo    | todo   | 0008             |
 | [0013](0013-api-disciplina.md)                | Disciplina                           | todo   | 0012             |
@@ -52,7 +55,6 @@ A **[0021](0021-api-rate-limiting-expiracao.md)** fica no fim, em bloco próprio
 | [0018](0018-api-projeto.md)                   | Projeto                              | todo   | 0014, 0016       |
 | [0019](0019-api-membros-projeto.md)           | Membros do projeto                   | todo   | 0018             |
 | **Endurecimento**                             |                                      |        |                  |
-| [0021](0021-api-rate-limiting-expiracao.md)   | Rate limiting e expiração de tokens  | todo   | 0005             |
 
 O id é uma sequência de criação, não de execução: quem manda na ordem é o `depends_on` e o lugar na tabela. Spec nova entra onde precisa rodar, e não no fim.
 
