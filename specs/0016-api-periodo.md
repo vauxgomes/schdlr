@@ -84,3 +84,24 @@ Executada em sequência (`/spec next 2`), na branch `feature/catalogo-academico`
   - **Excluir período com projeto responde 409**, pela regra do bloco ("não se
     exclui o que está em uso"), ainda que não seja critério desta spec.
   - **O teste-rede da 0022 cresceu com as quatro mutações de período.**
+
+
+---
+
+## Nota posterior — 2026-08-28 (spec 0023)
+
+**A tabela de transições desta spec foi substituída.** O desenho aqui era uma
+fila de mão única (`PLANNING → ADJUSTMENTS → STARTED → FINISHED`), com
+`ADJUSTMENTS` no papel de "ajuste antes de começar". A 0023 muda isso:
+`PLANNING` passa a ir direto para `STARTED`, e `ADJUSTMENTS` vira o período
+**reaberto**, alcançável só a partir de `STARTED`.
+
+O motivo é a 0018: ela trava mutação de projeto em período que já começou, e
+sem uma transição que saia de `STARTED` para trás essa trava seria permanente.
+A tabela nova, o motivo e os critérios estão em
+[0023](0023-api-transicoes-periodo.md).
+
+O que **não** mudou: a transição continua em endpoint próprio, continua
+respondendo 409 quando não existe, continua exigindo `assertManagement`, e
+continua registrando `term.status-changed` na trilha. O `CANCELLED` segue
+terminal.
