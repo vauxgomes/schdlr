@@ -1,7 +1,7 @@
 ---
 id: 0016
 title: Período letivo
-status: todo
+status: done
 depends_on: [0012]
 ---
 
@@ -39,12 +39,12 @@ O calendário: os períodos letivos da unidade e em que fase cada um está.
 
 ## Critérios de aceite
 
-- [ ] Criar com `endDate` anterior ao `startDate` responde 400
-- [ ] Nome repetido na unidade responde 409
-- [ ] Update genérico não consegue alterar `status`
-- [ ] Transição inválida (ex.: `FINISHED → PLANNING`) responde 409
-- [ ] Dois períodos com datas sobrepostas são aceitos
-- [ ] TEACHER não cria, altera nem muda status
+- [x] Criar com `endDate` anterior ao `startDate` responde 400
+- [x] Nome repetido na unidade responde 409
+- [x] Update genérico não consegue alterar `status`
+- [x] Transição inválida (ex.: `FINISHED → PLANNING`) responde 409
+- [x] Dois períodos com datas sobrepostas são aceitos
+- [x] TEACHER não cria, altera nem muda status
 
 ## Verificação
 
@@ -56,7 +56,31 @@ pnpm build:api
 
 ## Registro
 
-_Preenchido durante a execução._
+Executada em sequência (`/spec next 2`), na branch `feature/catalogo-academico`. Molde da 0012 mais a transição de status em rota própria. 35 unitários e 210 e2e passando; os seis critérios têm teste.
 
-- **commits:**
+- **commits:** `feat(api): módulo de períodos letivos (spec 0016)`
 - **desvios:**
+  - **A máquina de estado é uma função pura em `terms/utils/term-status.ts`**,
+    com tabela de transições e teste unitário próprio. As regras de código
+    mandam política para `utils/`, e assim a tabela é conferível de um lugar
+    só, em vez de virar uma cadeia de `if` dentro do service.
+  - **`CANCELLED` é terminal.** A spec lista as transições válidas e nenhuma
+    sai de cancelado; segui a lista. Se reabrir um período cancelado for
+    necessário, é decisão de produto e vira spec.
+  - **`status` não é rejeitado no `PATCH` genérico: é ignorado.** O schema Zod
+    não declara o campo e o Zod descarta o que não conhece — o efeito prático
+    é o que o critério pede (o update não altera status), sem um 400 a mais.
+    O teste fixa esse comportamento.
+  - **A ordem das datas é revalidada no update.** O `refine` da criação vê o
+    corpo inteiro; num `PATCH` parcial, quem garante a invariante é a
+    comparação com o que já está gravado.
+  - **O evento `TERM_STARTED` não é emitido.** A notificação está em "Não
+    entra" e não há consumidor — quem seria notificado são os membros do
+    projeto, que só existem a partir da 0018. O ponto de emissão, quando
+    entrar, é `updateStatus`.
+  - **A listagem não filtra por status.** Período não tem `isActive`, e filtro
+    por fase não está no escopo. Só paginação, ordenada por `startDate`
+    decrescente.
+  - **Excluir período com projeto responde 409**, pela regra do bloco ("não se
+    exclui o que está em uso"), ainda que não seja critério desta spec.
+  - **O teste-rede da 0022 cresceu com as quatro mutações de período.**

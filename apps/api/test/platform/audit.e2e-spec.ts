@@ -1,4 +1,4 @@
-import { LocationType, MemberRole } from '@prisma/client'
+import { LocationType, MemberRole, TermStatus } from '@prisma/client'
 import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -174,7 +174,20 @@ describe('Audit trail (e2e)', () => {
       capacity: 40,
     })
     await as(admin, server().delete(`/units/${unitId}/locations/${locationId}`))
-    await waitFor(() => collected.entries.length >= 20)
+
+    const term = await as(admin, server().post(`/units/${unitId}/terms`)).send({
+      name: '2026.1',
+      startDate: '2026-02-01',
+      endDate: '2026-07-01',
+    })
+    const termId = (term.body as { id: string }).id
+
+    await as(admin, server().patch(`/units/${unitId}/terms/${termId}`)).send({ name: '2026.2' })
+    await as(admin, server().patch(`/units/${unitId}/terms/${termId}/status`)).send({
+      status: TermStatus.ADJUSTMENTS,
+    })
+    await as(admin, server().delete(`/units/${unitId}/terms/${termId}`))
+    await waitFor(() => collected.entries.length >= 24)
 
     expect(actions()).toEqual([
       'unit.updated',
@@ -197,6 +210,10 @@ describe('Audit trail (e2e)', () => {
       'location.created',
       'location.updated',
       'location.deleted',
+      'term.created',
+      'term.updated',
+      'term.status-changed',
+      'term.deleted',
     ])
   })
 

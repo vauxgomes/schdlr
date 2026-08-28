@@ -17,6 +17,7 @@ import { LocationsModule } from './modules/locations/locations.module'
 import { MembersModule } from './modules/members/members.module'
 import { NotificationsModule } from './modules/notifications/notifications.module'
 import { OrganizationsModule } from './modules/organizations/organizations.module'
+import { TermsModule } from './modules/terms/terms.module'
 import { UnitsModule } from './modules/units/units.module'
 import { UsersModule } from './modules/users/users.module'
 
@@ -37,6 +38,7 @@ import { UsersModule } from './modules/users/users.module'
     MembersModule,
     NotificationsModule,
     OrganizationsModule,
+    TermsModule,
     UnitsModule,
     UsersModule,
   ],

@@ -31,6 +31,10 @@ export const AuditAction = {
   LocationCreated: 'location.created',
   LocationUpdated: 'location.updated',
   LocationDeleted: 'location.deleted',
+  TermCreated: 'term.created',
+  TermUpdated: 'term.updated',
+  TermStatusChanged: 'term.status-changed',
+  TermDeleted: 'term.deleted',
   AccessDenied: 'access.denied',
 } as const
 
