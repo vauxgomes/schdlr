@@ -35,6 +35,12 @@ export const AuditAction = {
   TermUpdated: 'term.updated',
   TermStatusChanged: 'term.status-changed',
   TermDeleted: 'term.deleted',
+  TimetableCreated: 'timetable.created',
+  TimetableUpdated: 'timetable.updated',
+  TimetableDeleted: 'timetable.deleted',
+  TimeSlotCreated: 'time-slot.created',
+  TimeSlotUpdated: 'time-slot.updated',
+  TimeSlotDeleted: 'time-slot.deleted',
   AccessDenied: 'access.denied',
 } as const
 

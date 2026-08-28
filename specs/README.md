@@ -50,7 +50,7 @@ A **[0021](0021-api-rate-limiting-expiracao.md)** fica no fim, em bloco próprio
 | [0014](0014-api-curriculo.md)                 | Currículo e disciplinas do currículo | done   | 0012, 0013       |
 | [0015](0015-api-local.md)                     | Local                                | done   | 0012             |
 | [0016](0016-api-periodo.md)                   | Período letivo                       | done   | 0012             |
-| [0017](0017-api-grade-horarios.md)            | Grade de horários                    | todo   | 0012             |
+| [0017](0017-api-grade-horarios.md)            | Grade de horários                    | done   | 0012             |
 | **Scheduling**                                |                                      |        |                  |
 | [0018](0018-api-projeto.md)                   | Projeto                              | todo   | 0014, 0016       |
 | [0019](0019-api-membros-projeto.md)           | Membros do projeto                   | todo   | 0018             |

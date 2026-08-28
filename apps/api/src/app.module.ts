@@ -18,6 +18,7 @@ import { MembersModule } from './modules/members/members.module'
 import { NotificationsModule } from './modules/notifications/notifications.module'
 import { OrganizationsModule } from './modules/organizations/organizations.module'
 import { TermsModule } from './modules/terms/terms.module'
+import { TimetablesModule } from './modules/timetables/timetables.module'
 import { UnitsModule } from './modules/units/units.module'
 import { UsersModule } from './modules/users/users.module'
 
@@ -39,6 +40,7 @@ import { UsersModule } from './modules/users/users.module'
     NotificationsModule,
     OrganizationsModule,
     TermsModule,
+    TimetablesModule,
     UnitsModule,
     UsersModule,
   ],

@@ -187,7 +187,28 @@ describe('Audit trail (e2e)', () => {
       status: TermStatus.ADJUSTMENTS,
     })
     await as(admin, server().delete(`/units/${unitId}/terms/${termId}`))
-    await waitFor(() => collected.entries.length >= 24)
+
+    const timetable = await as(admin, server().post(`/units/${unitId}/timetables`)).send({
+      name: 'Manhã',
+    })
+    const timetableId = (timetable.body as { id: string }).id
+    const timeSlots = `/units/${unitId}/timetables/${timetableId}/time-slots`
+
+    await as(admin, server().patch(`/units/${unitId}/timetables/${timetableId}`)).send({
+      name: 'Matutino',
+    })
+
+    const timeSlot = await as(admin, server().post(timeSlots)).send({
+      name: '1º horário',
+      startTime: 420,
+      endTime: 470,
+    })
+    const timeSlotId = (timeSlot.body as { id: string }).id
+
+    await as(admin, server().patch(`${timeSlots}/${timeSlotId}`)).send({ endTime: 480 })
+    await as(admin, server().delete(`${timeSlots}/${timeSlotId}`))
+    await as(admin, server().delete(`/units/${unitId}/timetables/${timetableId}`))
+    await waitFor(() => collected.entries.length >= 30)
 
     expect(actions()).toEqual([
       'unit.updated',
@@ -214,6 +235,12 @@ describe('Audit trail (e2e)', () => {
       'term.updated',
       'term.status-changed',
       'term.deleted',
+      'timetable.created',
+      'timetable.updated',
+      'time-slot.created',
+      'time-slot.updated',
+      'time-slot.deleted',
+      'timetable.deleted',
     ])
   })
 
