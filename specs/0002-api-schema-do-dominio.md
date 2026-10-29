@@ -40,38 +40,38 @@ tabela ou relação depois custa uma migration por spec que já o usou.
 
 O código é todo em inglês. A tabela abaixo é a ponte com o vocabulário do produto.
 
-| produto (pt) | entidade | tabela |
-|---|---|---|
-| Usuário | `User` | `users` |
-| Assinatura / plano | `Subscription` | `subscriptions` |
-| Código OTP | `OtpCode` | `otp_codes` |
-| Sessão (refresh token) | `RefreshToken` | `refresh_tokens` |
-| Organização | `Organization` | `organizations` |
-| Unidade | `Unit` | `units` |
-| Membro da unidade | `UnitMember` | `unit_members` |
-| Convite para unidade | `UnitInvitation` | `unit_invitations` |
-| Curso | `Course` | `courses` |
-| Currículo | `Curriculum` | `curricula` |
-| Disciplina | `Subject` | `subjects` |
-| Localização | `Location` | `locations` |
-| Semestre | `Term` | `terms` |
-| Bloco de horários | `TimeTable` | `time_tables` |
-| Horário | `TimeSlot` | `time_slots` |
-| Projeto | `Project` | `projects` |
-| Oferta | `Offering` | `offerings` |
-| Quadro (turma) | `Board` | `boards` |
-| Célula do quadro | `BoardSlot` | `board_slots` |
+| produto (pt)           | entidade         | tabela             |
+| ---------------------- | ---------------- | ------------------ |
+| Usuário                | `User`           | `users`            |
+| Assinatura / plano     | `Subscription`   | `subscriptions`    |
+| Código OTP             | `OtpCode`        | `otp_codes`        |
+| Sessão (refresh token) | `RefreshToken`   | `refresh_tokens`   |
+| Organização            | `Organization`   | `organizations`    |
+| Unidade                | `Unit`           | `units`            |
+| Membro da unidade      | `UnitMember`     | `unit_members`     |
+| Convite para unidade   | `UnitInvitation` | `unit_invitations` |
+| Curso                  | `Course`         | `courses`          |
+| Currículo              | `Curriculum`     | `curricula`        |
+| Disciplina             | `Subject`        | `subjects`         |
+| Localização            | `Location`       | `locations`        |
+| Semestre               | `Term`           | `terms`            |
+| Bloco de horários      | `TimeTable`      | `time_tables`      |
+| Horário                | `TimeSlot`       | `time_slots`       |
+| Projeto                | `Project`        | `projects`         |
+| Oferta                 | `Offering`       | `offerings`        |
+| Quadro (turma)         | `Board`          | `boards`           |
+| Célula do quadro       | `BoardSlot`      | `board_slots`      |
 
 **Papéis.** "Dono", "responsável pela unidade", "coordenador" e "professor" **não são um enum
 único**, porque cada papel mora num lugar diferente:
 
-| papel | onde mora |
-|---|---|
-| Dono | `Organization.ownerId` |
+| papel                    | onde mora              |
+| ------------------------ | ---------------------- |
+| Dono                     | `Organization.ownerId` |
 | Responsável pela unidade | `UnitMember.isManager` |
-| Professor | `UnitMember.isTeacher` |
-| Coordenador de curso | `Course.coordinatorId` |
-| Suporte / master | `User.systemRole` |
+| Professor                | `UnitMember.isTeacher` |
+| Coordenador de curso     | `Course.coordinatorId` |
+| Suporte / master         | `User.systemRole`      |
 
 O "usuário comum" é `systemRole = USER`. Um mesmo usuário acumula papéis livremente: dono de
 uma organização, responsável numa unidade, professor em outra, coordenador de um curso.
@@ -631,18 +631,18 @@ O schema do Prisma não expressa estas regras, e a migration não ganha SQL escr
 elas. **Cada uma tem que ser validada pela spec que criar o endpoint de escrita da entidade**,
 de preferência no schema Zod da entrada. Esta lista é o contrato que essas specs herdam:
 
-| entidade | regra |
-|---|---|
-| `User` | e-mail normalizado para minúsculas antes de gravar; no máximo um `MASTER` |
-| `Subscription` | `TRIAL` exige `expiresAt`; `GRACE` não vence |
-| `OtpCode` | `attempts >= 0` |
-| `Organization`, `Unit` | slug no formato `^[a-z0-9]+(-[a-z0-9]+)*$` |
-| `Subject` | `workload >= 1`; `level >= 1`; `color` no formato `^#[0-9A-Fa-f]{6}$` || `Location` | `capacity` nulo ou `> 0` |
-| `Term` | `endDate >= startDate` |
-| `TimeSlot` | `0 <= startTime < endTime <= 1440`; sem sobreposição `[start, end)` com outro horário do mesmo bloco |
-| `Project` | `workingDays` é 5 ou 6 |
-| `BoardSlot` | `weekday` entre 1 e `project.workingDays`; `isBlocked` exige `offeringId` e `locationId` nulos e impede preenchê-los; oferta sem professor é aceita |
-| cruzadas | professor da oferta é membro `isTeacher` ativo da unidade; local, termo e currículo são da unidade do projeto; horário da célula é do bloco do quadro; oferta da célula é do mesmo projeto |
+| entidade               | regra                                                                                                                                                                                      |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `User`                 | e-mail normalizado para minúsculas antes de gravar; no máximo um `MASTER`                                                                                                                  |
+| `Subscription`         | `TRIAL` exige `expiresAt`; `GRACE` não vence                                                                                                                                               |
+| `OtpCode`              | `attempts >= 0`                                                                                                                                                                            |
+| `Organization`, `Unit` | slug no formato `^[a-z0-9]+(-[a-z0-9]+)*$`                                                                                                                                                 |
+| `Subject`              | `workload >= 1`; `level >= 1`; `color` no formato `^#[0-9A-Fa-f]{6}$`                                                                                                                      |     | `Location` | `capacity` nulo ou `> 0` |
+| `Term`                 | `endDate >= startDate`                                                                                                                                                                     |
+| `TimeSlot`             | `0 <= startTime < endTime <= 1440`; sem sobreposição `[start, end)` com outro horário do mesmo bloco                                                                                       |
+| `Project`              | `workingDays` é 5 ou 6                                                                                                                                                                     |
+| `BoardSlot`            | `weekday` entre 1 e `project.workingDays`; `isBlocked` exige `offeringId` e `locationId` nulos e impede preenchê-los; oferta sem professor é aceita                                        |
+| cruzadas               | professor da oferta é membro `isTeacher` ativo da unidade; local, termo e currículo são da unidade do projeto; horário da célula é do bloco do quadro; oferta da célula é do mesmo projeto |
 
 ## Critérios de aceite
 

@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-schdlr}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-schdlr}
+      POSTGRES_DB: ${POSTGRES_DB:-schdlr}
+    ports:
+      - '${POSTGRES_PORT:-5434}:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Descomentado pela spec que criar o Dockerfile da API.
+  # api:
+  #   build: ./apps/api
+  #   env_file: ./apps/api/.env
+  #   ports:
+  #     - '3001:3001'
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+
+  # Descomentado pela spec que criar o Dockerfile do web.
+  # web:
+  #   build: ./apps/web
+  #   ports:
+  #     - '3000:3000'
+  #   depends_on:
+  #     - api
+
+volumes:
+  db-data:

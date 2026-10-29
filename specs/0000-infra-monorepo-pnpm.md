@@ -1,7 +1,7 @@
 ---
 id: 0000
 title: Monorepo pnpm, CI e compose
-status: todo
+status: done
 depends_on: []
 ---
 
@@ -110,22 +110,22 @@ Scripts da raiz, exatamente estes:
 
 ## Critérios de aceite
 
-- [ ] `pnpm install` num clone limpo termina sem erro e gera/respeita o `pnpm-lock.yaml`
-- [ ] `package.json` da raiz tem `version: "0.0.0"`, `packageManager: "pnpm@10.32.1"` e os 10
+- [x] `pnpm install` num clone limpo termina sem erro e gera/respeita o `pnpm-lock.yaml`
+- [x] `package.json` da raiz tem `version: "0.0.0"`, `packageManager: "pnpm@10.32.1"` e os 10
       scripts exatamente como na seção "Escopo"
-- [ ] `pnpm-workspace.yaml` declara `apps/*`
-- [ ] `apps/api/.gitkeep` e `apps/web/.gitkeep` existem e são os únicos arquivos em `apps/`
+- [x] `pnpm-workspace.yaml` declara `apps/*`
+- [x] `apps/api/.gitkeep` e `apps/web/.gitkeep` existem e são os únicos arquivos em `apps/`
       (fora o `apps/api/.env.example`)
-- [ ] `pnpm test:api` sai `0` hoje, sem pacote que case
-- [ ] `pnpm format` roda e não reformata nada que já estava formatado de novo na segunda vez
-- [ ] `docker compose config` valida **sem `.env` na raiz**
-- [ ] `docker compose up -d db` sobe e o serviço fica `healthy`
-- [ ] `psql` conecta com a `DATABASE_URL` do `apps/api/.env.example`, sem editar nada
-- [ ] `api` e `web` estão comentados no compose, cada um com a nota de qual spec os ativa
-- [ ] `.github/workflows/ci.yml` tem um job de teste em matriz com `app: [api]`
-- [ ] Com `apps/api/package.json` ausente, o job emite um `notice` e pula install e teste
-- [ ] `.env` não é versionado; `.env.example` (raiz e api) é
-- [ ] `README.md` lista os scripts e como subir o banco
+- [x] `pnpm test:api` sai `0` hoje, sem pacote que case
+- [x] `pnpm format` roda e não reformata nada que já estava formatado de novo na segunda vez
+- [x] `docker compose config` valida **sem `.env` na raiz**
+- [x] `docker compose up -d db` sobe e o serviço fica `healthy`
+- [x] `psql` conecta com a `DATABASE_URL` do `apps/api/.env.example`, sem editar nada
+- [x] `api` e `web` estão comentados no compose, cada um com a nota de qual spec os ativa
+- [x] `.github/workflows/ci.yml` tem um job de teste em matriz com `app: [api]`
+- [x] Com `apps/api/package.json` ausente, o job emite um `notice` e pula install e teste
+- [x] `.env` não é versionado; `.env.example` (raiz e api) é
+- [x] `README.md` lista os scripts e como subir o banco
 
 ## Verificação
 
@@ -161,4 +161,33 @@ pendente.
 
 ## Registro
 
-_(vazio)_
+**2026-10-29** — executada com `/spec next`, na branch `development`.
+
+Commits: `chore(infra): monorepo pnpm, CI e compose (spec 0000)` — implementação, Registro e
+status no mesmo commit.
+
+Verificação: `pnpm install --frozen-lockfile` ok; versão `0.0.0`; `pnpm test:api` sai `0`
+("No projects matched"); `pnpm format` estável na segunda passada; `find apps` mostra só os três
+arquivos esperados; `docker compose config -q` ok sem `.env`; `db` sobe `(healthy)`;
+`select 1` ok com a `DATABASE_URL` do `apps/api/.env.example`; `.env` ignorado, os dois
+`.env.example` não.
+
+Desvios:
+
+- **Sem `psql` local.** A conexão foi testada com o `psql` da própria imagem
+  (`docker run --rm postgres:17-alpine psql …`), trocando `localhost` por
+  `host.docker.internal` — mesma porta `5434`, mesmas credenciais, nada editado no
+  `.env.example`.
+- **Validador do workflow não rodou.** `npx @action-validator/cli` foi bloqueado pela política
+  de permissões da sessão e não há `actionlint` instalado. Só o parse do YAML foi conferido
+  (Ruby/Psych). Rodar o validador à mão.
+- **Execução no GitHub Actions pendente.** Não houve push (regra do projeto: só commit local).
+  Falta conferir no Actions que `test (api)` emite o `notice` e termina verde com install e
+  teste `skipped`.
+- **A primeira passada do `pnpm format` realinhou as tabelas markdown** de `specs/README.md`,
+  `0001`, `0002` e do `README.md` (só espaçamento, nenhum texto mudou). Foi incluído no commit
+  para que `pnpm format` fique estável.
+- `.gitignore` manteve a linha `.plans/` que já existia.
+- Notas de "qual spec descomenta" no compose citam "a spec que criar o Dockerfile da API/web",
+  sem id: essa spec ainda não existe no índice.
+- Docker Desktop estava parado; foi aberto (`open -a Docker`) para a verificação.

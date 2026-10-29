@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: test (${{ matrix.app }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [api]
+    steps:
+      - uses: actions/checkout@v4
+
+      # App sem package.json ainda não foi inicializado: pula de forma visível,
+      # em vez de rodar um filtro vazio que sairia 0 e pareceria "testes passaram".
+      - name: Verificar se o app existe
+        id: app
+        run: |
+          if [ -f "apps/${{ matrix.app }}/package.json" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=${{ matrix.app }}::apps/${{ matrix.app }}/package.json ausente — não há o que testar"
+          fi
+
+      - uses: pnpm/action-setup@v4
+        if: steps.app.outputs.exists == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.app.outputs.exists == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Instalar dependências
+        if: steps.app.outputs.exists == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Testar
+        if: steps.app.outputs.exists == 'true'
+        run: pnpm --filter @schdlr/${{ matrix.app }} test:all

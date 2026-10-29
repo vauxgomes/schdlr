@@ -1,1 +1,21 @@
 .plans/
+
+# dependências
+node_modules/
+
+# saída de build e testes
+dist/
+build/
+coverage/
+
+# env — só os exemplos são versionados
+.env
+.env.*
+!.env.example
+
+# sistema e logs
+.DS_Store
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*

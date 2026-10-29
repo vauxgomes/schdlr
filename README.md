@@ -34,13 +34,40 @@ schdlr/
 
 ## Tecnologias
 
-| parte | tecnologias |
-|---|---|
-| API | TypeScript, NestJS, Prisma, PostgreSQL, Passport (JWT), Zod |
-| Web | TypeScript, React |
-| Infra | pnpm workspaces, Docker Compose, GitHub Actions |
+| parte | tecnologias                                                 |
+| ----- | ----------------------------------------------------------- |
+| API   | TypeScript, NestJS, Prisma, PostgreSQL, Passport (JWT), Zod |
+| Web   | TypeScript, React                                           |
+| Infra | pnpm workspaces, Docker Compose, GitHub Actions             |
 
 O login é sem senha: o acesso é feito por código enviado por e-mail (OTP).
+
+## Como rodar
+
+Pré-requisitos: Node 24 (ver `.nvmrc`), pnpm 10 e Docker.
+
+```bash
+pnpm install
+docker compose up -d db   # Postgres em localhost:5434, usuário/senha/banco: schdlr
+```
+
+O compose sobe sem `.env` na raiz: todas as variáveis têm padrão. Para mudar porta ou
+credenciais, copie `.env.example` para `.env`. O env da API fica em `apps/api/.env.example`.
+
+| script                   | o que faz                                   |
+| ------------------------ | ------------------------------------------- |
+| `pnpm dev:api`           | sobe a API em modo watch                    |
+| `pnpm build:api`         | compila a API                               |
+| `pnpm test:api`          | roda todos os testes da API                 |
+| `pnpm db:generate`       | gera o Prisma Client                        |
+| `pnpm db:migrate`        | cria e aplica migrations em desenvolvimento |
+| `pnpm db:migrate:deploy` | aplica migrations pendentes (CI/produção)   |
+| `pnpm db:reset`          | recria o banco do zero                      |
+| `pnpm db:seed`           | popula o banco                              |
+| `pnpm db:studio`         | abre o Prisma Studio                        |
+| `pnpm format`            | formata o repositório com Prettier          |
+
+Os scripts da API só passam a fazer algo quando `apps/api` for inicializado.
 
 ## Specs
 

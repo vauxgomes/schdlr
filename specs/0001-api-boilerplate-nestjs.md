@@ -90,22 +90,22 @@ executada sozinha, com `/spec 0001`.
 
 Scripts de `apps/api/package.json` — os nomes são os que a raiz já chama:
 
-| script | comando |
-|---|---|
-| `start:dev` | `nest start --watch` |
-| `start` | `nest start` |
-| `start:prod` | `node dist/main` |
-| `build` | `nest build` |
-| `lint` | `eslint "{src,test}/**/*.ts"` |
-| `test` | `jest` |
-| `test:e2e` | `jest --config test/jest-e2e.json` |
-| `test:all` | `pnpm db:generate && pnpm test && pnpm test:e2e` |
-| `db:generate` | `prisma generate` |
-| `db:migrate` | `prisma migrate dev` |
-| `db:migrate:deploy` | `prisma migrate deploy` |
-| `db:reset` | `prisma migrate reset` |
-| `db:seed` | `prisma db seed` |
-| `db:studio` | `prisma studio` |
+| script              | comando                                          |
+| ------------------- | ------------------------------------------------ |
+| `start:dev`         | `nest start --watch`                             |
+| `start`             | `nest start`                                     |
+| `start:prod`        | `node dist/main`                                 |
+| `build`             | `nest build`                                     |
+| `lint`              | `eslint "{src,test}/**/*.ts"`                    |
+| `test`              | `jest`                                           |
+| `test:e2e`          | `jest --config test/jest-e2e.json`               |
+| `test:all`          | `pnpm db:generate && pnpm test && pnpm test:e2e` |
+| `db:generate`       | `prisma generate`                                |
+| `db:migrate`        | `prisma migrate dev`                             |
+| `db:migrate:deploy` | `prisma migrate deploy`                          |
+| `db:reset`          | `prisma migrate reset`                           |
+| `db:seed`           | `prisma db seed`                                 |
+| `db:studio`         | `prisma studio`                                  |
 
 ## Não entra
 
@@ -133,7 +133,7 @@ Scripts de `apps/api/package.json` — os nomes são os que a raiz já chama:
   relativo só dentro do mesmo módulo
 - **Um `.prettierrc` só, o da raiz.** O que o `nest new` gera em `apps/api` é apagado
 - **O env é validado na partida e a app não sobe com env inválido.** `ConfigModule.forRoot({
-  validate })` chama `envSchema.parse`; erro lista cada variável que falhou. Nada lê
+validate })` chama `envSchema.parse`; erro lista cada variável que falhou. Nada lê
   `process.env` direto fora de `src/config/`, `prisma.config.ts` e `prisma/seed.ts`
 - **O schema Zod do env cobre só o que a app lê nesta spec:** `NODE_ENV`, `PORT`,
   `DATABASE_URL`, `CORS_ORIGIN`, `JWT_SECRET` (mínimo 32 caracteres), `JWT_EXPIRES_IN`. As demais
@@ -155,6 +155,7 @@ Scripts de `apps/api/package.json` — os nomes são os que a raiz já chama:
   ```
 
   `path` é o `issue.path` juntado por `.`
+
 - **Pipe próprio, por parâmetro, não global.** Sem `nestjs-zod`: o pipe tem ~20 linhas e o
   schema fica explícito na assinatura do handler
 - **`test:all` gera o client do Prisma antes de testar.** O pnpm não roda `pre*` scripts por
@@ -166,7 +167,7 @@ Scripts de `apps/api/package.json` — os nomes são os que a raiz já chama:
 - **`DATABASE_URL` aponta para o Postgres já rodando em container**, `localhost:5434`, usuário,
   senha e banco `schdlr` — os padrões do `db` da spec 0000
 - **Scaffold pelo CLI, depois ajustado:** `pnpm dlx @nestjs/cli@11 new api --directory apps/api
-  --package-manager pnpm --skip-git --strict`, e o resto à mão. O `app.controller`/`app.service`
+--package-manager pnpm --skip-git --strict`, e o resto à mão. O `app.controller`/`app.service`
   de exemplo saem
 - **Dependências de produção:** `@nestjs/common`, `@nestjs/core`, `@nestjs/platform-express`,
   `@nestjs/config`, `@nestjs/jwt`, `@nestjs/passport`, `@nestjs/terminus`, `passport`,

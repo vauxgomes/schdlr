@@ -1,0 +1,24 @@
+{
+  "name": "schdlr",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev:api": "pnpm --filter @schdlr/api start:dev",
+    "build:api": "pnpm --filter @schdlr/api build",
+    "test:api": "pnpm --filter @schdlr/api test:all",
+    "db:generate": "pnpm --filter @schdlr/api db:generate",
+    "db:migrate": "pnpm --filter @schdlr/api db:migrate",
+    "db:migrate:deploy": "pnpm --filter @schdlr/api db:migrate:deploy",
+    "db:reset": "pnpm --filter @schdlr/api db:reset",
+    "db:seed": "pnpm --filter @schdlr/api db:seed",
+    "db:studio": "pnpm --filter @schdlr/api db:studio",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.9.10"
+  }
+}
