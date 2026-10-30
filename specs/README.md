@@ -117,3 +117,7 @@ decisão; em caso de dúvida, vale a spec (e o Registro dela), não este resumo.
 | 0008 | [Códigos de erro](0008-api-codigos-de-erro.md)                                   | ✅ done | 0001, 0004, 0006, 0007       |
 | 0009 | [Organização e unidade](0009-api-organizacao-e-unidade.md)                       | ✅ done | 0002, 0004, 0005, 0006, 0008 |
 | 0010 | [Membros e convites](0010-api-membros-e-convites.md)                             | ✅ done | 0003, 0004, 0008, 0009       |
+| 0011 | [Cursos](0011-api-cursos.md)                                                     | ⬜ todo | 0008, 0009, 0010             |
+| 0012 | [Currículos](0012-api-curriculos.md)                                             | ⬜ todo | 0011                         |
+| 0013 | [Disciplinas](0013-api-disciplinas.md)                                           | ⬜ todo | 0012                         |
+| 0014 | [Duplicação de currículo](0014-api-duplicacao-de-curriculo.md)                   | ⬜ todo | 0013                         |
