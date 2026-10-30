@@ -1,7 +1,7 @@
 ---
 id: 0010
 title: Membros e convites
-status: todo
+status: done
 depends_on: [0003, 0004, 0008, 0009]
 ---
 
@@ -260,29 +260,29 @@ mostra `{ statusCode, message }`, o corpo real é o da 0008, com o `code` abaixo
 
 ## Critérios de aceite
 
-- [ ] Não-membro recebe `404` nas rotas da unidade; membro sem papel recebe `403` no que a tabela
+- [x] Não-membro recebe `404` nas rotas da unidade; membro sem papel recebe `403` no que a tabela
       de permissões não dá a ele
-- [ ] Responsável convida sem `isManager`; com `isManager`, `403`. Mesma regra no `PATCH`, no
+- [x] Responsável convida sem `isManager`; com `isManager`, `403`. Mesma regra no `PATCH`, no
       `DELETE` de responsável e no cancelamento
-- [ ] Convite a e-mail sem conta cria o `User` não verificado, sem assinatura, e o `sign-up`
+- [x] Convite a e-mail sem conta cria o `User` não verificado, sem assinatura, e o `sign-up`
       depois funciona para ele
-- [ ] Convite a quem já é membro dá `409`; a usuário inativo, `409`
-- [ ] Convidar de novo cancela o pendente anterior e cria outro com token novo
-- [ ] O token não fica no banco (só o SHA-256) nem no log
-- [ ] Falha do e-mail dá `503` e o convite fica
-- [ ] Aceitar cria o `UnitMember` com as flags; aceitando já sendo membro, as flags somam
-- [ ] Vencido dá `410`; respondido ou cancelado dá `409`; a leitura mostra `EXPIRED` sem gravar
-- [ ] Aceitar, convidar, editar, remover e cancelar com o plano do dono vencido dão
+- [x] Convite a quem já é membro dá `409`; a usuário inativo, `409`
+- [x] Convidar de novo cancela o pendente anterior e cria outro com token novo
+- [x] O token não fica no banco (só o SHA-256) nem no log
+- [x] Falha do e-mail dá `503` e o convite fica
+- [x] Aceitar cria o `UnitMember` com as flags; aceitando já sendo membro, as flags somam
+- [x] Vencido dá `410`; respondido ou cancelado dá `409`; a leitura mostra `EXPIRED` sem gravar
+- [x] Aceitar, convidar, editar, remover e cancelar com o plano do dono vencido dão
       `403 "Plan expired"`; recusar passa
-- [ ] `by-token` é público; token desconhecido dá `404`. Rotas `:id` dão `404` para convite de
+- [x] `by-token` é público; token desconhecido dá `404`. Rotas `:id` dão `404` para convite de
       outra pessoa
-- [ ] `DELETE` de si mesmo funciona para membro e responsável e responde `204`
-- [ ] `UNIT_INVITE_TTL_DAYS` e `WEB_APP_URL` no `envSchema` e fora do "Ainda não lido"
-- [ ] Todos os erros desta spec saem com o `code` da tabela
-- [ ] Testes unitários dos services e do modelo de e-mail, com banco, `MailService` e
+- [x] `DELETE` de si mesmo funciona para membro e responsável e responde `204`
+- [x] `UNIT_INVITE_TTL_DAYS` e `WEB_APP_URL` no `envSchema` e fora do "Ainda não lido"
+- [x] Todos os erros desta spec saem com o `code` da tabela
+- [x] Testes unitários dos services e do modelo de e-mail, com banco, `MailService` e
       `TenantAccessService` substituídos; e2e das rotas com os services substituídos. Nenhum
       teste envia e-mail
-- [ ] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
+- [x] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
 
 ## Verificação
 
@@ -366,3 +366,70 @@ Ao final, devolver o banco ao estado da seed: apagar os convites da `unidade-tes
 `UnitMember` e o `User` do `guest@`, conferir que o `coordinator@` voltou a membro sem flag e que
 a assinatura do `admin@` está `GRACE` sem `expires_at`, e apagar os códigos OTP e refresh tokens
 dos logins.
+
+## Registro
+
+**2026-10-30** — executada com `/spec 0010`, na branch `development`, depois da 0009 e da
+refatoração dela em módulos (`tenancy`, `organizations`, `units`).
+
+Commits: `feat(api): membros e convites (spec 0010)`.
+
+Verificação: `pnpm install --frozen-lockfile` ok; sem `.env`, `pnpm test:api` passa (238
+unitários, 58 e2e) e `pnpm build:api` também; lint limpo; `pnpm format` estável. Contra o banco de
+dev, com `MAIL_ENABLED=false`: o `coordinator@` lista 3 membros; o master recebe `404`; o
+`coordinator@` nos convites → `403`. O `manager@` convidando com `isManager` → `403`; convidando
+`Guest@schdlr.dev` → `201`, e o `guest@` nasceu `USER`, não verificado e sem assinatura;
+convidando o `teacher@` → `409 ALREADY_A_MEMBER`. O `admin@` convidou o `guest@` de novo, e
+`?status=CANCELLED` mostrou o primeiro; `?status=OUTRO` → `400`. O `guest@` entrou por OTP
+(`SIGN_UP`, ficou verificado), viu 1 convite pendente e aceitou (`200`); o `manager@` aceitando o
+convite dele → `404`; aceitar de novo → `409`; o `guest@` entrou como professor. Pelo link, com o
+convite inserido por SQL: `GET` → `200` sem token; token desconhecido → `404`; aceitar → `200`, e
+o `coordinator@` virou responsável (soma). O `manager@` tirando o `isManager` ou removendo o
+`coordinator@` → `403`; o `admin@` tirou (`200`); `userId` que não é membro → `404
+MEMBER_NOT_FOUND`; `PATCH` sem flag → `400 EMPTY_UPDATE`; o `guest@` saiu (`204`). Com a
+assinatura do `admin@` vencida por SQL: aceitar, convidar, editar, remover e cancelar → `403
+PLAN_EXPIRED`; recusar → `200`. Convite vencido por SQL: aceitar → `410`, `?status=EXPIRED` o
+lista, e o banco continua com `PENDING`. O `manager@` cancelando um convite com `isManager` →
+`403`; o `admin@` cancelou (`200`); cancelar de novo → `409`. O `sign-up` do `novo@`, criado pelo
+convite, respondeu `202`, trocou o nome e emitiu um código `SIGN_UP`. Nenhuma linha do log tem o
+token ou o link, só `[mail desligado] para=… assunto="Convite para a unidade Unidade Teste no
+schdlr"`; o `token_hash` tem 64 caracteres (SHA-256 em hex). No fim, os convites da
+`unidade-teste`, o `guest@` e o `novo@` foram apagados, o `coordinator@` voltou a membro sem flag,
+a assinatura do `admin@` está `GRACE` sem `expires_at`, e os códigos OTP e refresh tokens foram
+apagados.
+
+Desvios:
+
+- **Dois módulos, `src/modules/members/` e `src/modules/invitations/`**, a pedido do usuário, em
+  vez de um `members/` só: um módulo por entidade, como `organizations/` e `units/`. Os dois
+  importam o `TenancyModule`. O de convites tem dois controllers: `UnitInvitationsController`
+  (rotas da unidade) e `InvitationsController` (`/api/invitations`).
+- **Ordem das checagens no `PATCH` e no `DELETE` de membro**: o alvo (`404 MEMBER_NOT_FOUND`)
+  antes do papel (`403`), porque o `DELETE` só sabe se o responsável pode remover depois de saber
+  se o alvo é responsável. Depois, `assertWritable`. No cancelamento, a mesma ideia: convite (`404`),
+  papel, status (`410`/`409`), `assertWritable`.
+- **Cancelar responde `200` com o convite**, como aceitar e recusar; a spec não dizia.
+- **Aceitar**: o status é conferido antes do `assertWritable`, e de novo dentro da transação, com
+  `updateMany` filtrando `status: PENDING`: duas respostas simultâneas não passam as duas (a
+  segunda dá `409`). O `assertWritable` roda antes da transação, porque só lê. O membro é criado
+  com `upsert`, que soma as flags.
+- **Sair da unidade** (`DELETE` de si mesmo) também passa por `assertWritable`: com o plano do
+  dono vencido, nem sair. "Toda escrita passa por `assertWritable`" não abria exceção.
+- **Token**: `generateOpaqueToken` e `hashOpaqueToken` foram extraídos para
+  `src/common/crypto/opaque-token.ts`, e a `SessionService` da 0004 passou a usá-los. O formato
+  do refresh token não mudou.
+- **E-mail**: a validade sai como data em pt-BR no fuso `America/Sao_Paulo` ("O convite vale até
+  06/11/2026."). Os nomes no HTML são escapados, porque vêm de entrada do usuário. Os botões são
+  "Aceitar" e "Recusar"; o texto puro traz os dois links. `roleLabel` monta "responsável e
+  professor", "professor" ou "membro". Uma barra no fim do `WEB_APP_URL` é descartada.
+- **`MailService.sendUnitInvitation`** recebe o tipo `UnitInvitationTemplateInput & { to }`, com
+  os campos da spec.
+- **Convidado inativo nas rotas `:id`** também dá `404`, como no `by-token`.
+- **`.env.example`**: `UNIT_INVITE_TTL_DAYS` ganhou o comentário "Validade do convite para uma
+  unidade, em dias." no lugar do "Ainda não lido".
+- **O roteiro da Verificação foi rodado em `bash`** a partir de um script: no zsh desta máquina,
+  algumas substituições `$(…)` falharam com "failed to change group ID". Além do roteiro: plano
+  vencido também em editar, remover e cancelar, convite vencido (`410` e `EXPIRED` sem gravar),
+  cancelamento por responsável e o `sign-up` de usuário criado pelo convite.
+- **Falha real de envio não foi exercitada**: nenhum teste envia e-mail. O `503` com o convite
+  mantido está coberto pelo teste unitário com o `MailService` substituído.

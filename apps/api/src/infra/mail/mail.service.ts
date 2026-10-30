@@ -7,6 +7,10 @@ import { Env } from '@config/env.schema'
 import { MAIL_TRANSPORT, type MailTransport } from './mail.transport'
 import { MailMessage } from './mail.types'
 import { otpCodeTemplate } from './templates/otp-code.template'
+import {
+  unitInvitationTemplate,
+  type UnitInvitationTemplateInput,
+} from './templates/unit-invitation.template'
 
 @Injectable()
 export class MailService implements OnModuleInit {
@@ -53,6 +57,12 @@ export class MailService implements OnModuleInit {
   }): Promise<void> {
     const { to, ...template } = input
     return this.send({ to, ...otpCodeTemplate(template) })
+  }
+
+  /** Os links levam o token do convite: como o corpo, nunca vão para o log. */
+  sendUnitInvitation(input: UnitInvitationTemplateInput & { to: string }): Promise<void> {
+    const { to, ...template } = input
+    return this.send({ to, ...unitInvitationTemplate(template) })
   }
 }
 

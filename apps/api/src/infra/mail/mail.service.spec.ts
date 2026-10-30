@@ -50,6 +50,24 @@ describe('MailService', () => {
       )
       expect(logged(log, warn, error)).not.toContain('482913')
     })
+
+    it('não registra o token do convite', async () => {
+      await service.sendUnitInvitation({
+        to: 'nova@ifce.edu.br',
+        inviterName: 'Admin',
+        unitName: 'Sede',
+        organizationName: 'Acme',
+        isManager: false,
+        isTeacher: true,
+        acceptUrl: 'http://web/invitations/token-secreto?action=accept',
+        rejectUrl: 'http://web/invitations/token-secreto?action=reject',
+        expiresAt: new Date(),
+      })
+      expect(log).toHaveBeenCalledWith(
+        '[mail desligado] para=nova@ifce.edu.br assunto="Convite para a unidade Sede no schdlr"',
+      )
+      expect(logged(log, warn, error)).not.toContain('token-secreto')
+    })
   })
 
   describe('com MAIL_ENABLED=true', () => {

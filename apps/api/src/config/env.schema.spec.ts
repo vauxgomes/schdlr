@@ -5,6 +5,7 @@ const base = {
   CORS_ORIGIN: 'http://localhost:3000',
   JWT_SECRET: 'x'.repeat(32),
   MAIL_FROM: 'noreply@schdlr.test',
+  WEB_APP_URL: 'http://localhost:3000',
 }
 
 function failingPaths(env: Record<string, string>) {
@@ -38,5 +39,18 @@ describe('envSchema — e-mail', () => {
       MAIL_PASS: 'abcd efgh ijkl mnop',
     })
     expect(env.MAIL_PASS).toBe('abcd efgh ijkl mnop')
+  })
+})
+
+describe('envSchema — convites', () => {
+  it('UNIT_INVITE_TTL_DAYS vale 7 se ausente e vira número', () => {
+    expect(envSchema.parse(base).UNIT_INVITE_TTL_DAYS).toBe(7)
+    expect(envSchema.parse({ ...base, UNIT_INVITE_TTL_DAYS: '3' }).UNIT_INVITE_TTL_DAYS).toBe(3)
+    expect(failingPaths({ ...base, UNIT_INVITE_TTL_DAYS: '0' })).toEqual(['UNIT_INVITE_TTL_DAYS'])
+  })
+
+  it('WEB_APP_URL é obrigatória e é URL', () => {
+    expect(failingPaths({ ...base, WEB_APP_URL: '' })).toEqual(['WEB_APP_URL'])
+    expect(failingPaths({ ...base, WEB_APP_URL: 'localhost' })).toEqual(['WEB_APP_URL'])
   })
 })

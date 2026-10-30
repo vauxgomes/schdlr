@@ -41,6 +41,14 @@ export const ERRORS = {
   SUBSCRIPTION_REQUIRED: { status: HttpStatus.FORBIDDEN, message: 'Subscription required' },
   PLAN_LIMIT_REACHED: { status: HttpStatus.FORBIDDEN, message: 'Plan limit reached' },
   SLUG_ALREADY_IN_USE: { status: HttpStatus.CONFLICT, message: 'Slug already in use' },
+
+  // Membros e convites (0010)
+  MEMBER_NOT_FOUND: { status: HttpStatus.NOT_FOUND, message: 'Member not found' },
+  USER_INACTIVE: { status: HttpStatus.CONFLICT, message: 'User is inactive' },
+  ALREADY_A_MEMBER: { status: HttpStatus.CONFLICT, message: 'Already a member' },
+  INVITATION_NOT_FOUND: { status: HttpStatus.NOT_FOUND, message: 'Invitation not found' },
+  INVITATION_EXPIRED: { status: HttpStatus.GONE, message: 'Invitation expired' },
+  INVITATION_NOT_PENDING: { status: HttpStatus.CONFLICT, message: 'Invitation is not pending' },
 } as const satisfies Record<string, { status: HttpStatus; message: string }>
 
 export type ErrorCode = keyof typeof ERRORS

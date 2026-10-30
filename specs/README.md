@@ -82,6 +82,10 @@ decisão; em caso de dúvida, vale a spec (e o Registro dela), não este resumo.
 - Contar contra o limite do plano e criar numa transação, com a linha-pai travada (`FOR UPDATE`);
   `P2002` no create vira o `409` do slug (`isUniqueViolation` em `@infra/database/prisma-errors`).
   `slugSchema` em `tenancy/schemas/`, `addressSchema` em `organizations/schemas/` (0009)
+- Membros (`modules/members/`) e convites (`modules/invitations/`) da unidade: só o dono cria,
+  promove ou remove responsável; o responsável cuida do resto. `EXPIRED` do convite é calculado na
+  leitura. Token opaco (convite, refresh) por `generateOpaqueToken`/`hashOpaqueToken` de
+  `@common/crypto/opaque-token`: no banco, só o SHA-256 (0010)
 - Um módulo por entidade, cada um na sua pasta e com os próprios schemas, mesmo quando os campos
   coincidem (organização e unidade: `modules/organizations/` e `modules/units/`). Para agrupar,
   pasta de módulos (nota da 0009)
@@ -112,4 +116,4 @@ decisão; em caso de dúvida, vale a spec (e o Registro dela), não este resumo.
 | 0007 | [Perfil do usuário](0007-api-perfil-do-usuario.md)                               | ✅ done | 0004, 0006                   |
 | 0008 | [Códigos de erro](0008-api-codigos-de-erro.md)                                   | ✅ done | 0001, 0004, 0006, 0007       |
 | 0009 | [Organização e unidade](0009-api-organizacao-e-unidade.md)                       | ✅ done | 0002, 0004, 0005, 0006, 0008 |
-| 0010 | [Membros e convites](0010-api-membros-e-convites.md)                             | ⬜ todo | 0003, 0004, 0008, 0009       |
+| 0010 | [Membros e convites](0010-api-membros-e-convites.md)                             | ✅ done | 0003, 0004, 0008, 0009       |

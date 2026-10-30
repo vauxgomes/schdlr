@@ -18,6 +18,9 @@ export const envSchema = z
       .regex(/^\d+(ms|s|m|h|d|w|y)?$/, 'Use um número seguido de ms, s, m, h, d, w ou y')
       .default('15m'),
     REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(7),
+    UNIT_INVITE_TTL_DAYS: z.coerce.number().int().positive().default(7),
+    // Base dos links enviados por e-mail.
+    WEB_APP_URL: z.url(),
     // `stringbool`, não `coerce.boolean`: o coerce lê a string "false" como true.
     MAIL_ENABLED: z.stringbool().default(false),
     MAIL_FROM: z.string().min(1),

@@ -1,8 +1,7 @@
-import { createHash, randomBytes } from 'node:crypto'
-
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 
+import { generateOpaqueToken, hashOpaqueToken } from '@common/crypto/opaque-token'
 import { Env } from '@config/env.schema'
 import { DatabaseService } from '@infra/database/database.service'
 
@@ -21,10 +20,10 @@ export class SessionService {
   }
 
   async create(userId: string): Promise<IssuedSession> {
-    const refreshToken = randomBytes(32).toString('base64url')
+    const refreshToken = generateOpaqueToken()
     const expiresAt = new Date(Date.now() + this.ttlDays * 24 * 60 * 60 * 1000)
     await this.database.refreshToken.create({
-      data: { userId, tokenHash: hashToken(refreshToken), expiresAt },
+      data: { userId, tokenHash: hashOpaqueToken(refreshToken), expiresAt },
     })
     return { refreshToken, expiresAt }
   }
@@ -35,7 +34,7 @@ export class SessionService {
    */
   async rotate(refreshToken: string): Promise<(IssuedSession & { userId: string }) | null> {
     const stored = await this.database.refreshToken.findUnique({
-      where: { tokenHash: hashToken(refreshToken) },
+      where: { tokenHash: hashOpaqueToken(refreshToken) },
       include: { user: { select: { isActive: true } } },
     })
     if (!stored) return null
@@ -61,7 +60,7 @@ export class SessionService {
 
   async revoke(refreshToken: string): Promise<void> {
     await this.database.refreshToken.updateMany({
-      where: { tokenHash: hashToken(refreshToken), revokedAt: null },
+      where: { tokenHash: hashOpaqueToken(refreshToken), revokedAt: null },
       data: { revokedAt: new Date() },
     })
   }
@@ -72,8 +71,4 @@ export class SessionService {
       data: { revokedAt: new Date() },
     })
   }
-}
-
-function hashToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex')
 }

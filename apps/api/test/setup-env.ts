@@ -8,4 +8,5 @@ Object.assign(process.env, {
   JWT_EXPIRES_IN: '15m',
   MAIL_ENABLED: 'false',
   MAIL_FROM: 'noreply@schdlr.test',
+  WEB_APP_URL: 'http://localhost:3000',
 })
