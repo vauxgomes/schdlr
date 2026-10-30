@@ -6,6 +6,7 @@ import { App } from 'supertest/types'
 import { DatabaseService } from '@infra/database/database.service'
 
 import { AppModule } from '../src/app.module'
+import { configureApp } from '../src/app.setup'
 
 describe('GET /api/health', () => {
   let app: INestApplication<App>
@@ -18,7 +19,7 @@ describe('GET /api/health', () => {
       .compile()
 
     app = moduleRef.createNestApplication()
-    app.setGlobalPrefix('api')
+    configureApp(app)
     await app.init()
   })
 

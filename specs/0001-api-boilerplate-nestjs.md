@@ -312,3 +312,12 @@ Desvios:
   spec são do `auth`.
 - **CI pendente.** Não houve push (regra do projeto). Falta conferir no Actions que `test (api)`
   roda install e `test:all` sem o `notice` e fica verde. O workflow não precisou mudar.
+
+## Notas posteriores
+
+**2026-10-30 — spec 0004.** O que o `main.ts` configurava (prefixo `api`, CORS, shutdown hooks)
+mudou para `configureApp(app)` em `src/app.setup.ts`, que também registra o `cookieParser()`. O
+`main.ts` e os e2e chamam essa função: o e2e não aplica mais o `setGlobalPrefix` à mão, como o
+Registro acima descreve. O teste do `JwtAuthGuard` deixou de importar o `AuthModule` inteiro (que
+agora tem rotas dependentes de banco e de e-mail) e monta só `PassportModule`, `JwtModule` e a
+`JwtStrategy`. O `lint` passou a cobrir também `scripts/`.

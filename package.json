@@ -16,6 +16,7 @@
     "db:reset": "pnpm --filter @schdlr/api db:reset",
     "db:seed": "pnpm --filter @schdlr/api db:seed",
     "db:studio": "pnpm --filter @schdlr/api db:studio",
+    "otp": "pnpm --filter @schdlr/api otp",
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\""
   },
   "devDependencies": {

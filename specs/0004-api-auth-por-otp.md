@@ -1,7 +1,7 @@
 ---
 id: 0004
 title: Auth por OTP
-status: todo
+status: done
 depends_on: [0001, 0002, 0003]
 ---
 
@@ -184,28 +184,28 @@ formato do usuário autenticado e as constantes do OTP). Deve ser executada sozi
 
 ## Critérios de aceite
 
-- [ ] As seis rotas respondem com os status e corpos da seção "Fluxos" e "Sessão"
-- [ ] Corpo inválido em qualquer rota dá o `400` da 0001, com `path` e `message`
-- [ ] `sign-up` com e-mail novo cria o usuário sem `Subscription` e envia um código `SIGN_UP`
-- [ ] `sign-up` com e-mail verificado dá `409`; não verificado reenvia, com `429` dentro de 60 s
-- [ ] `code` responde `202` para e-mail inexistente sem enviar nada
-- [ ] O código gravado é HMAC-SHA256 e nunca o valor em claro
-- [ ] Só o código mais recente vale; o quinto erro mata o código; código vencido dá `401`
-- [ ] `sign-in` com código `SIGN_UP` preenche `emailVerifiedAt`
-- [ ] O cookie `schdlr_refresh` sai com `HttpOnly`, `SameSite=Lax`, `Path=/api/auth` e, só em
+- [x] As seis rotas respondem com os status e corpos da seção "Fluxos" e "Sessão"
+- [x] Corpo inválido em qualquer rota dá o `400` da 0001, com `path` e `message`
+- [x] `sign-up` com e-mail novo cria o usuário sem `Subscription` e envia um código `SIGN_UP`
+- [x] `sign-up` com e-mail verificado dá `409`; não verificado reenvia, com `429` dentro de 60 s
+- [x] `code` responde `202` para e-mail inexistente sem enviar nada
+- [x] O código gravado é HMAC-SHA256 e nunca o valor em claro
+- [x] Só o código mais recente vale; o quinto erro mata o código; código vencido dá `401`
+- [x] `sign-in` com código `SIGN_UP` preenche `emailVerifiedAt`
+- [x] O cookie `schdlr_refresh` sai com `HttpOnly`, `SameSite=Lax`, `Path=/api/auth` e, só em
       produção, `Secure`
-- [ ] `refresh` gira o token; reusar o token antigo dá `401` e revoga todas as sessões do
+- [x] `refresh` gira o token; reusar o token antigo dá `401` e revoga todas as sessões do
       usuário
-- [ ] `logout` responde `204` com e sem cookie, e o refresh revogado deixa de funcionar
-- [ ] `GET /api/auth/me` sem token dá `401`; com token devolve o formato do usuário
-- [ ] `pnpm otp <email>` imprime um código que funciona no `sign-in`; `pnpm otp` sem argumento
+- [x] `logout` responde `204` com e sem cookie, e o refresh revogado deixa de funcionar
+- [x] `GET /api/auth/me` sem token dá `401`; com token devolve o formato do usuário
+- [x] `pnpm otp <email>` imprime um código que funciona no `sign-in`; `pnpm otp` sem argumento
       pega o código utilizável mais recente; com `NODE_ENV=production`, sai `1`
-- [ ] `main.ts` e e2e usam `configureApp`; nenhum e2e chama `setGlobalPrefix` à mão
-- [ ] Notas datadas acrescentadas na 0000 (script `otp` na raiz) e na 0001 (`configureApp`)
-- [ ] Testes unitários de `OtpService` e `SessionService` com o `DatabaseService` substituído; e2e
+- [x] `main.ts` e e2e usam `configureApp`; nenhum e2e chama `setGlobalPrefix` à mão
+- [x] Notas datadas acrescentadas na 0000 (script `otp` na raiz) e na 0001 (`configureApp`)
+- [x] Testes unitários de `OtpService` e `SessionService` com o `DatabaseService` substituído; e2e
       das rotas com os services substituídos, cobrindo status, corpo e atributos do cookie
-- [ ] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
-- [ ] Nenhum `process.env` fora de `src/config/`, `prisma.config.ts` e `prisma/seed.ts`
+- [x] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
+- [x] Nenhum `process.env` fora de `src/config/`, `prisma.config.ts` e `prisma/seed.ts`
 
 ## Verificação
 
@@ -249,4 +249,46 @@ ficou.
 
 ## Registro
 
-_(vazio)_
+**2026-10-30** — executada com `/spec 0004`, na branch `development`.
+
+Commits: `feat(api): auth por OTP (spec 0004)` — implementação, notas na 0000 e na 0001,
+Registro e status no mesmo commit.
+
+Verificação: `pnpm install --frozen-lockfile` ok; sem `.env`, `pnpm test:api` passa (58
+unitários, 13 e2e) e `pnpm build:api` gera `dist/main.js`; lint limpo; `pnpm format` estável; os
+greps de `process.env` e `../../` saem vazios. Contra o banco de dev, com `MAIL_ENABLED=false`:
+`sign-up` com `Ana@IFCE.edu.br` → `202` e o log `[mail desligado] … assunto="Confirme seu cadastro
+no schdlr"`; repetir dentro de 60 s → `429`; `sign-up` de `admin@schdlr.dev` (verificado) → `409`;
+`pnpm otp ana@ifce.edu.br` imprimiu um código `SIGN_UP`; código errado → `401`; código certo →
+`200` com `{ accessToken, user }` e cookie `schdlr_refresh` `HttpOnly` em `/api/auth`; `me` sem
+token `401`, com token `200`; `refresh` → `200`; reusar o cookie antigo → `401`, e o novo também
+deixou de valer; `logout` sem cookie → `204`; `code` para e-mail inexistente → `202`. No banco,
+`email_verified_at` preenchido, nenhuma assinatura, `code_hash` com 64 caracteres hexadecimais.
+Depois: `pnpm otp` sem argumento achou o código em aberto da Ana; cinco erros seguidos mataram o
+código (o certo deu `401` depois); um código emitido antes de outro deixou de valer;
+`NODE_ENV=production pnpm otp` saiu `1`. O usuário de teste foi apagado no fim (cascade levou
+códigos e refresh tokens); o banco voltou aos 5 usuários da seed da 0005.
+
+Desvios:
+
+- **O script com `NODE_ENV=production` conecta ao banco, mas não consulta.** O `NODE_ENV` é lido
+  pelo `ConfigService`, e o contexto Nest abre a conexão do `DatabaseService` no `init`, antes da
+  checagem. Nenhuma linha é lida ou gravada. Checar antes exigiria ler `process.env` no script.
+- **Corpos de erro sem o campo `error`.** As exceções recebem o objeto `{ statusCode, message }`
+  para que o corpo seja exatamente o da spec (o padrão do Nest acrescenta `error: "Conflict"`).
+  O `401` do guard e do `refresh` continua o padrão do Nest
+  (`{ message: "Unauthorized", statusCode: 401 }`). O `429` diz `"Wait before requesting a new
+code"`, texto que a spec não fixava.
+- **Refresh e consumo de código são à prova de corrida:** `updateMany` com `revokedAt: null` ou
+  `consumedAt: null` no filtro. Dois `refresh` simultâneos com o mesmo token contam como reuso.
+- **`requestCode` com falha de e-mail dá `503`**, como a spec manda. Isso revela que o e-mail
+  existe só quando o envio falha.
+- **`clearCookie` recebe as mesmas opções do cookie, com `maxAge`.** O Express 5 (o do Nest 11)
+  ignora `maxAge` ao apagar; `path` e os demais atributos precisam bater.
+- **Arquivos além dos listados:** `auth-user.ts` (`AuthUser` e `toAuthUser`, o formato que as
+  próximas specs reaproveitam), `auth.constants.spec.ts` e `auth.service.spec.ts`. As opções do
+  cookie saem de `refreshCookieOptions(isProduction, ttlDays)`, testada nos dois ambientes; o
+  `Secure` em produção não é exercitado pelo e2e, que roda em `NODE_ENV=test`.
+- **O teste do `JwtAuthGuard` da 0001 foi ajustado** (nota datada na 0001).
+- **`.env.example`:** `REFRESH_TOKEN_TTL_DAYS` ganhou um comentário próprio e saiu do bloco
+  "Ainda não lido"; `UNIT_INVITE_TTL_DAYS` e `WEB_APP_URL` continuam marcados.

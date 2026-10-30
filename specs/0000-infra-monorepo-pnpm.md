@@ -191,3 +191,9 @@ Desvios:
 - Notas de "qual spec descomenta" no compose citam "a spec que criar o Dockerfile da API/web",
   sem id: essa spec ainda não existe no índice.
 - Docker Desktop estava parado; foi aberto (`open -a Docker`) para a verificação.
+
+## Notas posteriores
+
+**2026-10-30 — spec 0004.** A raiz ganhou um 11º script, `"otp": "pnpm --filter @schdlr/api
+otp"`, que emite um código OTP para o ambiente local. Os 10 scripts que esta spec fixou
+"exatamente" continuam iguais.

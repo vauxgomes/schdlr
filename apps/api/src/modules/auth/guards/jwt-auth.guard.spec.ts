@@ -1,15 +1,16 @@
 import { Controller, Get, INestApplication } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { APP_GUARD } from '@nestjs/core'
-import { JwtService } from '@nestjs/jwt'
+import { JwtModule, JwtService } from '@nestjs/jwt'
+import { PassportModule } from '@nestjs/passport'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import { App } from 'supertest/types'
 
-import { AuthModule } from '../auth.module'
 import { CurrentUser } from '../decorators/current-user.decorator'
 import { Public } from '../decorators/public.decorator'
 import type { JwtPayload } from '../jwt-payload'
+import { JwtStrategy } from '../strategies/jwt.strategy'
 import { JwtAuthGuard } from './jwt-auth.guard'
 
 @Controller()
@@ -36,9 +37,10 @@ describe('JwtAuthGuard', () => {
       JWT_EXPIRES_IN: '15m',
     }
     const moduleRef = await Test.createTestingModule({
-      imports: [AuthModule],
+      // Só a infra de JWT: o AuthModule inteiro traz rotas que dependem de banco e de e-mail.
+      imports: [PassportModule, JwtModule.register({ secret: env.JWT_SECRET })],
       controllers: [TestController],
-      providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],
+      providers: [JwtStrategy, { provide: APP_GUARD, useClass: JwtAuthGuard }],
     })
       .useMocker((token) => {
         if (token === ConfigService) return { get: (key: string) => env[key] }
