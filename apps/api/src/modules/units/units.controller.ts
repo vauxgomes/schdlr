@@ -5,11 +5,11 @@ import { CurrentUser } from '@modules/auth/decorators/current-user.decorator'
 import type { JwtPayload } from '@modules/auth/jwt-payload'
 
 import {
-  createTenantSchema,
-  updateTenantSchema,
-  type CreateTenantInput,
-  type UpdateTenantInput,
-} from './schemas/organization.schemas'
+  createUnitSchema,
+  updateUnitSchema,
+  type CreateUnitInput,
+  type UpdateUnitInput,
+} from './schemas/unit.schemas'
 import { UnitsService } from './units.service'
 
 // Os slugs do caminho são validados pelo TenantAccessService: fora do formato dá 404, não 400.
@@ -20,7 +20,7 @@ export class UnitsController {
   @Post()
   create(
     @Param('orgSlug') orgSlug: string,
-    @Body(new ZodValidationPipe(createTenantSchema)) body: CreateTenantInput,
+    @Body(new ZodValidationPipe(createUnitSchema)) body: CreateUnitInput,
     @CurrentUser() user: JwtPayload,
   ) {
     return this.units.create(user.sub, orgSlug, body)
@@ -44,7 +44,7 @@ export class UnitsController {
   update(
     @Param('orgSlug') orgSlug: string,
     @Param('unitSlug') unitSlug: string,
-    @Body(new ZodValidationPipe(updateTenantSchema)) body: UpdateTenantInput,
+    @Body(new ZodValidationPipe(updateUnitSchema)) body: UpdateUnitInput,
     @CurrentUser() user: JwtPayload,
   ) {
     return this.units.update(user.sub, orgSlug, unitSlug, body)

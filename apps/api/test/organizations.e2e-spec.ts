@@ -7,7 +7,7 @@ import { App } from 'supertest/types'
 import { AppException } from '@common/errors/app.exception'
 import { DatabaseService } from '@infra/database/database.service'
 import { OrganizationsService } from '@modules/organizations/organizations.service'
-import { UnitsService } from '@modules/organizations/units.service'
+import { UnitsService } from '@modules/units/units.service'
 
 import { AppModule } from '../src/app.module'
 import { configureApp } from '../src/app.setup'

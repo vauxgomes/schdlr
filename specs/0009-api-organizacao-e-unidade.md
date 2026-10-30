@@ -398,3 +398,23 @@ Desvios:
   criação.
 - Testes além dos pedidos: os schemas e um e2e com os services reais e o banco substituído, para o
   `404` de slug inválido no caminho.
+
+## Notas posteriores
+
+**2026-10-30 — a pedido do usuário, depois do commit da 0009.** O que a seção "Código" e o
+"Escopo" puseram em `src/modules/organizations/` foi dividido em três módulos:
+
+- **`src/modules/tenancy/`** (`TenancyModule`): o `TenantAccessService`, exportado, e o
+  `slugSchema` (`tenancy/schemas/tenancy.schemas.ts`). Quem precisa do acesso importa o
+  `TenancyModule`, não o `OrganizationsModule`, que não exporta mais nada
+- **`src/modules/units/`** (`UnitsModule`, que importa o `TenancyModule` e o
+  `SubscriptionsModule`): controller, service e schemas próprios
+  (`createUnitSchema`, `updateUnitSchema`, `isUnitReactivation`)
+- **`src/modules/organizations/`**: controller, service, `createOrganizationSchema`,
+  `updateOrganizationSchema`, `isOrganizationReactivation` e o `addressSchema`, que a unidade
+  importa
+
+Isso desfaz o desvio "Organização e unidade compartilham os schemas" do Registro: a preferência é
+um schema por entidade e um módulo por pasta; agrupar, só com pasta de módulos. O
+`isUniqueViolation` foi para `src/infra/database/prisma-errors.ts`. Rotas, respostas, regras e o
+contrato do `TenantAccessService` não mudaram; só o endereço.

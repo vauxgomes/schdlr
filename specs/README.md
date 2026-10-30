@@ -72,7 +72,7 @@ decisão; em caso de dúvida, vale a spec (e o Registro dela), não este resumo.
 - Regras que o schema não expressa e que cada endpoint de escrita tem de validar: tabela "Regras
   que ficam com a aplicação" da 0002
 - Dado de unidade mora sob `/api/organizations/:orgSlug/units/:unitSlug`. O `TenantAccessService`
-  (exportado pelo `OrganizationsModule`) resolve o acesso: `resolveOrganization`/`resolveUnit`
+  (exportado pelo `TenancyModule`, em `modules/tenancy/`) resolve o acesso: `resolveOrganization`/`resolveUnit`
   dão `404` a quem não enxerga (e a slug fora do formato), sem checar papel; quem chama decide e
   lança `AppException('NOT_ALLOWED')`. Toda escrita chama `assertWritable(access)`: organização
   inativa → `409`, unidade inativa → `409`, plano do dono ausente ou vencido → `PLAN_EXPIRED`.
@@ -80,8 +80,11 @@ decisão; em caso de dúvida, vale a spec (e o Registro dela), não este resumo.
 - Enxerga a organização o dono ou membro de unidade ativa dela; desativada, só o dono. O papel é
   lido do banco a cada requisição (0009)
 - Contar contra o limite do plano e criar numa transação, com a linha-pai travada (`FOR UPDATE`);
-  `P2002` no create vira o `409` do slug. `slugSchema` e `addressSchema` em
-  `organizations/schemas/` (0009)
+  `P2002` no create vira o `409` do slug (`isUniqueViolation` em `@infra/database/prisma-errors`).
+  `slugSchema` em `tenancy/schemas/`, `addressSchema` em `organizations/schemas/` (0009)
+- Um módulo por entidade, cada um na sua pasta e com os próprios schemas, mesmo quando os campos
+  coincidem (organização e unidade: `modules/organizations/` e `modules/units/`). Para agrupar,
+  pasta de módulos (nota da 0009)
 
 **Testes e verificação**
 

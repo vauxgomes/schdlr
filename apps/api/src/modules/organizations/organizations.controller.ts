@@ -6,10 +6,10 @@ import type { JwtPayload } from '@modules/auth/jwt-payload'
 
 import { OrganizationsService } from './organizations.service'
 import {
-  createTenantSchema,
-  updateTenantSchema,
-  type CreateTenantInput,
-  type UpdateTenantInput,
+  createOrganizationSchema,
+  updateOrganizationSchema,
+  type CreateOrganizationInput,
+  type UpdateOrganizationInput,
 } from './schemas/organization.schemas'
 
 // O :orgSlug é validado pelo TenantAccessService: fora do formato dá 404, não 400.
@@ -19,7 +19,7 @@ export class OrganizationsController {
 
   @Post()
   create(
-    @Body(new ZodValidationPipe(createTenantSchema)) body: CreateTenantInput,
+    @Body(new ZodValidationPipe(createOrganizationSchema)) body: CreateOrganizationInput,
     @CurrentUser() user: JwtPayload,
   ) {
     return this.organizations.create(user.sub, body)
@@ -38,7 +38,7 @@ export class OrganizationsController {
   @Patch(':orgSlug')
   update(
     @Param('orgSlug') orgSlug: string,
-    @Body(new ZodValidationPipe(updateTenantSchema)) body: UpdateTenantInput,
+    @Body(new ZodValidationPipe(updateOrganizationSchema)) body: UpdateOrganizationInput,
     @CurrentUser() user: JwtPayload,
   ) {
     return this.organizations.update(user.sub, orgSlug, body)

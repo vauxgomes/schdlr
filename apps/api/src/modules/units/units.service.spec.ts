@@ -1,8 +1,8 @@
 import { AppException } from '@common/errors/app.exception'
 import { DatabaseService } from '@infra/database/database.service'
 import { SubscriptionsService } from '@modules/subscriptions/subscriptions.service'
+import { TenantAccessService } from '@modules/tenancy/tenant-access.service'
 
-import { TenantAccessService } from './tenant-access.service'
 import { UnitsService } from './units.service'
 
 const organization = { id: 'org-1', name: 'Acme', slug: 'acme', ownerId: 'owner', isActive: true }

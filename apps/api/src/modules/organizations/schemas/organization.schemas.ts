@@ -1,32 +1,23 @@
 import { z } from 'zod'
 
 import { nameSchema } from '@modules/auth/schemas/auth.schemas'
+import { slugSchema } from '@modules/tenancy/schemas/tenancy.schemas'
 
-// Formato da 0002. Também valida os :orgSlug/:unitSlug do caminho (TenantAccessService).
-export const slugSchema = z
-  .string()
-  .trim()
-  .toLowerCase()
-  .min(2)
-  .max(60)
-  .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/)
-
-// Vazio vira null: é assim que se apaga o endereço.
+// Vazio vira null: é assim que se apaga o endereço. A unidade usa o mesmo.
 export const addressSchema = z
   .string()
   .trim()
   .max(300)
   .transform((value) => value || null)
 
-// Organização e unidade têm os mesmos campos.
-export const createTenantSchema = z.object({
+export const createOrganizationSchema = z.object({
   name: nameSchema,
   slug: slugSchema,
   address: addressSchema.optional(),
 })
 
 // O slug não muda (as URLs ficam estáveis); chaves extras são descartadas pelo z.object.
-export const updateTenantSchema = z
+export const updateOrganizationSchema = z
   .object({
     name: nameSchema.optional(),
     address: addressSchema.optional(),
@@ -37,9 +28,9 @@ export const updateTenantSchema = z
     params: { code: 'EMPTY_UPDATE' },
   })
 
-export type CreateTenantInput = z.infer<typeof createTenantSchema>
-export type UpdateTenantInput = z.infer<typeof updateTenantSchema>
+export type CreateOrganizationInput = z.infer<typeof createOrganizationSchema>
+export type UpdateOrganizationInput = z.infer<typeof updateOrganizationSchema>
 
-/** PATCH só com `isActive: true`: reativa, sem o 409 da própria entidade. */
-export const isReactivation = (body: UpdateTenantInput) =>
+/** PATCH só com `isActive: true`: reativa, sem o 409 de organização inativa. */
+export const isOrganizationReactivation = (body: UpdateOrganizationInput) =>
   body.isActive === true && body.name === undefined && body.address === undefined

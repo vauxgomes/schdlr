@@ -3,15 +3,16 @@ import { Organization, PlanType, Prisma } from '@prisma/client'
 
 import { AppException } from '@common/errors/app.exception'
 import { DatabaseService } from '@infra/database/database.service'
+import { isUniqueViolation } from '@infra/database/prisma-errors'
 import { PlanExpiredException } from '@modules/subscriptions/plan-expired.exception'
 import { toActivePlan } from '@modules/subscriptions/subscriptions.service'
+import { TenantAccessService } from '@modules/tenancy/tenant-access.service'
 
 import {
-  CreateTenantInput,
-  isReactivation,
-  UpdateTenantInput,
+  CreateOrganizationInput,
+  isOrganizationReactivation,
+  UpdateOrganizationInput,
 } from './schemas/organization.schemas'
-import { TenantAccessService } from './tenant-access.service'
 
 export type OrganizationView = Omit<Organization, 'ownerId'> & {
   owner: { id: string; email: string; name: string }
@@ -23,10 +24,6 @@ const withOwner = {
 } satisfies Prisma.OrganizationInclude
 
 type OrganizationWithOwner = Prisma.OrganizationGetPayload<{ include: typeof withOwner }>
-
-/** Slug repetido em corrida: o unique do banco barra o segundo create. */
-export const isUniqueViolation = (error: unknown) =>
-  error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002'
 
 @Injectable()
 export class OrganizationsService {
@@ -61,7 +58,7 @@ export class OrganizationsService {
    */
   async create(
     userId: string,
-    { name, slug, address }: CreateTenantInput,
+    { name, slug, address }: CreateOrganizationInput,
   ): Promise<OrganizationView> {
     try {
       const created = await this.database.$transaction(async (tx) => {
@@ -102,11 +99,11 @@ export class OrganizationsService {
   async update(
     userId: string,
     orgSlug: string,
-    body: UpdateTenantInput,
+    body: UpdateOrganizationInput,
   ): Promise<OrganizationView> {
     const access = await this.tenants.resolveOrganization(userId, orgSlug)
     if (!access.isOwner) throw new AppException('NOT_ALLOWED')
-    await this.tenants.assertWritable(access, { reactivating: isReactivation(body) })
+    await this.tenants.assertWritable(access, { reactivating: isOrganizationReactivation(body) })
 
     const updated = await this.database.organization.update({
       where: { id: access.organization.id },

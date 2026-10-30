@@ -12,6 +12,7 @@ import { HealthModule } from '@modules/health/health.module'
 import { OrganizationsModule } from '@modules/organizations/organizations.module'
 import { ProfileModule } from '@modules/profile/profile.module'
 import { SubscriptionsModule } from '@modules/subscriptions/subscriptions.module'
+import { UnitsModule } from '@modules/units/units.module'
 import { UsersModule } from '@modules/users/users.module'
 
 @Module({
@@ -29,6 +30,7 @@ import { UsersModule } from '@modules/users/users.module'
     UsersModule,
     ProfileModule,
     OrganizationsModule,
+    UnitsModule,
   ],
   // A ordem importa: o SystemRoleGuard lê o usuário que o JwtAuthGuard pôs na requisição.
   providers: [

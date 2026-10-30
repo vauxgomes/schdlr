@@ -6,7 +6,7 @@ import { DatabaseService } from '@infra/database/database.service'
 import { PlanExpiredException } from '@modules/subscriptions/plan-expired.exception'
 import { SubscriptionsService } from '@modules/subscriptions/subscriptions.service'
 
-import { slugSchema } from './schemas/organization.schemas'
+import { slugSchema } from './schemas/tenancy.schemas'
 
 export type OrganizationAccess = {
   organization: Organization

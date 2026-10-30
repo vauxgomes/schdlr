@@ -3,9 +3,9 @@ import { Prisma } from '@prisma/client'
 import { AppException } from '@common/errors/app.exception'
 import { DatabaseService } from '@infra/database/database.service'
 import { PlanExpiredException } from '@modules/subscriptions/plan-expired.exception'
+import { TenantAccessService } from '@modules/tenancy/tenant-access.service'
 
 import { OrganizationsService } from './organizations.service'
-import { TenantAccessService } from './tenant-access.service'
 
 const owner = { id: 'user-1', email: 'admin@schdlr.dev', name: 'Admin' }
 const stored = (overrides: Record<string, unknown> = {}) => ({

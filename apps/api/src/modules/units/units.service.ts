@@ -3,15 +3,11 @@ import { Organization, Unit } from '@prisma/client'
 
 import { AppException } from '@common/errors/app.exception'
 import { DatabaseService } from '@infra/database/database.service'
+import { isUniqueViolation } from '@infra/database/prisma-errors'
 import { SubscriptionsService } from '@modules/subscriptions/subscriptions.service'
+import { TenantAccessService } from '@modules/tenancy/tenant-access.service'
 
-import { isUniqueViolation } from './organizations.service'
-import {
-  CreateTenantInput,
-  isReactivation,
-  UpdateTenantInput,
-} from './schemas/organization.schemas'
-import { TenantAccessService } from './tenant-access.service'
+import { CreateUnitInput, isUnitReactivation, UpdateUnitInput } from './schemas/unit.schemas'
 
 export type UnitView = Omit<Unit, 'organizationId'> & {
   organization: { name: string; slug: string }
@@ -58,7 +54,7 @@ export class UnitsService {
   async create(
     userId: string,
     orgSlug: string,
-    { name, slug, address }: CreateTenantInput,
+    { name, slug, address }: CreateUnitInput,
   ): Promise<UnitView> {
     const access = await this.tenants.resolveOrganization(userId, orgSlug)
     if (!access.isOwner) throw new AppException('NOT_ALLOWED')
@@ -100,12 +96,12 @@ export class UnitsService {
     userId: string,
     orgSlug: string,
     unitSlug: string,
-    body: UpdateTenantInput,
+    body: UpdateUnitInput,
   ): Promise<UnitView> {
     const access = await this.tenants.resolveUnit(userId, orgSlug, unitSlug)
     const allowed = access.isOwner || (access.isManager && body.isActive === undefined)
     if (!allowed) throw new AppException('NOT_ALLOWED')
-    await this.tenants.assertWritable(access, { reactivating: isReactivation(body) })
+    await this.tenants.assertWritable(access, { reactivating: isUnitReactivation(body) })
 
     const unit = await this.database.unit.update({ where: { id: access.unit.id }, data: body })
     return toView(unit, access.organization, access.isOwner, access.membership)
