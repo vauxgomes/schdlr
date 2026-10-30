@@ -1,7 +1,7 @@
 ---
 id: 0006
 title: Assinaturas e papel de suporte
-status: todo
+status: done
 depends_on: [0002, 0004, 0005]
 ---
 
@@ -205,26 +205,26 @@ the master" }`. Responde `200` com o formato `AuthUser` da 0004
 
 ## Critérios de aceite
 
-- [ ] `plans.ts` tem os quatro planos com os limites e durações da seção "Planos"
-- [ ] `addMonths` cobre o fim de mês (31/01 → 28 ou 29/02) e a virada de ano
-- [ ] `getActivePlan` devolve `null` sem assinatura, `ACTIVE` dentro da validade, `EXPIRED`
+- [x] `plans.ts` tem os quatro planos com os limites e durações da seção "Planos"
+- [x] `addMonths` cobre o fim de mês (31/01 → 28 ou 29/02) e a virada de ano
+- [x] `getActivePlan` devolve `null` sem assinatura, `ACTIVE` dentro da validade, `EXPIRED`
       depois dela, e `GRACE` sempre `ACTIVE`
-- [ ] `PlanExpiredException` responde `403` com `"Plan expired"`
-- [ ] `@RequireSystemRole('SUPPORT')` aceita `SUPPORT` e `MASTER` e recusa `USER` com `403`;
+- [x] `PlanExpiredException` responde `403` com `"Plan expired"`
+- [x] `@RequireSystemRole('SUPPORT')` aceita `SUPPORT` e `MASTER` e recusa `USER` com `403`;
       `@RequireSystemRole('MASTER')` recusa `SUPPORT`; usuário inativo dá `403`
-- [ ] Rota sem o decorator não consulta o banco no `SystemRoleGuard`
-- [ ] `PUT` cria a assinatura na primeira vez e substitui depois, com `startsAt` e `assignedBy`
+- [x] Rota sem o decorator não consulta o banco no `SystemRoleGuard`
+- [x] `PUT` cria a assinatura na primeira vez e substitui depois, com `startsAt` e `assignedBy`
       atualizados
-- [ ] `PUT` `TRIAL` sem `expiresAt` vence em 1 mês; com `expiresAt` no passado dá `400`; `GRACE`
+- [x] `PUT` `TRIAL` sem `expiresAt` vence em 1 mês; com `expiresAt` no passado dá `400`; `GRACE`
       com `expiresAt` dá `400`; `BASIC`/`PRO` dão `400`
-- [ ] `extend` soma 1 mês a partir da validade ou de agora, se vencido; `GRACE` dá `409`
-- [ ] `GET`/`PUT`/`extend` com e-mail sem usuário dão `404`; `GET` e `extend` sem assinatura dão
+- [x] `extend` soma 1 mês a partir da validade ou de agora, se vencido; `GRACE` dá `409`
+- [x] `GET`/`PUT`/`extend` com e-mail sem usuário dão `404`; `GET` e `extend` sem assinatura dão
       `404`
-- [ ] `system-role` promove a `SUPPORT` e rebaixa a `USER`; `MASTER` no corpo dá `400`; alvo
+- [x] `system-role` promove a `SUPPORT` e rebaixa a `USER`; `MASTER` no corpo dá `400`; alvo
       `MASTER` dá `409`; chamado por `SUPPORT` dá `403`
-- [ ] Testes unitários de `plans.ts`, `SubscriptionsService` e `SystemRoleGuard`; e2e das rotas
+- [x] Testes unitários de `plans.ts`, `SubscriptionsService` e `SystemRoleGuard`; e2e das rotas
       com os services substituídos
-- [ ] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
+- [x] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
 
 ## Verificação
 
@@ -283,4 +283,33 @@ e conferir que o `manager@` voltou a `USER`.
 
 ## Registro
 
-_(vazio)_
+**2026-10-30** — executada com pedido do usuário para construir a 0006 e a 0007, na branch
+`development`.
+
+Commits: `feat(api): assinaturas e papel de suporte (spec 0006)`.
+
+Verificação: `pnpm install --frozen-lockfile` ok; sem `.env`, `pnpm test:api` passa (92
+unitários, 23 e2e) e `pnpm build:api` também; lint limpo; `pnpm format` estável. Contra o banco de
+dev, com o master no papel de suporte: `teacher@` (`USER`) consultando → `403`; `GET` sem
+assinatura → `404 "Subscription not found"`; `PUT TRIAL` → `200`, validade em 30/11 (1 mês);
+`extend` → `200`, validade em 30/12; `PUT PRO` → `400` em `plan`; `TRIAL` com data no passado →
+`400`; `extend` do `admin@` (`GRACE`) → `409`; e-mail inexistente → `404 "User not found"`. O
+master promoveu o `manager@` a `SUPPORT` (`200`); com ele: consulta → `200`, `system-role` → `403`.
+Mudar o papel do master → `409`. Rebaixado o `manager@`, o token dele ainda válido passou a dar
+`403`, porque o papel é lido do banco. No fim, a assinatura do `teacher@` foi apagada, o `manager@`
+voltou a `USER`, e os códigos OTP e refresh tokens criados pelos logins do teste foram apagados.
+
+Desvios:
+
+- **A rota `system-role` mora num módulo `users`** (`src/modules/users/`), não em
+  `subscriptions`. A spec não dizia onde; mudar papel não é assunto de assinatura.
+- **`emailSchema` passou a ser exportado** de `auth/schemas/auth.schemas.ts` e é usado para
+  validar e normalizar o `:email` dos caminhos. E-mail inválido no caminho dá o `400` da 0001.
+- **As regras de `expiresAt`** (`GRACE` não aceita data; `TRIAL` exige data futura) ficaram no
+  schema Zod, então o erro sai no formato `400` da 0001, com `path: "expiresAt"`.
+- **O `403` do `SystemRoleGuard` é o padrão do Nest**:
+  `{ message: "Forbidden resource", error: "Forbidden", statusCode: 403 }`.
+- **`addMonths` trabalha em UTC**, para o resultado não depender do fuso do servidor.
+- **`RequireSystemRole` aceita só `'SUPPORT'` ou `'MASTER'`** no tipo: exigir `USER` seria o
+  mesmo que estar logado.
+- Testes além dos pedidos: o schema de atribuição e o `UsersService`.
