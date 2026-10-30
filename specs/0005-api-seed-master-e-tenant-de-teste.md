@@ -1,7 +1,7 @@
 ---
 id: 0005
 title: Seed do master e do tenant de teste
-status: todo
+status: done
 depends_on: [0002]
 ---
 
@@ -135,18 +135,18 @@ schema) e passa a dizer o que é semeado. O comentário atual continua valendo, 
 
 ## Critérios de aceite
 
-- [ ] `pnpm db:seed` num banco vazio, com `SET_FIRST_TENANT=false`, cria só o master
-- [ ] Com `SET_FIRST_TENANT=true`, cria os 4 usuários, a assinatura, a organização, a unidade,
+- [x] `pnpm db:seed` num banco vazio, com `SET_FIRST_TENANT=false`, cria só o master
+- [x] Com `SET_FIRST_TENANT=true`, cria os 4 usuários, a assinatura, a organização, a unidade,
       os 3 membros e o curso, com os dados da tabela
-- [ ] Rodar de novo sai `0`, imprime só `já existia` e não muda nenhuma linha (`updated_at`
+- [x] Rodar de novo sai `0`, imprime só `já existia` e não muda nenhuma linha (`updated_at`
       igual)
-- [ ] Existe exatamente um `MASTER`, com o e-mail de `ROOT_EMAIL` em minúsculas
-- [ ] Com outro `MASTER` no banco, a seed sai `1` e não grava nada
-- [ ] Com `ROOT_EMAIL` já cadastrado como `USER`, a seed sai `1` e não promove
-- [ ] Com `NODE_ENV=production` e `SET_FIRST_TENANT=true`, a seed sai `1` antes de tocar no banco
-- [ ] Sem `ROOT_EMAIL`, a seed sai `1` e a mensagem nomeia `ROOT_EMAIL`
-- [ ] A seção Seed do `.env.example` não tem mais "Ainda não lido pela API"
-- [ ] `pnpm test:api` e `pnpm build:api` continuam passando
+- [x] Existe exatamente um `MASTER`, com o e-mail de `ROOT_EMAIL` em minúsculas
+- [x] Com outro `MASTER` no banco, a seed sai `1` e não grava nada
+- [x] Com `ROOT_EMAIL` já cadastrado como `USER`, a seed sai `1` e não promove
+- [x] Com `NODE_ENV=production` e `SET_FIRST_TENANT=true`, a seed sai `1` antes de tocar no banco
+- [x] Sem `ROOT_EMAIL`, a seed sai `1` e a mensagem nomeia `ROOT_EMAIL`
+- [x] A seção Seed do `.env.example` não tem mais "Ainda não lido pela API"
+- [x] `pnpm test:api` e `pnpm build:api` continuam passando
 
 ## Verificação
 
@@ -187,4 +187,29 @@ pnpm build:api
 
 ## Registro
 
-_(vazio)_
+**2026-10-29** — executada com `/spec next 2`, na branch `development`. Foi a única da
+sequência: a 0003 saiu da fila por estabelecer contrato (e instalar `nodemailer`), e a 0004
+depende dela.
+
+Commits: `feat(api): seed do master e do tenant de teste (spec 0005)`.
+
+Verificação: com `SET_FIRST_TENANT=false`, a seed criou só o master (`MASTER`); com `true`,
+criou os 4 usuários verificados, a assinatura `GRACE` do `admin@` atribuída pelo master, a
+organização, a unidade, os 3 membros com as flags da tabela e o curso com o coordenador. Rodar de
+novo, com `ROOT_EMAIL` em maiúsculas, imprimiu `0 criados, 12 já existiam`, e o `id` +
+`updated_at` de todas as linhas ficaram iguais. Saíram `1`, sem gravar: tenant em
+`NODE_ENV=production`, outro `MASTER` no banco (`ROOT_EMAIL=outro@…`) e `ROOT_EMAIL` cadastrado
+como `USER`. Master em produção sem tenant sai `0`. Sem `ROOT_EMAIL`, a mensagem nomeia
+`ROOT_EMAIL`. `test:api` (sem `.env`), `build:api`, lint e `format` passam.
+
+Desvios:
+
+- **Sem `pnpm db:reset`.** O modo autônomo não pode pedir a autorização que o Prisma exige. O
+  banco de dev já estava no estado equivalente: migration `init` aplicada e zero linhas em
+  `users` e `organizations`. A seed rodou sobre ele.
+- **O caso "`ROOT_EMAIL` cadastrado como `USER`"** foi montado rebaixando o master por SQL
+  (`update users set system_role='USER'`), rodando a seed e restaurando `MASTER` em seguida. O
+  `updated_at` não mudou, porque o `@updatedAt` é do client do Prisma.
+- **O banco de dev ficou semeado** com o master e o tenant de teste, que é o estado esperado
+  para as próximas specs.
+- O comentário do `.env.example` cita `pnpm otp <email>`, que só passa a existir com a 0004.
