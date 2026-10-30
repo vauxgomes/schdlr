@@ -1,7 +1,7 @@
 ---
 id: 0009
 title: Organização e unidade
-status: todo
+status: done
 depends_on: [0002, 0004, 0005, 0006, 0008]
 ---
 
@@ -242,27 +242,27 @@ mostra `{ statusCode, message }`, o corpo real é o da 0008, com o `code` abaixo
 
 ## Critérios de aceite
 
-- [ ] Criar organização sem assinatura dá `403 "Subscription required"`; com plano vencido,
+- [x] Criar organização sem assinatura dá `403 "Subscription required"`; com plano vencido,
       `403 "Plan expired"`; acima do limite, `403 "Plan limit reached"`, contando as
       desativadas; slug repetido dá `409`
-- [ ] Criar unidade acima do limite dá `403 "Plan limit reached"`, contando as desativadas;
+- [x] Criar unidade acima do limite dá `403 "Plan limit reached"`, contando as desativadas;
       slug repetido na mesma organização dá `409`, e o mesmo slug em outra organização passa
-- [ ] Slug fora do formato no corpo dá `400`; no caminho dá `404`
-- [ ] Contagem e criação acontecem numa transação com a linha travada
-- [ ] Não-membro recebe `404` em organização e unidade; membro recebe `403 "Not allowed"` no que
+- [x] Slug fora do formato no corpo dá `400`; no caminho dá `404`
+- [x] Contagem e criação acontecem numa transação com a linha travada
+- [x] Não-membro recebe `404` em organização e unidade; membro recebe `403 "Not allowed"` no que
       o papel não permite
-- [ ] Organização ou unidade desativada some para os membros e continua visível ao dono
-- [ ] Escrita em organização ou unidade desativada dá `409`; com o plano do dono vencido,
+- [x] Organização ou unidade desativada some para os membros e continua visível ao dono
+- [x] Escrita em organização ou unidade desativada dá `409`; com o plano do dono vencido,
       `403 "Plan expired"`, mesmo quando quem escreve é o responsável com plano próprio
-- [ ] Reativar dispensa o `409` da própria entidade, mas exige o plano em vigor
-- [ ] Responsável edita nome e endereço da unidade; `isActive` vindo dele dá `403`
-- [ ] `slug` no `PATCH` é ignorado
-- [ ] `TenantAccessService` exportado, com `resolveOrganization`, `resolveUnit` e
+- [x] Reativar dispensa o `409` da própria entidade, mas exige o plano em vigor
+- [x] Responsável edita nome e endereço da unidade; `isActive` vindo dele dá `403`
+- [x] `slug` no `PATCH` é ignorado
+- [x] `TenantAccessService` exportado, com `resolveOrganization`, `resolveUnit` e
       `assertWritable` como na seção acima
-- [ ] Todos os erros desta spec saem com o `code` da tabela; `PLAN_LIMIT_REACHED` com `params`
-- [ ] Testes unitários do `TenantAccessService` e dos services com banco e
+- [x] Todos os erros desta spec saem com o `code` da tabela; `PLAN_LIMIT_REACHED` com `params`
+- [x] Testes unitários do `TenantAccessService` e dos services com banco e
       `SubscriptionsService` substituídos; e2e das rotas com os services substituídos
-- [ ] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
+- [x] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
 
 ## Verificação
 
@@ -350,3 +350,51 @@ kill %1
 Ao final, devolver o banco ao estado da seed: apagar a unidade e a organização `do-teacher` e a
 assinatura do `teacher@`, conferir que a `unidade-teste` está ativa e com o nome original, e
 apagar os códigos OTP e refresh tokens dos logins.
+
+## Registro
+
+**2026-10-30** — executada com `/spec 0009`, na branch `development`, logo depois da 0008.
+
+Commits: `feat(api): organização e unidade (spec 0009)`.
+
+Verificação: `pnpm install --frozen-lockfile` ok; sem `.env`, `pnpm test:api` passa (174
+unitários, 43 e2e) e `pnpm build:api` também; lint limpo; `pnpm format` estável. Contra o banco de
+dev, todas as linhas da seção "Verificação" deram o esperado: `admin@` e `teacher@` listam a
+organização com `isOwner` `true` e `false`; o master recebe `404`; o `manager@` vê a unidade com
+`isManager`; segunda organização e segunda unidade do `admin@` (`GRACE`) → `403
+PLAN_LIMIT_REACHED` com `params`; `teacher@` sem assinatura → `403 SUBSCRIPTION_REQUIRED`;
+responsável renomeia (`200`) e não desativa (`403 NOT_ALLOWED`); o coordenador não renomeia
+(`403`); desativada pelo dono, a unidade some para o `manager@` (`404`), e escrita do dono dá
+`409 UNIT_INACTIVE`; `{"isActive":true}` reativa. Com `TRIAL`, o `teacher@` criou `do-teacher`
+(`201`) e uma unidade com o slug `unidade-teste` (`201`, slug é por organização); a segunda
+organização dá `403` de limite. Com o plano vencido por SQL: `PATCH` → `403 PLAN_EXPIRED`, `GET` →
+`200`, e reativar também dá `PLAN_EXPIRED`. Além do roteiro: slug inválido no caminho → `404`, no
+corpo → `400`; `PATCH` só com `slug` → `400` com o item `EMPTY_UPDATE`. No fim, a organização e a
+unidade `do-teacher` e a assinatura do `teacher@` foram apagadas, a `unidade-teste` ficou ativa e
+com o nome original, e os códigos OTP e refresh tokens dos logins foram apagados.
+
+Desvios:
+
+- **`assertWritable(access, { reactivating? })`**: o segundo parâmetro, opcional, não estava na
+  assinatura da spec. É como o "reativar dispensa o `409` da própria entidade" chega ao serviço:
+  com ele, a organização de um `OrganizationAccess` ou a unidade de um `UnitAccess` pode estar
+  inativa; a organização de um `UnitAccess` e o plano continuam exigidos. Quem chama sem ele tem o
+  contrato da spec.
+- **Reativação é o corpo exatamente `{ isActive: true }`** (`isReactivation` no schema). Reativar e
+  renomear na mesma chamada passa pelo `assertWritable` inteiro e dá `409`.
+- **O slug do caminho é validado dentro do `resolve*`**, com o `slugSchema` (inclusive `trim` e
+  minúsculas: `/organizations/ROOT-TEST-ORGANIZATION` resolve). Quem usa o `TenantAccessService`
+  não precisa de pipe no `:orgSlug`/`:unitSlug`.
+- **O membro cuja única unidade foi desativada recebe `ORGANIZATION_NOT_FOUND`** em
+  `…/units/unidade-teste`, não `UNIT_NOT_FOUND`: sem unidade ativa, ele já não enxerga a
+  organização. É o `404` que a spec pede, com o código da primeira checagem que falha.
+- **O plano na criação de organização é lido dentro da transação**, na mesma consulta que trava a
+  assinatura (`SELECT plan, expires_at … FOR UPDATE`). Para calcular o status sem duplicar a regra
+  da 0006, `toActivePlan` passou a ser exportado de `subscriptions.service.ts`. A unidade lê os
+  limites com `getActivePlan` depois do `assertWritable`, fora da transação, e trava a organização.
+- **Organização e unidade compartilham os schemas** (`createTenantSchema`, `updateTenantSchema`),
+  porque os campos e regras são os mesmos.
+- **Ordem no `PATCH` da unidade**: papel (`403`) antes de `assertWritable` (`409`/`403`), como na
+  criação.
+- Testes além dos pedidos: os schemas e um e2e com os services reais e o banco substituído, para o
+  `404` de slug inválido no caminho.

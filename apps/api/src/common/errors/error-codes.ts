@@ -31,6 +31,16 @@ export const ERRORS = {
   PLAN_DOES_NOT_EXPIRE: { status: HttpStatus.CONFLICT, message: 'Plan does not expire' },
   CANNOT_CHANGE_MASTER: { status: HttpStatus.CONFLICT, message: 'Cannot change the master' },
   PLAN_EXPIRED: { status: HttpStatus.FORBIDDEN, message: 'Plan expired' },
+
+  // Organização e unidade (0009)
+  ORGANIZATION_NOT_FOUND: { status: HttpStatus.NOT_FOUND, message: 'Organization not found' },
+  UNIT_NOT_FOUND: { status: HttpStatus.NOT_FOUND, message: 'Unit not found' },
+  NOT_ALLOWED: { status: HttpStatus.FORBIDDEN, message: 'Not allowed' },
+  ORGANIZATION_INACTIVE: { status: HttpStatus.CONFLICT, message: 'Organization is inactive' },
+  UNIT_INACTIVE: { status: HttpStatus.CONFLICT, message: 'Unit is inactive' },
+  SUBSCRIPTION_REQUIRED: { status: HttpStatus.FORBIDDEN, message: 'Subscription required' },
+  PLAN_LIMIT_REACHED: { status: HttpStatus.FORBIDDEN, message: 'Plan limit reached' },
+  SLUG_ALREADY_IN_USE: { status: HttpStatus.CONFLICT, message: 'Slug already in use' },
 } as const satisfies Record<string, { status: HttpStatus; message: string }>
 
 export type ErrorCode = keyof typeof ERRORS

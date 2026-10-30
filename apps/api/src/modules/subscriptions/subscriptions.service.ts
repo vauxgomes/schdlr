@@ -96,7 +96,14 @@ export class SubscriptionsService {
   }
 }
 
-function toActivePlan({ plan, expiresAt }: { plan: PlanType; expiresAt: Date | null }): ActivePlan {
+/** Exportada para quem lê a assinatura por conta própria (a criação de organização, 0009). */
+export function toActivePlan({
+  plan,
+  expiresAt,
+}: {
+  plan: PlanType
+  expiresAt: Date | null
+}): ActivePlan {
   return {
     plan,
     status: expiresAt && expiresAt <= new Date() ? 'EXPIRED' : 'ACTIVE',

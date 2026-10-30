@@ -71,6 +71,17 @@ decisão; em caso de dúvida, vale a spec (e o Registro dela), não este resumo.
   (`403 "Subscription required"`). Leitura sempre liberada (0006)
 - Regras que o schema não expressa e que cada endpoint de escrita tem de validar: tabela "Regras
   que ficam com a aplicação" da 0002
+- Dado de unidade mora sob `/api/organizations/:orgSlug/units/:unitSlug`. O `TenantAccessService`
+  (exportado pelo `OrganizationsModule`) resolve o acesso: `resolveOrganization`/`resolveUnit`
+  dão `404` a quem não enxerga (e a slug fora do formato), sem checar papel; quem chama decide e
+  lança `AppException('NOT_ALLOWED')`. Toda escrita chama `assertWritable(access)`: organização
+  inativa → `409`, unidade inativa → `409`, plano do dono ausente ou vencido → `PLAN_EXPIRED`.
+  `{ reactivating: true }` dispensa só o `409` da própria entidade (0009)
+- Enxerga a organização o dono ou membro de unidade ativa dela; desativada, só o dono. O papel é
+  lido do banco a cada requisição (0009)
+- Contar contra o limite do plano e criar numa transação, com a linha-pai travada (`FOR UPDATE`);
+  `P2002` no create vira o `409` do slug. `slugSchema` e `addressSchema` em
+  `organizations/schemas/` (0009)
 
 **Testes e verificação**
 
@@ -97,5 +108,5 @@ decisão; em caso de dúvida, vale a spec (e o Registro dela), não este resumo.
 | 0006 | [Assinaturas e papel de suporte](0006-api-assinaturas-e-papel-de-suporte.md)     | ✅ done | 0002, 0004, 0005             |
 | 0007 | [Perfil do usuário](0007-api-perfil-do-usuario.md)                               | ✅ done | 0004, 0006                   |
 | 0008 | [Códigos de erro](0008-api-codigos-de-erro.md)                                   | ✅ done | 0001, 0004, 0006, 0007       |
-| 0009 | [Organização e unidade](0009-api-organizacao-e-unidade.md)                       | ⬜ todo | 0002, 0004, 0005, 0006, 0008 |
+| 0009 | [Organização e unidade](0009-api-organizacao-e-unidade.md)                       | ✅ done | 0002, 0004, 0005, 0006, 0008 |
 | 0010 | [Membros e convites](0010-api-membros-e-convites.md)                             | ⬜ todo | 0003, 0004, 0008, 0009       |

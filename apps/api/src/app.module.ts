@@ -9,6 +9,7 @@ import { AuthModule } from '@modules/auth/auth.module'
 import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard'
 import { SystemRoleGuard } from '@modules/auth/guards/system-role.guard'
 import { HealthModule } from '@modules/health/health.module'
+import { OrganizationsModule } from '@modules/organizations/organizations.module'
 import { ProfileModule } from '@modules/profile/profile.module'
 import { SubscriptionsModule } from '@modules/subscriptions/subscriptions.module'
 import { UsersModule } from '@modules/users/users.module'
@@ -27,6 +28,7 @@ import { UsersModule } from '@modules/users/users.module'
     SubscriptionsModule,
     UsersModule,
     ProfileModule,
+    OrganizationsModule,
   ],
   // A ordem importa: o SystemRoleGuard lê o usuário que o JwtAuthGuard pôs na requisição.
   providers: [
