@@ -1,7 +1,7 @@
 ---
 id: 0002
 title: Schema do domínio
-status: todo
+status: done
 depends_on: [0001]
 ---
 
@@ -646,23 +646,23 @@ de preferência no schema Zod da entrada. Esta lista é o contrato que essas spe
 
 ## Critérios de aceite
 
-- [ ] `schema.prisma` tem os 19 models e 7 enums da seção "Schema", com os `@@map`/`@map` como
-      estão
-- [ ] Existe uma migration só, `<timestamp>_init`, **idêntica à que o Prisma gerou**: nenhuma
+- [x] `schema.prisma` tem os 19 models e 7 enums da seção "Schema", com os `@@map`/`@map` como
+      estão _(com uma mudança de `onDelete` — ver Registro)_
+- [x] Existe uma migration só, `<timestamp>_init`, **idêntica à que o Prisma gerou**: nenhuma
       linha escrita ou editada à mão
-- [ ] `pnpm db:reset` num banco vazio aplica a migration sem erro
-- [ ] Depois de aplicar, `pnpm db:migrate` diz que não há mudança (sem drift)
-- [ ] `\dt` mostra 19 tabelas em snake_case plural (fora `_prisma_migrations`), e nenhuma coluna
+- [x] `pnpm db:reset` num banco vazio aplica a migration sem erro
+- [x] Depois de aplicar, `pnpm db:migrate` diz que não há mudança (sem drift)
+- [x] `\dt` mostra 19 tabelas em snake_case plural (fora `_prisma_migrations`), e nenhuma coluna
       em camelCase
-- [ ] Os enums do Postgres têm os nomes em snake_case da seção "Schema"
-- [ ] As unicidades compostas existem no banco: slug de unidade por organização,
+- [x] Os enums do Postgres têm os nomes em snake_case da seção "Schema"
+- [x] As unicidades compostas existem no banco: slug de unidade por organização,
       `(projectId, subjectId)` em `offerings`, `(projectId, name)` em `boards`,
       `(boardId, timeSlotId, weekday)` em `board_slots`
-- [ ] `subjects.level` é `integer not null default 1`; `boards` tem `name` não nulo e não tem `level`
-- [ ] Apagar currículo usado por projeto falha por FK; apagar projeto leva ofertas, quadros e
+- [x] `subjects.level` é `integer not null default 1`; `boards` tem `name` não nulo e não tem `level`
+- [x] Apagar currículo usado por projeto falha por FK; apagar projeto leva ofertas, quadros e
       células junto
-- [ ] `pnpm db:generate` e `pnpm build:api` passam; `pnpm test:api` continua passando sem banco
-- [ ] Nenhum comentário ou identificador em português no `schema.prisma`
+- [x] `pnpm db:generate` e `pnpm build:api` passam; `pnpm test:api` continua passando sem banco
+- [x] Nenhum comentário ou identificador em português no `schema.prisma`
 
 ## Verificação
 
@@ -692,4 +692,37 @@ pnpm test:api
 
 ## Registro
 
-_(vazio)_
+**2026-10-29** — executada com `/spec 0002`, na branch `development`.
+
+Commits: `feat(api): schema do domínio (spec 0002)` — schema, migration, Registro e status no
+mesmo commit.
+
+Verificação: `pnpm db:migrate --name init` gerou `20261030010156_init`; `pnpm db:reset --force`
+reaplicou do zero e `pnpm db:migrate` respondeu "Already in sync". O `psql` mostra 19 tabelas
+(fora `_prisma_migrations`), os 7 enums em snake_case, nenhuma coluna em camelCase, as 4
+unicidades compostas, `subjects.level integer not null default 1` e `boards` sem `level`. Numa
+transação desfeita no fim: apagar currículo em uso falha por FK (`projects_curriculum_id_fkey`), e
+apagar o projeto leva ofertas, quadros e células, deixando o currículo e o local. `db:generate`,
+`build:api` e `test:api` (sem `.env`) passam. O `shasum` do `migration.sql` foi tirado logo
+depois da geração e conferido no fim: nenhuma edição.
+
+Desvios:
+
+- **`BoardSlot.offeringId` é `onDelete: SetNull`, não `Restrict`.** Com `Restrict`, apagar um
+  projeto que tem célula alocada **falha**: o cascade `Project → Offering` esbarra na FK da
+  célula, que o Postgres confere na hora, antes de o cascade `Board → BoardSlot` apagar as
+  células. `NoAction` falha igual: a checagem roda antes do cascade dos quadros. Resolver com
+  `Restrict` exigiria `DEFERRABLE`, que é SQL escrito à mão. Decidido com o usuário: não haverá
+  endpoint de remoção de oferta, e `SetNull` mantém a grade intacta caso uma oferta saia algum
+  dia ("desfazer uma alocação é zerar o campo"). O bloco "Schema" e a seção "Deleção" acima
+  ficaram como foram escritos; **vale o `schema.prisma`**.
+- **A migration `init` foi gerada duas vezes.** A primeira (`20261030005616_init`, com
+  `Restrict`) foi apagada antes do commit, e o banco de dev foi resetado (com autorização do
+  usuário, que o Prisma exige quando quem chama é um agente) para gerar a definitiva. Só
+  `20261030010156_init` existe, sem edição.
+- **`pnpm db:reset` recusa rodar chamado pelo Claude Code** sem
+  `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION`. Specs futuras que pedirem reset na
+  Verificação vão precisar da autorização do usuário na hora.
+- Na tabela de "Regras que ficam com a aplicação", a linha de `Location` (`capacity` nulo ou
+  `> 0`) ficou grudada no fim da linha de `Subject` e não aparece como linha própria. A regra
+  vale igual; a tabela não foi corrigida para não editar o corpo da spec.

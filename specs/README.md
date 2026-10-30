@@ -36,4 +36,4 @@ Ver a spec 0000, "Decisões já tomadas".
 | ---- | -------------------------------------------------------------- | ------- | ---------- |
 | 0000 | [Monorepo pnpm, CI e compose](0000-infra-monorepo-pnpm.md)     | ✅ done | —          |
 | 0001 | [Boilerplate da API em NestJS](0001-api-boilerplate-nestjs.md) | ✅ done | 0000       |
-| 0002 | [Schema do domínio](0002-api-schema-do-dominio.md)             | ⬜ todo | 0001       |
+| 0002 | [Schema do domínio](0002-api-schema-do-dominio.md)             | ✅ done | 0001       |
