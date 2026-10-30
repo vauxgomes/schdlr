@@ -40,3 +40,4 @@ Ver a spec 0000, "Decisões já tomadas".
 | 0003 | [Envio de e-mail](0003-api-envio-de-email.md)                                    | ✅ done | 0001, 0002       |
 | 0004 | [Auth por OTP](0004-api-auth-por-otp.md)                                         | ✅ done | 0001, 0002, 0003 |
 | 0005 | [Seed do master e do tenant de teste](0005-api-seed-master-e-tenant-de-teste.md) | ✅ done | 0002             |
+| 0006 | [Assinaturas e papel de suporte](0006-api-assinaturas-e-papel-de-suporte.md)     | ⬜ todo | 0002, 0004, 0005 |
