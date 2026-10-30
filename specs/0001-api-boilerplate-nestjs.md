@@ -1,7 +1,7 @@
 ---
 id: 0001
 title: Boilerplate da API em NestJS
-status: todo
+status: done
 depends_on: [0000]
 ---
 
@@ -197,28 +197,28 @@ Database, CORS, Auth, Seed, Auditoria, E-mail), com os mesmos comentários. Muda
 
 ## Critérios de aceite
 
-- [ ] `apps/api/package.json` existe com `name: "@schdlr/api"` e os 14 scripts da tabela
-- [ ] `apps/api/.gitkeep` não existe mais
-- [ ] Na raiz, `pnpm dev:api` sobe a API em `:3001` com o `.env` preenchido
-- [ ] `curl localhost:3001/api/health` devolve `200` com o banco de pé, sem token
-- [ ] Qualquer outra rota sem token devolve `401`
-- [ ] Com `JWT_SECRET` vazio ou curto, a app não sobe e a mensagem nomeia `JWT_SECRET`
-- [ ] Com `DATABASE_URL` ausente, a app não sobe e a mensagem nomeia `DATABASE_URL`
-- [ ] Nenhum `process.env` fora de `src/config/`, `prisma.config.ts` e `prisma/seed.ts`
-- [ ] `ZodValidationPipe` tem teste unitário cobrindo o caso válido e o corpo `400` do contrato
-- [ ] `JwtAuthGuard` tem teste: rota `@Public()` passa sem token, rota comum sem token dá `401`,
+- [x] `apps/api/package.json` existe com `name: "@schdlr/api"` e os 14 scripts da tabela
+- [x] `apps/api/.gitkeep` não existe mais
+- [x] Na raiz, `pnpm dev:api` sobe a API em `:3001` com o `.env` preenchido
+- [x] `curl localhost:3001/api/health` devolve `200` com o banco de pé, sem token
+- [x] Qualquer outra rota sem token devolve `401` _(rota existente; inexistente dá `404` — ver Registro)_
+- [x] Com `JWT_SECRET` vazio ou curto, a app não sobe e a mensagem nomeia `JWT_SECRET`
+- [x] Com `DATABASE_URL` ausente, a app não sobe e a mensagem nomeia `DATABASE_URL`
+- [x] Nenhum `process.env` fora de `src/config/`, `prisma.config.ts` e `prisma/seed.ts`
+- [x] `ZodValidationPipe` tem teste unitário cobrindo o caso válido e o corpo `400` do contrato
+- [x] `JwtAuthGuard` tem teste: rota `@Public()` passa sem token, rota comum sem token dá `401`,
       token válido popula `@CurrentUser()`
-- [ ] e2e do health cobre `200` e `503` sem precisar de Postgres
-- [ ] `pnpm test:api` passa na raiz **sem `.env` em `apps/api`**
-- [ ] `pnpm build:api` gera `apps/api/dist/main.js`
-- [ ] `pnpm db:generate`, `pnpm db:migrate` (sem model: nada a migrar) e `pnpm db:seed` (imprime
+- [x] e2e do health cobre `200` e `503` sem precisar de Postgres
+- [x] `pnpm test:api` passa na raiz **sem `.env` em `apps/api`**
+- [x] `pnpm build:api` gera `apps/api/dist/main.js`
+- [x] `pnpm db:generate`, `pnpm db:migrate` (sem model: nada a migrar) e `pnpm db:seed` (imprime
       que não há o que semear) saem `0`
-- [ ] `pnpm db:studio` abre conectado ao banco
-- [ ] `pnpm --filter @schdlr/api lint` sai limpo
-- [ ] `pnpm format` não altera nada depois do commit
-- [ ] `apps/api/.env.example` tem todas as seções originais e as marcações de "ainda não lido"
-- [ ] `grep -n "PASSWORD\|senha" apps/api/.env.example` não acha nada
-- [ ] Imports entre módulos usam os aliases; nenhum `../../`
+- [x] `pnpm db:studio` abre conectado ao banco
+- [x] `pnpm --filter @schdlr/api lint` sai limpo
+- [x] `pnpm format` não altera nada depois do commit
+- [x] `apps/api/.env.example` tem todas as seções originais e as marcações de "ainda não lido"
+- [x] `grep -n "PASSWORD\|senha" apps/api/.env.example` não acha nada
+- [x] Imports entre módulos usam os aliases; nenhum `../../`
 - [ ] O job `test (api)` do CI deixa de emitir o `notice` e roda install e teste
 
 ## Verificação
@@ -259,4 +259,56 @@ O CI só se prova rodando: depois do push, o job `test (api)` tem que executar i
 
 ## Registro
 
-_(vazio)_
+**2026-10-29** — executada com `/spec 0001`, na branch `development`.
+
+Commits: `feat(api): boilerplate da API em NestJS (spec 0001)` — implementação, Registro e
+status no mesmo commit.
+
+Verificação: sem `.env` em `apps/api`, `pnpm test:api` passa (6 unitários, 2 e2e), `pnpm build:api`
+gera `dist/main.js` e `pnpm db:generate` sai `0`. Com `.env`: lint limpo, `pnpm format` não muda
+nada, `db:migrate` ("Already in sync") e `db:seed` ("nada a semear") saem `0`, `pnpm dev:api`
+sobe em `:3001`, `GET /api/health` dá `200` sem token, CORS devolve a origem e
+`credentials: true`. Com `JWT_SECRET=curto`, vazio, ou sem `DATABASE_URL`, a app não sobe e o
+erro nomeia a variável. Os greps de `process.env` e `../../` saem vazios.
+
+Desvios:
+
+- **Rota inexistente dá `404`, não `401`.** O `APP_GUARD` só roda em rota que casou; o Nest
+  responde `404` antes. A `curl …/api/qualquer-coisa` da Verificação devolve `404`. Decidido
+  com o usuário manter o comportamento padrão: o contrato é "toda rota **existente** exige JWT,
+  salvo `@Public()`". O teste do guard cobre rota protegida sem token (`401`), token de outro
+  segredo (`401`) e token válido populando `@CurrentUser()`.
+- **Pacotes `@nestjs/*` auxiliares fixados na linha do NestJS 11:** `@nestjs/config@^4`,
+  `@nestjs/jwt@^11`, `@nestjs/passport@^11`, `@nestjs/terminus@^11`. O `pnpm add` sem versão
+  trouxe as majors 12, e o `@nestjs/config@12` é só ESM — o Jest (ts-jest, CommonJS) não carrega.
+  São as mesmas versões do ENEM. Nenhuma dependência fora da lista da spec.
+- **Seção E-mail do `.env.example` reescrita a pedido do usuário:** não haverá servidor SMTP.
+  Saem `SMTP_*`; entram `MAIL_ENABLED=false` (local: nada sai, o código do OTP vai para o log),
+  `MAIL_FROM`, `MAIL_USER` e `MAIL_PASS`. Os dois últimos ficam **vazios no exemplo** — os
+  valores reais estão só no `apps/api/.env`, que é gitignored. Com isso o grep de
+  `PASSWORD\|senha` sai vazio. `ROOT_EMAIL` passou a ser `vaux.gomes@ifce.edu.br`, também a
+  pedido. A spec do envio de e-mail parte desse bloco, não do `SMTP_HOST` que o `.plans/` cita.
+- **`JWT_EXPIRES_IN` validado com o formato do `ms`** (`900`, `15m`, `7d`…), porque o
+  `expiresIn` do `@nestjs/jwt` só aceita esse formato no tipo. Default `15m`.
+- **`tsconfig`:** o `--strict` do CLI não liga `strict: true` (só alguns flags); foi ligado à mão.
+  Com `isolatedModules` + `emitDecoratorMetadata`, tipo usado em assinatura decorada precisa de
+  `import type` (ex.: `JwtPayload`).
+- **Prisma:** generator `prisma-client-js`, client gerado em `node_modules` — por isso o
+  `apps/api/.gitignore` só tem `dist/` e `coverage/`. O `prisma.config.ts` lê `.env.local` e
+  depois `.env`, como a app. O pnpm ignora os build scripts de `prisma`/`@prisma/engines`
+  ("Ignored build scripts"); `generate`, `migrate` e `studio` funcionam assim mesmo.
+- **`DatabaseModule` é `@Global()`**, para os módulos de domínio injetarem `DatabaseService` sem
+  importá-lo.
+- **Health:** indicador próprio (`DatabaseHealthIndicator`, com `HealthIndicatorService` do
+  terminus 11) fazendo `SELECT 1` pelo `DatabaseService`, em vez do `PrismaHealthIndicator`.
+- **e2e:** o `test/jest-e2e.json` usa `rootDir: ".."` para os aliases apontarem para `src/`. O
+  e2e aplica `setGlobalPrefix('api')` à mão, porque o prefixo é definido no `main.ts`.
+- **`pnpm db:studio`** sobe numa porta aleatória no Prisma 7 (não mais `5555`); respondeu `200`.
+  Não dá para conferir a UI conectada sem navegador — conferido só que carrega a config e serve.
+- **Arquivos do scaffold removidos:** `.prettierrc`, `README.md`, `app.controller*`,
+  `app.service`, `test/app.e2e-spec.ts`. Scripts extras do scaffold (`format`, `test:watch`,
+  `test:cov`, `test:debug`, `start:debug`) saíram: a spec lista os 14.
+- `src/common/decorators/` e `src/common/filters/` estão vazios (`.gitkeep`): os decorators desta
+  spec são do `auth`.
+- **CI pendente.** Não houve push (regra do projeto). Falta conferir no Actions que `test (api)`
+  roda install e `test:all` sem o `notice` e fica verde. O workflow não precisou mudar.

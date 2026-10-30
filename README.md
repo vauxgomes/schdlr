@@ -67,7 +67,15 @@ credenciais, copie `.env.example` para `.env`. O env da API fica em `apps/api/.e
 | `pnpm db:studio`         | abre o Prisma Studio                        |
 | `pnpm format`            | formata o repositório com Prettier          |
 
-Os scripts da API só passam a fazer algo quando `apps/api` for inicializado.
+Para subir a API, copie `apps/api/.env.example` para `apps/api/.env` e preencha `JWT_SECRET`
+(32 caracteres ou mais). Sem ele a API não sobe: o env é validado na partida. Para gerar:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+```
+
+Com o banco de pé, `pnpm dev:api` sobe a API em `http://localhost:3001`; `GET /api/health`
+responde sem token e confere o banco. Toda outra rota exige `Authorization: Bearer <jwt>`.
 
 ## Specs
 
