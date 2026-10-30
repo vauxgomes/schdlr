@@ -6,4 +6,6 @@ Object.assign(process.env, {
   CORS_ORIGIN: 'http://localhost:3000',
   JWT_SECRET: 'e2e-secret-with-at-least-32-characters',
   JWT_EXPIRES_IN: '15m',
+  MAIL_ENABLED: 'false',
+  MAIL_FROM: 'noreply@schdlr.test',
 })

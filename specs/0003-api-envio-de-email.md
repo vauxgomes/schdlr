@@ -1,7 +1,7 @@
 ---
 id: 0003
 title: Envio de e-mail
-status: todo
+status: done
 depends_on: [0001, 0002]
 ---
 
@@ -173,23 +173,23 @@ MAIL_PASS: z.string().optional(),
 
 ## Critérios de aceite
 
-- [ ] `MailService` e `MailMessage` têm exatamente as assinaturas da seção "Interface"
-- [ ] `MailModule` é global e está no `AppModule`; nenhum outro módulo o importa
-- [ ] Com `MAIL_ENABLED=false`, `send` não chama o transporte e registra `[mail desligado]` com
+- [x] `MailService` e `MailMessage` têm exatamente as assinaturas da seção "Interface"
+- [x] `MailModule` é global e está no `AppModule`; nenhum outro módulo o importa
+- [x] Com `MAIL_ENABLED=false`, `send` não chama o transporte e registra `[mail desligado]` com
       destinatário e assunto
-- [ ] Com `MAIL_ENABLED=true`, `send` chama `sendMail` com `from: MAIL_FROM`, `to`, `subject`,
+- [x] Com `MAIL_ENABLED=true`, `send` chama `sendMail` com `from: MAIL_FROM`, `to`, `subject`,
       `text` e `html`, e registra `[mail enviado]`
-- [ ] Falha do `sendMail` registra `error` e a promessa de `send` rejeita
-- [ ] O corpo (`text`, `html`) nunca aparece no log, e a linha do `sendOtpCode` não contém o
+- [x] Falha do `sendMail` registra `error` e a promessa de `send` rejeita
+- [x] O corpo (`text`, `html`) nunca aparece no log, e a linha do `sendOtpCode` não contém o
       código — coberto por teste
-- [ ] O modelo do OTP muda o assunto conforme o `purpose` e traz código e validade no `text` e
+- [x] O modelo do OTP muda o assunto conforme o `purpose` e traz código e validade no `text` e
       no `html`
-- [ ] `MAIL_ENABLED=true` sem `MAIL_USER` ou sem `MAIL_PASS`: a app não sobe e a mensagem
+- [x] `MAIL_ENABLED=true` sem `MAIL_USER` ou sem `MAIL_PASS`: a app não sobe e a mensagem
       nomeia a variável
-- [ ] `MAIL_ENABLED=false` com `MAIL_USER=` e `MAIL_PASS=` vazios: a app sobe
-- [ ] `MAIL_ENABLED=true` com credencial errada: a app sobe e registra `warn` do `verify`
-- [ ] A seção E-mail do `.env.example` não tem mais a linha "Ainda não lido pela API"
-- [ ] `pnpm test:api` passa sem `.env`; `pnpm build:api` e o lint passam
+- [x] `MAIL_ENABLED=false` com `MAIL_USER=` e `MAIL_PASS=` vazios: a app sobe
+- [x] `MAIL_ENABLED=true` com credencial errada: a app sobe e registra `warn` do `verify`
+- [x] A seção E-mail do `.env.example` não tem mais a linha "Ainda não lido pela API"
+- [x] `pnpm test:api` passa sem `.env`; `pnpm build:api` e o lint passam
 - [ ] Envio real conferido à mão (ver "Verificação")
 
 ## Verificação
@@ -223,4 +223,34 @@ credenciais do `.env`. Conferir que o e-mail chega, com o assunto, o código e a
 
 ## Registro
 
-_(vazio)_
+**2026-10-29** — executada com `/spec 0003`, na branch `development`.
+
+Commits: `feat(api): envio de e-mail (spec 0003)` — implementação, Registro e status no mesmo
+commit.
+
+Verificação: `pnpm install --frozen-lockfile` ok; sem `.env`, `pnpm test:api` passa (19
+unitários, 2 e2e) e `pnpm build:api` também; lint limpo; `pnpm format` não muda nada. Com
+`MAIL_ENABLED=true` e `MAIL_USER=` ou `MAIL_PASS=` vazios, a app não sobe e o erro nomeia a
+variável. Com o `.env` como está (envio desligado), a app sobe sem nenhum aviso de e-mail. Com
+`MAIL_ENABLED=true` e credencial falsa (`bogus@example.com`), a app sobe, o health dá `200` e o
+`MailService` registra `warn` com o `535 … Username and Password not accepted` do Gmail. O grep
+de `process.env` fora de `src/config/` sai vazio.
+
+Desvios:
+
+- **Envio real não conferido.** O usuário pediu, durante a execução, que nada envie e-mail por
+  enquanto. Os testes usam um dublê do transporte, e o script descartável da Verificação não foi
+  rodado. O critério ficou desmarcado; conferir quando o envio for ligado.
+- **`nodemailer` 10.3**, que se declara ESM mas publica saída CommonJS em `exports.require`: o
+  Jest (ts-jest, CommonJS) carrega sem ajuste. O ENEM usa a 9.
+- **`MailContent`** (`Omit<MailMessage, 'to'>`) foi acrescentado em `mail.types.ts` como o tipo
+  de retorno dos modelos. `MailMessage` e as assinaturas do `MailService` são as da spec.
+- **O `verify()` roda sem `await` no `onModuleInit`**, para que nem a demora nem a falha do Gmail
+  segurem a partida.
+- **Falha de envio** registra `[mail falhou] para=… assunto="…" erro="…"` em `error`, no mesmo
+  formato das outras linhas.
+- **`src/config/env.schema.spec.ts`** foi criado para cobrir as regras do env de e-mail
+  (`stringbool`, vazio como ausente, obrigatoriedade com o envio ligado, senha com espaços).
+- **Comentário da seção E-mail do `.env.example`** corrigido: dizia que o código do OTP ia para o
+  log, o que contradiz esta spec. Agora diz que o log registra só destinatário e assunto e que
+  `MAIL_USER`/`MAIL_PASS` são obrigatórias com o envio ligado.
