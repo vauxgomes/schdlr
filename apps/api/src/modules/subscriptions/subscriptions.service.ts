@@ -1,6 +1,7 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { PlanType, Prisma } from '@prisma/client'
 
+import { AppException } from '@common/errors/app.exception'
 import { DatabaseService } from '@infra/database/database.service'
 
 import { addMonths, PlanLimits, PLANS } from './plans'
@@ -26,10 +27,6 @@ const withEmails = {
 
 type SubscriptionWithEmails = Prisma.SubscriptionGetPayload<{ include: typeof withEmails }>
 
-const userNotFound = () => new NotFoundException({ statusCode: 404, message: 'User not found' })
-const subscriptionNotFound = () =>
-  new NotFoundException({ statusCode: 404, message: 'Subscription not found' })
-
 @Injectable()
 export class SubscriptionsService {
   constructor(private readonly database: DatabaseService) {}
@@ -46,7 +43,7 @@ export class SubscriptionsService {
       where: { userId },
       include: withEmails,
     })
-    if (!subscription) throw subscriptionNotFound()
+    if (!subscription) throw new AppException('SUBSCRIPTION_NOT_FOUND')
     return toView(subscription)
   }
 
@@ -79,10 +76,8 @@ export class SubscriptionsService {
   async extend(email: string, actorId: string): Promise<SubscriptionView> {
     const userId = await this.userIdByEmail(email)
     const current = await this.database.subscription.findUnique({ where: { userId } })
-    if (!current) throw subscriptionNotFound()
-    if (!current.expiresAt) {
-      throw new ConflictException({ statusCode: 409, message: 'Plan does not expire' })
-    }
+    if (!current) throw new AppException('SUBSCRIPTION_NOT_FOUND')
+    if (!current.expiresAt) throw new AppException('PLAN_DOES_NOT_EXPIRE')
 
     const now = new Date()
     const from = current.expiresAt > now ? current.expiresAt : now
@@ -96,7 +91,7 @@ export class SubscriptionsService {
 
   private async userIdByEmail(email: string): Promise<string> {
     const user = await this.database.user.findUnique({ where: { email }, select: { id: true } })
-    if (!user) throw userNotFound()
+    if (!user) throw new AppException('USER_NOT_FOUND')
     return user.id
   }
 }

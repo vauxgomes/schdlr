@@ -313,3 +313,14 @@ Desvios:
 - **`RequireSystemRole` aceita só `'SUPPORT'` ou `'MASTER'`** no tipo: exigir `USER` seria o
   mesmo que estar logado.
 - Testes além dos pedidos: o schema de atribuição e o `UsersService`.
+
+## Notas posteriores
+
+**2026-10-30 — spec 0008.** `PlanExpiredException` passou a estender `AppException`
+(`PLAN_EXPIRED`), e não mais `ForbiddenException`; o corpo é `{ statusCode: 403, code:
+"PLAN_EXPIRED", message: "Plan expired" }`. Os erros do suporte e do `system-role` são
+`AppException` (`USER_NOT_FOUND`, `SUBSCRIPTION_NOT_FOUND`, `PLAN_DOES_NOT_EXPIRE`,
+`CANNOT_CHANGE_MASTER`). O `SystemRoleGuard` não devolve mais `false`: lança
+`AppException('FORBIDDEN')`, e o `403` deixou de ser o padrão do Nest (`"Forbidden resource"`, com
+`error`) que o Registro acima descreve. As duas regras de `expiresAt` do schema saem com os
+códigos `GRACE_DOES_NOT_EXPIRE` e `DATE_NOT_IN_FUTURE`.

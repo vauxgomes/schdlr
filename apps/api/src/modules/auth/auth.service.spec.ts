@@ -1,7 +1,7 @@
-import { HttpException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { User } from '@prisma/client'
 
+import { AppException } from '@common/errors/app.exception'
 import { DatabaseService } from '@infra/database/database.service'
 import { MailService } from '@infra/mail/mail.service'
 
@@ -21,14 +21,14 @@ const user = (overrides: Partial<User> = {}): User => ({
   ...overrides,
 })
 
-async function httpError(promise: Promise<unknown>) {
+async function appError(promise: Promise<unknown>) {
   const error = await promise.then(
     () => undefined,
     (e: unknown) => e,
   )
-  expect(error).toBeInstanceOf(HttpException)
-  const exception = error as HttpException
-  return { status: exception.getStatus(), body: exception.getResponse() }
+  expect(error).toBeInstanceOf(AppException)
+  const exception = error as AppException
+  return { status: exception.getStatus(), code: exception.code }
 }
 
 describe('AuthService', () => {
@@ -81,9 +81,9 @@ describe('AuthService', () => {
 
     it('dá 409 para e-mail verificado', async () => {
       users.findUnique.mockResolvedValue(user())
-      expect(await httpError(service.signUp({ name: 'Ana', email: 'ana@ifce.edu.br' }))).toEqual({
+      expect(await appError(service.signUp({ name: 'Ana', email: 'ana@ifce.edu.br' }))).toEqual({
         status: 409,
-        body: { statusCode: 409, message: 'Email already registered' },
+        code: 'EMAIL_ALREADY_REGISTERED',
       })
     })
 
@@ -103,8 +103,10 @@ describe('AuthService', () => {
     it('dá 429 dentro do intervalo', async () => {
       users.findUnique.mockResolvedValue(user({ emailVerifiedAt: null }))
       otp.isInCooldown.mockResolvedValue(true)
-      const { status } = await httpError(service.signUp({ name: 'Ana', email: 'ana@ifce.edu.br' }))
-      expect(status).toBe(429)
+      expect(await appError(service.signUp({ name: 'Ana', email: 'ana@ifce.edu.br' }))).toEqual({
+        status: 429,
+        code: 'OTP_COOLDOWN',
+      })
       expect(otp.issue).not.toHaveBeenCalled()
     })
 
@@ -112,9 +114,9 @@ describe('AuthService', () => {
       users.findUnique.mockResolvedValue(null)
       users.create.mockResolvedValue(user({ emailVerifiedAt: null }))
       mail.sendOtpCode.mockRejectedValue(new Error('smtp'))
-      expect(await httpError(service.signUp({ name: 'Ana', email: 'ana@ifce.edu.br' }))).toEqual({
+      expect(await appError(service.signUp({ name: 'Ana', email: 'ana@ifce.edu.br' }))).toEqual({
         status: 503,
-        body: { statusCode: 503, message: 'Could not send email' },
+        code: 'EMAIL_SEND_FAILED',
       })
     })
   })
@@ -176,9 +178,9 @@ describe('AuthService', () => {
     ])('dá o mesmo 401 para usuário %s', async (_label, found) => {
       users.findUnique.mockResolvedValue(found)
       otp.consume.mockResolvedValue(null)
-      expect(await httpError(service.signIn({ email: 'x@y.dev', code: '000000' }))).toEqual({
+      expect(await appError(service.signIn({ email: 'x@y.dev', code: '000000' }))).toEqual({
         status: 401,
-        body: { statusCode: 401, message: 'Invalid or expired code' },
+        code: 'INVALID_OR_EXPIRED_CODE',
       })
       expect(sessions.create).not.toHaveBeenCalled()
     })
@@ -186,9 +188,9 @@ describe('AuthService', () => {
 
   describe('refresh', () => {
     it('dá 401 sem cookie ou com token recusado', async () => {
-      expect((await httpError(service.refresh(undefined))).status).toBe(401)
+      expect((await appError(service.refresh(undefined))).status).toBe(401)
       sessions.rotate.mockResolvedValue(null)
-      expect((await httpError(service.refresh('rt'))).status).toBe(401)
+      expect((await appError(service.refresh('rt'))).status).toBe(401)
     })
 
     it('devolve token novo e a sessão girada', async () => {
@@ -210,6 +212,6 @@ describe('AuthService', () => {
 
   it('me dá 401 para usuário inativo', async () => {
     users.findUnique.mockResolvedValue(user({ isActive: false }))
-    expect((await httpError(service.me('user-1'))).status).toBe(401)
+    expect(await appError(service.me('user-1'))).toEqual({ status: 401, code: 'UNAUTHORIZED' })
   })
 })

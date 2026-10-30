@@ -292,3 +292,11 @@ code"`, texto que a spec não fixava.
 - **O teste do `JwtAuthGuard` da 0001 foi ajustado** (nota datada na 0001).
 - **`.env.example`:** `REFRESH_TOKEN_TTL_DAYS` ganhou um comentário próprio e saiu do bloco
   "Ainda não lido"; `UNIT_INVITE_TTL_DAYS` e `WEB_APP_URL` continuam marcados.
+
+## Notas posteriores
+
+**2026-10-30 — spec 0008.** Os erros do auth deixaram de passar o objeto `{ statusCode, message }`
+à exceção do Nest, como o Registro acima descreve: são `AppException` com código do catálogo
+(`INVALID_OR_EXPIRED_CODE`, `EMAIL_ALREADY_REGISTERED`, `OTP_COOLDOWN`, `EMAIL_SEND_FAILED`,
+`UNAUTHORIZED`), e o corpo é montado pelo `AppExceptionFilter`. Status e mensagens não mudaram; o
+`401` do guard e do `refresh` também sai com `code: "UNAUTHORIZED"` e sem o campo `error`.

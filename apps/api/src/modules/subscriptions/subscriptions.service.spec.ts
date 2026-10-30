@@ -1,5 +1,4 @@
-import { HttpException } from '@nestjs/common'
-
+import { AppException } from '@common/errors/app.exception'
 import { DatabaseService } from '@infra/database/database.service'
 
 import { PlanExpiredException } from './plan-expired.exception'
@@ -22,14 +21,14 @@ const row = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 })
 
-async function httpError(promise: Promise<unknown>) {
+async function appError(promise: Promise<unknown>) {
   const error = await promise.then(
     () => undefined,
     (e: unknown) => e,
   )
-  expect(error).toBeInstanceOf(HttpException)
-  const exception = error as HttpException
-  return { status: exception.getStatus(), body: exception.getResponse() }
+  expect(error).toBeInstanceOf(AppException)
+  const exception = error as AppException
+  return { status: exception.getStatus(), code: exception.code }
 }
 
 describe('SubscriptionsService', () => {
@@ -121,9 +120,9 @@ describe('SubscriptionsService', () => {
 
     it('e-mail sem usuário dá 404', async () => {
       user.findUnique.mockResolvedValue(null)
-      expect(await httpError(service.assign('x@y.dev', { plan: 'TRIAL' }, 's'))).toEqual({
+      expect(await appError(service.assign('x@y.dev', { plan: 'TRIAL' }, 's'))).toEqual({
         status: 404,
-        body: { statusCode: 404, message: 'User not found' },
+        code: 'USER_NOT_FOUND',
       })
     })
   })
@@ -155,31 +154,39 @@ describe('SubscriptionsService', () => {
 
     it('GRACE dá 409', async () => {
       subscription.findUnique.mockResolvedValue(row({ plan: 'GRACE', expiresAt: null }))
-      expect(await httpError(service.extend('admin@schdlr.dev', 's'))).toEqual({
+      expect(await appError(service.extend('admin@schdlr.dev', 's'))).toEqual({
         status: 409,
-        body: { statusCode: 409, message: 'Plan does not expire' },
+        code: 'PLAN_DOES_NOT_EXPIRE',
       })
     })
 
     it('sem assinatura dá 404', async () => {
       subscription.findUnique.mockResolvedValue(null)
-      expect(await httpError(service.extend('teacher@schdlr.dev', 's'))).toEqual({
+      expect(await appError(service.extend('teacher@schdlr.dev', 's'))).toEqual({
         status: 404,
-        body: { statusCode: 404, message: 'Subscription not found' },
+        code: 'SUBSCRIPTION_NOT_FOUND',
       })
     })
   })
 
   it('findByEmail sem assinatura dá 404', async () => {
     subscription.findUnique.mockResolvedValue(null)
-    expect((await httpError(service.findByEmail('teacher@schdlr.dev'))).status).toBe(404)
+    expect(await appError(service.findByEmail('teacher@schdlr.dev'))).toEqual({
+      status: 404,
+      code: 'SUBSCRIPTION_NOT_FOUND',
+    })
   })
 })
 
 describe('PlanExpiredException', () => {
-  it('responde 403 com "Plan expired"', () => {
+  it('é a AppException PLAN_EXPIRED, com 403', () => {
     const exception = new PlanExpiredException()
+    expect(exception).toBeInstanceOf(AppException)
     expect(exception.getStatus()).toBe(403)
-    expect(exception.getResponse()).toEqual({ statusCode: 403, message: 'Plan expired' })
+    expect(exception.getBody()).toEqual({
+      statusCode: 403,
+      code: 'PLAN_EXPIRED',
+      message: 'Plan expired',
+    })
   })
 })

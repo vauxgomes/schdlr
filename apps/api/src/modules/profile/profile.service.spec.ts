@@ -1,5 +1,4 @@
-import { HttpException } from '@nestjs/common'
-
+import { AppException } from '@common/errors/app.exception'
 import { DatabaseService } from '@infra/database/database.service'
 import { SubscriptionsService } from '@modules/subscriptions/subscriptions.service'
 
@@ -69,8 +68,9 @@ describe('ProfileService', () => {
   ])('usuário %s dá 401', async (_label, found) => {
     users.findUnique.mockResolvedValue(found)
     for (const call of [service.get('user-1'), service.update('user-1', { name: 'X' })]) {
-      const error = (await call.catch((e: unknown) => e)) as HttpException
+      const error = (await call.catch((e: unknown) => e)) as AppException
       expect(error.getStatus()).toBe(401)
+      expect(error.code).toBe('UNAUTHORIZED')
     }
     expect(users.update).not.toHaveBeenCalled()
   })

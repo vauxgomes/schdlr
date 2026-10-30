@@ -1,6 +1,7 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { SystemRole } from '@prisma/client'
 
+import { AppException } from '@common/errors/app.exception'
 import { DatabaseService } from '@infra/database/database.service'
 import { ActivePlan, SubscriptionsService } from '@modules/subscriptions/subscriptions.service'
 
@@ -26,7 +27,7 @@ export class ProfileService {
 
   async get(userId: string): Promise<Profile> {
     const user = await this.database.user.findUnique({ where: { id: userId } })
-    if (!user?.isActive) throw new UnauthorizedException()
+    if (!user?.isActive) throw new AppException('UNAUTHORIZED')
 
     // Conta as desativadas também: é a mesma contagem do limite do plano (spec 0006).
     const [organizationsOwned, subscription] = await Promise.all([
@@ -52,7 +53,7 @@ export class ProfileService {
       where: { id: userId },
       select: { isActive: true },
     })
-    if (!user?.isActive) throw new UnauthorizedException()
+    if (!user?.isActive) throw new AppException('UNAUTHORIZED')
 
     await this.database.user.update({ where: { id: userId }, data: { name } })
     return this.get(userId)

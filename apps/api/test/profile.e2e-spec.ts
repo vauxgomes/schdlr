@@ -1,4 +1,4 @@
-import { INestApplication } from '@nestjs/common'
+import { INestApplication, Logger } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
@@ -35,7 +35,9 @@ describe('/api/profile', () => {
   const http = () => request(app.getHttpServer())
 
   it('sem token dá 401', async () => {
-    await http().get('/api/profile').expect(401)
+    await http()
+      .get('/api/profile')
+      .expect(401, { statusCode: 401, code: 'UNAUTHORIZED', message: 'Unauthorized' })
     await http().patch('/api/profile').send({ name: 'X' }).expect(401)
   })
 
@@ -64,7 +66,55 @@ describe('/api/profile', () => {
       .set('Authorization', token)
       .send({ name })
       .expect(400)
-    expect(res.body).toMatchObject({ message: 'Validation failed', errors: [{ path: 'name' }] })
+    expect(res.body).toMatchObject({ code: 'VALIDATION_FAILED', errors: [{ path: 'name' }] })
     expect(profile.update).not.toHaveBeenCalled()
+  })
+
+  it('nome longo dá too_big com o máximo nos params', async () => {
+    const res = await http()
+      .patch('/api/profile')
+      .set('Authorization', token)
+      .send({ name: 'x'.repeat(121) })
+      .expect(400)
+    expect(res.body).toMatchObject({
+      errors: [
+        {
+          path: 'name',
+          code: 'too_big',
+          params: { origin: 'string', maximum: 120, inclusive: true },
+        },
+      ],
+    })
+  })
+
+  // O que só o AppExceptionFilter trata: exceções do Nest e do body-parser, e erro qualquer.
+  describe('corpo de erro', () => {
+    it('rota inexistente dá 404 NOT_FOUND', async () => {
+      await http()
+        .get('/api/nao-existe')
+        .set('Authorization', token)
+        .expect(404, { statusCode: 404, code: 'NOT_FOUND', message: 'Not found' })
+    })
+
+    it('JSON inválido dá 400 BAD_REQUEST', async () => {
+      await http()
+        .patch('/api/profile')
+        .set('Authorization', token)
+        .set('content-type', 'application/json')
+        .send('{bad json')
+        .expect(400, { statusCode: 400, code: 'BAD_REQUEST', message: 'Bad request' })
+    })
+
+    it('erro não tratado dá 500 sem detalhe', async () => {
+      const logged = jest.spyOn(Logger.prototype, 'error').mockImplementation()
+      profile.get.mockRejectedValue(new Error('segredo do banco'))
+      await http().get('/api/profile').set('Authorization', token).expect(500, {
+        statusCode: 500,
+        code: 'INTERNAL_ERROR',
+        message: 'Internal server error',
+      })
+      expect(logged).toHaveBeenCalledWith('segredo do banco', expect.any(String))
+      logged.mockRestore()
+    })
   })
 })

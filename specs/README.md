@@ -48,12 +48,17 @@ decisão; em caso de dúvida, vale a spec (e o Registro dela), não este resumo.
   requisição. `MASTER` conta como `SUPPORT` (0006)
 - `@CurrentUser()` devolve só `{ sub }`; quem precisa do usuário consulta o banco e trata
   inexistente ou inativo como `401` (0004)
-- Validação: `ZodValidationPipe` por parâmetro, `400` com `{ statusCode, message: "Validation
-failed", errors: [{ path, message }] }` (0001). `emailSchema` e `nameSchema` de
+- Validação: `ZodValidationPipe` por parâmetro, `400` `VALIDATION_FAILED` com
+  `errors: [{ path, code, message, params? }]`; `code` do item é o do issue do Zod, ou o de
+  `params.code` num `custom` (0001, 0008). `emailSchema` e `nameSchema` de
   `auth/schemas/auth.schemas.ts` são reaproveitados (0004, 0007)
-- Erros de regra: a exceção do Nest recebe o objeto `{ statusCode, message }`, para o corpo não
-  ganhar o campo `error`. O `401` do guard e o `403` do `SystemRoleGuard` ficam no padrão do Nest
-  (0004, 0006)
+- Corpo de erro: sempre `{ statusCode, code, message }`, com `params` e `errors` só quando há;
+  nunca o campo `error`. `code` é contrato, `message` não. Montado pelo `AppExceptionFilter`,
+  registrado no `configureApp`; erro não tratado vira `500 INTERNAL_ERROR` sem detalhe (0008)
+- Erros de regra: `throw new AppException('CODIGO', params?)`, com status e mensagem do catálogo
+  `src/common/errors/error-codes.ts`. Spec que cria erro novo acrescenta o código ao catálogo e o
+  lista numa tabela própria; códigos de domínio são específicos (0008)
+- O `GET /api/health` fica de fora: o `503` mantém o corpo do terminus (Registro da 0008)
 - E-mail: só pelo `MailService` (`send` ou um `sendX` com modelo em `templates/`); o corpo nunca
   vai para o log (0003)
 
@@ -91,6 +96,6 @@ failed", errors: [{ path, message }] }` (0001). `emailSchema` e `nameSchema` de
 | 0005 | [Seed do master e do tenant de teste](0005-api-seed-master-e-tenant-de-teste.md) | ✅ done | 0002                         |
 | 0006 | [Assinaturas e papel de suporte](0006-api-assinaturas-e-papel-de-suporte.md)     | ✅ done | 0002, 0004, 0005             |
 | 0007 | [Perfil do usuário](0007-api-perfil-do-usuario.md)                               | ✅ done | 0004, 0006                   |
-| 0008 | [Códigos de erro](0008-api-codigos-de-erro.md)                                   | ⬜ todo | 0001, 0004, 0006, 0007       |
+| 0008 | [Códigos de erro](0008-api-codigos-de-erro.md)                                   | ✅ done | 0001, 0004, 0006, 0007       |
 | 0009 | [Organização e unidade](0009-api-organizacao-e-unidade.md)                       | ⬜ todo | 0002, 0004, 0005, 0006, 0008 |
 | 0010 | [Membros e convites](0010-api-membros-e-convites.md)                             | ⬜ todo | 0003, 0004, 0008, 0009       |

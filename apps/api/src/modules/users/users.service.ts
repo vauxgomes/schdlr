@@ -1,5 +1,6 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 
+import { AppException } from '@common/errors/app.exception'
 import { DatabaseService } from '@infra/database/database.service'
 import { AuthUser, toAuthUser } from '@modules/auth/auth-user'
 
@@ -11,10 +12,8 @@ export class UsersService {
 
   async setSystemRole(email: string, { systemRole }: SetSystemRoleInput): Promise<AuthUser> {
     const user = await this.database.user.findUnique({ where: { email } })
-    if (!user) throw new NotFoundException({ statusCode: 404, message: 'User not found' })
-    if (user.systemRole === 'MASTER') {
-      throw new ConflictException({ statusCode: 409, message: 'Cannot change the master' })
-    }
+    if (!user) throw new AppException('USER_NOT_FOUND')
+    if (user.systemRole === 'MASTER') throw new AppException('CANNOT_CHANGE_MASTER')
 
     const updated = await this.database.user.update({
       where: { id: user.id },

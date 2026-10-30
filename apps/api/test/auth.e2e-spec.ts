@@ -1,9 +1,10 @@
-import { INestApplication, UnauthorizedException } from '@nestjs/common'
+import { INestApplication } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import { App } from 'supertest/types'
 
+import { AppException } from '@common/errors/app.exception'
 import { DatabaseService } from '@infra/database/database.service'
 import { AuthService } from '@modules/auth/auth.service'
 
@@ -57,13 +58,27 @@ describe('/api/auth', () => {
     expect(auth.signUp).toHaveBeenCalledWith({ name: 'Ana', email: 'ana@ifce.edu.br' })
   })
 
-  it('corpo inválido dá o 400 da 0001', async () => {
-    const res = await http().post('/api/auth/sign-in').send({ email: 'x', code: '12' }).expect(400)
-    expect(res.body).toMatchObject({ statusCode: 400, message: 'Validation failed' })
-    expect((res.body as { errors: { path: string }[] }).errors.map((e) => e.path)).toEqual([
-      'email',
-      'code',
-    ])
+  it('corpo inválido dá 400 VALIDATION_FAILED, com código e params por campo', async () => {
+    const res = await http().post('/api/auth/sign-in').send({ email: 'x' }).expect(400)
+    expect(res.body).toEqual({
+      statusCode: 400,
+      code: 'VALIDATION_FAILED',
+      message: 'Validation failed',
+      errors: [
+        {
+          path: 'email',
+          code: 'invalid_format',
+          message: expect.any(String) as string,
+          params: { format: 'email' },
+        },
+        {
+          path: 'code',
+          code: 'invalid_type',
+          message: expect.any(String) as string,
+          params: { expected: 'string' },
+        },
+      ],
+    })
   })
 
   it('code responde 202', async () => {
@@ -86,14 +101,16 @@ describe('/api/auth', () => {
     expect(cookie).not.toContain('Secure')
   })
 
-  it('sign-in recusado repassa o 401', async () => {
-    auth.signIn.mockRejectedValue(
-      new UnauthorizedException({ statusCode: 401, message: 'Invalid or expired code' }),
-    )
+  it('sign-in recusado repassa o 401 com o código', async () => {
+    auth.signIn.mockRejectedValue(new AppException('INVALID_OR_EXPIRED_CODE'))
     await http()
       .post('/api/auth/sign-in')
       .send({ email: 'ana@ifce.edu.br', code: '123456' })
-      .expect(401, { statusCode: 401, message: 'Invalid or expired code' })
+      .expect(401, {
+        statusCode: 401,
+        code: 'INVALID_OR_EXPIRED_CODE',
+        message: 'Invalid or expired code',
+      })
   })
 
   it('refresh lê o cookie e grava o novo', async () => {
@@ -109,9 +126,11 @@ describe('/api/auth', () => {
   })
 
   it('refresh recusado dá 401 e apaga o cookie', async () => {
-    auth.refresh.mockRejectedValue(new UnauthorizedException())
+    auth.refresh.mockRejectedValue(new AppException('UNAUTHORIZED'))
 
-    const res = await http().post('/api/auth/refresh').expect(401)
+    const res = await http()
+      .post('/api/auth/refresh')
+      .expect(401, { statusCode: 401, code: 'UNAUTHORIZED', message: 'Unauthorized' })
 
     expect(auth.refresh).toHaveBeenCalledWith(undefined)
     expect(cookieHeader(res)).toMatch(
@@ -129,7 +148,9 @@ describe('/api/auth', () => {
   })
 
   it('me exige token', async () => {
-    await http().get('/api/auth/me').expect(401)
+    await http()
+      .get('/api/auth/me')
+      .expect(401, { statusCode: 401, code: 'UNAUTHORIZED', message: 'Unauthorized' })
     expect(auth.me).not.toHaveBeenCalled()
   })
 

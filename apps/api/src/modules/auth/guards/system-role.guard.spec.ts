@@ -1,6 +1,7 @@
 import { ExecutionContext } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 
+import { AppException } from '@common/errors/app.exception'
 import { DatabaseService } from '@infra/database/database.service'
 
 import { SystemRoleGuard } from './system-role.guard'
@@ -12,6 +13,8 @@ function context(user?: { sub: string }) {
     switchToHttp: () => ({ getRequest: () => ({ user }) }),
   } as unknown as ExecutionContext
 }
+
+const forbidden = expect.objectContaining({ code: 'FORBIDDEN' }) as AppException
 
 describe('SystemRoleGuard', () => {
   let findUnique: jest.Mock
@@ -39,14 +42,16 @@ describe('SystemRoleGuard', () => {
   ])('exige %s: %s → %s', async (need, role, allowed) => {
     required = need
     findUnique.mockResolvedValue({ systemRole: role, isActive: true })
-    await expect(guard.canActivate(context({ sub: 'u' }))).resolves.toBe(allowed)
+    const result = guard.canActivate(context({ sub: 'u' }))
+    if (allowed) await expect(result).resolves.toBe(true)
+    else await expect(result).rejects.toEqual(forbidden)
   })
 
   it('usuário inativo ou inexistente não passa', async () => {
     required = 'SUPPORT'
     findUnique.mockResolvedValue({ systemRole: 'MASTER', isActive: false })
-    await expect(guard.canActivate(context({ sub: 'u' }))).resolves.toBe(false)
+    await expect(guard.canActivate(context({ sub: 'u' }))).rejects.toEqual(forbidden)
     findUnique.mockResolvedValue(null)
-    await expect(guard.canActivate(context({ sub: 'u' }))).resolves.toBe(false)
+    await expect(guard.canActivate(context({ sub: 'u' }))).rejects.toEqual(forbidden)
   })
 })

@@ -1,7 +1,7 @@
 ---
 id: 0008
 title: Códigos de erro
-status: todo
+status: done
 depends_on: [0001, 0004, 0006, 0007]
 ---
 
@@ -212,22 +212,22 @@ TOO_MANY_REQUESTS`, outro 4xx → `HTTP_ERROR`, 5xx → `INTERNAL_ERROR` — e a
 
 ## Critérios de aceite
 
-- [ ] Todo corpo de erro tem `statusCode`, `code` e `message`, e nenhum tem o campo `error`
-- [ ] O catálogo tem todos os códigos das tabelas, com status e mensagem; nenhum serviço repete
+- [x] Todo corpo de erro tem `statusCode`, `code` e `message`, e nenhum tem o campo `error`
+- [x] O catálogo tem todos os códigos das tabelas, com status e mensagem; nenhum serviço repete
       status ou mensagem ao lançar
-- [ ] Nenhum `new XxxException({ statusCode, message })` sobra em `src/`: os erros de regra são
+- [x] Nenhum `new XxxException({ statusCode, message })` sobra em `src/`: os erros de regra são
       `AppException`
-- [ ] Os status HTTP de todos os erros de antes continuam os mesmos
-- [ ] O `401` do token ausente e o `404` de rota inexistente saem com `UNAUTHORIZED` e
+- [x] Os status HTTP de todos os erros de antes continuam os mesmos
+- [x] O `401` do token ausente e o `404` de rota inexistente saem com `UNAUTHORIZED` e
       `NOT_FOUND`; o `403` do `SystemRoleGuard`, com `FORBIDDEN`
-- [ ] Erro não tratado responde `500 INTERNAL_ERROR` sem detalhe, e o stack vai para o log
-- [ ] Validação devolve `code` e `params` por campo conforme a tabela; os dois `custom` da
+- [x] Erro não tratado responde `500 INTERNAL_ERROR` sem detalhe, e o stack vai para o log
+- [x] Validação devolve `code` e `params` por campo conforme a tabela; os dois `custom` da
       assinatura saem com `GRACE_DOES_NOT_EXPIRE` e `DATE_NOT_IN_FUTURE`
-- [ ] O filtro é registrado no `configureApp`, e os e2e o exercitam
-- [ ] Notas datadas na 0001, na 0004 e na 0006; "Contratos em vigor" do README atualizado (o item
+- [x] O filtro é registrado no `configureApp`, e os e2e o exercitam
+- [x] Notas datadas na 0001, na 0004 e na 0006; "Contratos em vigor" do README atualizado (o item
       "a exceção do Nest recebe o objeto `{ statusCode, message }`" dá lugar à `AppException` e ao
       catálogo)
-- [ ] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
+- [x] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
 
 ## Verificação
 
@@ -278,3 +278,44 @@ kill %1
 ```
 
 Ao final, apagar os códigos OTP e refresh tokens dos logins. Nada mais é gravado.
+
+## Registro
+
+**2026-10-30** — executada com `/spec 0008`, na branch `development`.
+
+Commits: `feat(api): códigos de erro (spec 0008)`.
+
+Verificação: `pnpm install --frozen-lockfile` ok; sem `.env`, `pnpm test:api` passa (120
+unitários, 35 e2e) e `pnpm build:api` também; lint limpo; `pnpm format` estável; o grep de
+`Exception({ statusCode` sai vazio. Contra o banco de dev: sem token → `401 UNAUTHORIZED`; rota
+inexistente → `404 NOT_FOUND "Not found"`; `sign-in` com `{"email":"x"}` → `400
+VALIDATION_FAILED` com `invalid_format` (`format: "email"`) e `invalid_type` (`expected:
+"string"`); JSON quebrado → `400 BAD_REQUEST`; código errado → `401 INVALID_OR_EXPIRED_CODE`; nome
+de 121 caracteres → `too_big` com `maximum: 120`; `USER` no suporte → `403 FORBIDDEN`; `teacher@`
+sem assinatura → `404 SUBSCRIPTION_NOT_FOUND`; `GRACE` com `expiresAt` → `GRACE_DOES_NOT_EXPIRE`;
+`extend` do `admin@` → `409 PLAN_DOES_NOT_EXPIRE`. Nenhum corpo trouxe o campo `error`. No fim,
+os códigos OTP e refresh tokens dos logins foram apagados.
+
+Desvios:
+
+- **O `503` do `GET /api/health` fica fora do filtro**, decidido com o usuário: a spec não falava
+  do health, e a leitura literal ("5xx → `INTERNAL_ERROR`") apagaria qual indicador caiu. O
+  controller pega a `ServiceUnavailableException` do terminus e devolve o corpo dela com o status
+  `503` (`@Res({ passthrough: true })`). É resposta de monitoramento, não erro que o web trata; o
+  e2e do health não mudou.
+- **`HttpException` não-`AppException` mantém o status original**, como "só o corpo muda" pede: um
+  `410` sai `410 HTTP_ERROR`, um `503` sai `503 INTERNAL_ERROR`. O `status` de `HTTP_ERROR` no
+  catálogo (`400`) é só o padrão. Mensagens que a spec não fixava: `TOO_MANY_REQUESTS` → `"Too many
+requests"`, `HTTP_ERROR` → `"Request failed"`.
+- **O filtro registra os 5xx** que vêm como `HttpException` (com stack), além do erro qualquer; os
+  4xx, não. O `EMAIL_SEND_FAILED` (`503`, `AppException`) não é registrado de novo: o
+  `MailService` já o registra.
+- **`AppException(code, params?, errors?)`**: o terceiro argumento só o pipe usa. Os tipos
+  `ErrorBody` e `ValidationErrorItem` moram em `app.exception.ts`, e `getBody()` dá o corpo (usado
+  pelo filtro e pelos testes).
+- **O `SystemRoleGuard` lança `FORBIDDEN` também sem `request.user`**, caso que antes devolvia
+  `false`.
+- **`params` do `invalid_value` converte `bigint` em número**, como no `too_small`/`too_big`.
+- Testes além dos pedidos: o e2e do perfil cobre rota inexistente, JSON inválido e o `500`; o do
+  suporte, o `GRACE_DOES_NOT_EXPIRE` e um erro de service com código; o spec do schema de
+  assinatura confere os dois `params.code`.

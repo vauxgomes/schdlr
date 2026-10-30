@@ -12,9 +12,19 @@ export const assignSubscriptionSchema = z
   .superRefine(({ plan, expiresAt }, ctx) => {
     if (!expiresAt) return
     if (plan === 'GRACE') {
-      ctx.addIssue({ code: 'custom', path: ['expiresAt'], message: 'GRACE does not expire' })
+      ctx.addIssue({
+        code: 'custom',
+        path: ['expiresAt'],
+        message: 'GRACE does not expire',
+        params: { code: 'GRACE_DOES_NOT_EXPIRE' },
+      })
     } else if (expiresAt <= new Date()) {
-      ctx.addIssue({ code: 'custom', path: ['expiresAt'], message: 'Must be in the future' })
+      ctx.addIssue({
+        code: 'custom',
+        path: ['expiresAt'],
+        message: 'Must be in the future',
+        params: { code: 'DATE_NOT_IN_FUTURE' },
+      })
     }
   })
 

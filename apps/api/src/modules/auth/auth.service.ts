@@ -1,15 +1,8 @@
-import {
-  ConflictException,
-  HttpException,
-  HttpStatus,
-  Injectable,
-  Logger,
-  ServiceUnavailableException,
-  UnauthorizedException,
-} from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { User } from '@prisma/client'
 
+import { AppException } from '@common/errors/app.exception'
 import { DatabaseService } from '@infra/database/database.service'
 import { MailService } from '@infra/mail/mail.service'
 
@@ -22,9 +15,6 @@ import { IssuedSession, SessionService } from './session.service'
 
 export type SignInResult = { accessToken: string; user: AuthUser; session: IssuedSession }
 export type RefreshResult = { accessToken: string; session: IssuedSession }
-
-const invalidCode = () =>
-  new UnauthorizedException({ statusCode: 401, message: 'Invalid or expired code' })
 
 @Injectable()
 export class AuthService {
@@ -42,13 +32,10 @@ export class AuthService {
     const existing = await this.database.user.findUnique({ where: { email } })
 
     if (existing?.emailVerifiedAt) {
-      throw new ConflictException({ statusCode: 409, message: 'Email already registered' })
+      throw new AppException('EMAIL_ALREADY_REGISTERED')
     }
     if (existing && (await this.otp.isInCooldown(existing.id))) {
-      throw new HttpException(
-        { statusCode: 429, message: 'Wait before requesting a new code' },
-        HttpStatus.TOO_MANY_REQUESTS,
-      )
+      throw new AppException('OTP_COOLDOWN')
     }
 
     // Usuário que se cadastra sozinho nasce sem assinatura (spec 0002).
@@ -68,10 +55,10 @@ export class AuthService {
 
   async signIn({ email, code }: SignInInput): Promise<SignInResult> {
     const user = await this.database.user.findUnique({ where: { email } })
-    if (!user?.isActive) throw invalidCode()
+    if (!user?.isActive) throw new AppException('INVALID_OR_EXPIRED_CODE')
 
     const consumed = await this.otp.consume(user.id, code)
-    if (!consumed) throw invalidCode()
+    if (!consumed) throw new AppException('INVALID_OR_EXPIRED_CODE')
 
     const signedIn =
       consumed.purpose === 'SIGN_UP' && !user.emailVerifiedAt
@@ -90,7 +77,7 @@ export class AuthService {
 
   async refresh(refreshToken: string | undefined): Promise<RefreshResult> {
     const rotated = refreshToken ? await this.sessions.rotate(refreshToken) : null
-    if (!rotated) throw new UnauthorizedException()
+    if (!rotated) throw new AppException('UNAUTHORIZED')
 
     const { userId, ...session } = rotated
     return { accessToken: this.signAccessToken(userId), session }
@@ -102,7 +89,7 @@ export class AuthService {
 
   async me(userId: string): Promise<AuthUser> {
     const user = await this.database.user.findUnique({ where: { id: userId } })
-    if (!user?.isActive) throw new UnauthorizedException()
+    if (!user?.isActive) throw new AppException('UNAUTHORIZED')
     return toAuthUser(user)
   }
 
@@ -118,7 +105,7 @@ export class AuthService {
       })
     } catch {
       // O MailService já registrou o erro; o usuário pede o código de novo.
-      throw new ServiceUnavailableException({ statusCode: 503, message: 'Could not send email' })
+      throw new AppException('EMAIL_SEND_FAILED')
     }
   }
 

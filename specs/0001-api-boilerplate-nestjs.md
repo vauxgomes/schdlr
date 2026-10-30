@@ -321,3 +321,9 @@ mudou para `configureApp(app)` em `src/app.setup.ts`, que também registra o `co
 Registro acima descreve. O teste do `JwtAuthGuard` deixou de importar o `AuthModule` inteiro (que
 agora tem rotas dependentes de banco e de e-mail) e monta só `PassportModule`, `JwtModule` e a
 `JwtStrategy`. O `lint` passou a cobrir também `scripts/`.
+
+**2026-10-30 — spec 0008.** O corpo do `400` de validação mudou: ganhou `code:
+"VALIDATION_FAILED"`, e cada item de `errors` ganhou `code` (o do issue do Zod, ou o da regra
+própria) e `params`. O `ZodValidationPipe` lança `AppException` em vez de `BadRequestException`.
+O `401` de rota sem token e o `404` de rota inexistente agora saem do `AppExceptionFilter`, com
+`code` e sem o campo `error`. `src/common/filters/` deixou de estar vazio.

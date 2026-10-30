@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing'
 import request from 'supertest'
 import { App } from 'supertest/types'
 
+import { AppException } from '@common/errors/app.exception'
 import { DatabaseService } from '@infra/database/database.service'
 import { SubscriptionsService } from '@modules/subscriptions/subscriptions.service'
 import { UsersService } from '@modules/users/users.service'
@@ -46,11 +47,16 @@ describe('/api/support', () => {
   const S = '/api/support/subscriptions'
 
   it('sem token dá 401', async () => {
-    await http().get(`${S}/teacher@schdlr.dev`).expect(401)
+    await http()
+      .get(`${S}/teacher@schdlr.dev`)
+      .expect(401, { statusCode: 401, code: 'UNAUTHORIZED', message: 'Unauthorized' })
   })
 
   it('USER dá 403', async () => {
-    await http().get(`${S}/teacher@schdlr.dev`).set('Authorization', as('USER')).expect(403)
+    await http()
+      .get(`${S}/teacher@schdlr.dev`)
+      .set('Authorization', as('USER'))
+      .expect(403, { statusCode: 403, code: 'FORBIDDEN', message: 'Forbidden' })
     expect(subscriptions.findByEmail).not.toHaveBeenCalled()
   })
 
@@ -83,7 +89,31 @@ describe('/api/support', () => {
       .set('Authorization', as('SUPPORT'))
       .send({ plan: 'PRO' })
       .expect(400)
-    expect(res.body).toMatchObject({ message: 'Validation failed', errors: [{ path: 'plan' }] })
+    expect(res.body).toMatchObject({
+      code: 'VALIDATION_FAILED',
+      errors: [{ path: 'plan', code: 'invalid_value', params: { values: ['GRACE', 'TRIAL'] } }],
+    })
+  })
+
+  it('PUT GRACE com expiresAt dá 400 GRACE_DOES_NOT_EXPIRE', async () => {
+    const res = await http()
+      .put(`${S}/teacher@schdlr.dev`)
+      .set('Authorization', as('SUPPORT'))
+      .send({ plan: 'GRACE', expiresAt: '2030-01-01T00:00:00Z' })
+      .expect(400)
+    expect(res.body).toMatchObject({
+      code: 'VALIDATION_FAILED',
+      errors: [{ path: 'expiresAt', code: 'GRACE_DOES_NOT_EXPIRE' }],
+    })
+  })
+
+  it('erro do service sai com o código do catálogo', async () => {
+    subscriptions.findByEmail.mockRejectedValue(new AppException('SUBSCRIPTION_NOT_FOUND'))
+    await http().get(`${S}/teacher@schdlr.dev`).set('Authorization', as('SUPPORT')).expect(404, {
+      statusCode: 404,
+      code: 'SUBSCRIPTION_NOT_FOUND',
+      message: 'Subscription not found',
+    })
   })
 
   it('extend responde 200', async () => {
@@ -103,7 +133,7 @@ describe('/api/support', () => {
         .put(R)
         .set('Authorization', as('SUPPORT'))
         .send({ systemRole: 'SUPPORT' })
-        .expect(403)
+        .expect(403, { statusCode: 403, code: 'FORBIDDEN', message: 'Forbidden' })
       expect(users.setSystemRole).not.toHaveBeenCalled()
     })
 

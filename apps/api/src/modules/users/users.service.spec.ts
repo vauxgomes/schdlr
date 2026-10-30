@@ -1,5 +1,4 @@
-import { HttpException } from '@nestjs/common'
-
+import { AppException } from '@common/errors/app.exception'
 import { DatabaseService } from '@infra/database/database.service'
 
 import { UsersService } from './users.service'
@@ -43,9 +42,9 @@ describe('UsersService.setSystemRole', () => {
     users.findUnique.mockResolvedValue(user('MASTER'))
     const error = (await service
       .setSystemRole('root@x.dev', { systemRole: 'USER' })
-      .catch((e: unknown) => e)) as HttpException
+      .catch((e: unknown) => e)) as AppException
     expect(error.getStatus()).toBe(409)
-    expect(error.getResponse()).toEqual({ statusCode: 409, message: 'Cannot change the master' })
+    expect(error.code).toBe('CANNOT_CHANGE_MASTER')
     expect(users.update).not.toHaveBeenCalled()
   })
 
@@ -53,7 +52,8 @@ describe('UsersService.setSystemRole', () => {
     users.findUnique.mockResolvedValue(null)
     const error = (await service
       .setSystemRole('x@y.dev', { systemRole: 'USER' })
-      .catch((e: unknown) => e)) as HttpException
+      .catch((e: unknown) => e)) as AppException
     expect(error.getStatus()).toBe(404)
+    expect(error.code).toBe('USER_NOT_FOUND')
   })
 })
