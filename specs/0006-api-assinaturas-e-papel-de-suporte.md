@@ -120,6 +120,10 @@ ele ainda está em vigor.
 - **`durationMonths: null` é "não vence"**: `GRACE` tem `expiresAt` nulo, sempre
 - **Curso é contado por unidade.** No `TRIAL` e no `GRACE` há uma unidade só, então o limite por
   unidade é o total
+- **O limite conta os registros desativados.** Organizações, unidades e cursos com
+  `isActive = false` ocupam vaga como os ativos: desativar não libera espaço no plano. As specs de
+  organização, unidade e curso contam sem filtro de `isActive`, como o `organizationsOwned` do
+  perfil (0007)
 - **"1 mês" é mês de calendário**: mesmo dia no mês seguinte, às mesmas horas; se o dia não
   existe (31 de janeiro), vai para o último dia do mês (28 ou 29 de fevereiro). Uma função
   `addMonths` própria em `plans.ts`, sem biblioteca de datas
