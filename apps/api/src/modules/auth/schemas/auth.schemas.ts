@@ -5,8 +5,10 @@ import { OTP_LENGTH } from '../auth.constants'
 // Normalizado antes de validar e de qualquer consulta: o e-mail é guardado em minúsculas.
 export const emailSchema = z.string().trim().toLowerCase().pipe(z.email())
 
+export const nameSchema = z.string().trim().min(1).max(120)
+
 export const signUpSchema = z.object({
-  name: z.string().trim().min(1).max(120),
+  name: nameSchema,
   email: emailSchema,
 })
 

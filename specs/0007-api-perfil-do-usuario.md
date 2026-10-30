@@ -1,7 +1,7 @@
 ---
 id: 0007
 title: Perfil do usuário
-status: todo
+status: done
 depends_on: [0004, 0006]
 ---
 
@@ -105,17 +105,17 @@ Responde `200` com:
 
 ## Critérios de aceite
 
-- [ ] `GET /api/profile` sem token dá `401`; com token devolve exatamente o formato acima
-- [ ] `organizationsOwned` conta as organizações de que o usuário é dono, ativas ou não
-- [ ] `subscription` é `null` sem assinatura, `ACTIVE` dentro da validade e `EXPIRED` depois
-- [ ] `PATCH` troca o nome (com `trim`) e devolve o perfil atualizado
-- [ ] `PATCH` com nome vazio ou acima de 120 caracteres dá `400`; `email` e `systemRole` no corpo
+- [x] `GET /api/profile` sem token dá `401`; com token devolve exatamente o formato acima
+- [x] `organizationsOwned` conta as organizações de que o usuário é dono, ativas ou não
+- [x] `subscription` é `null` sem assinatura, `ACTIVE` dentro da validade e `EXPIRED` depois
+- [x] `PATCH` troca o nome (com `trim`) e devolve o perfil atualizado
+- [x] `PATCH` com nome vazio ou acima de 120 caracteres dá `400`; `email` e `systemRole` no corpo
       são ignorados
-- [ ] Usuário inativo dá `401` nas duas rotas
-- [ ] O `sign-up` e o perfil usam o mesmo `nameSchema`
-- [ ] Testes unitários do `ProfileService` com banco e `SubscriptionsService` substituídos; e2e
+- [x] Usuário inativo dá `401` nas duas rotas
+- [x] O `sign-up` e o perfil usam o mesmo `nameSchema`
+- [x] Testes unitários do `ProfileService` com banco e `SubscriptionsService` substituídos; e2e
       das rotas com o service substituído
-- [ ] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
+- [x] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
 
 ## Verificação
 
@@ -157,4 +157,26 @@ kill %1
 
 ## Registro
 
-_(vazio)_
+**2026-10-30** — executada logo depois da 0006, a pedido do usuário, na branch `development`.
+
+Commits: `feat(api): perfil do usuário (spec 0007)`.
+
+Verificação: `pnpm install --frozen-lockfile` ok; sem `.env`, `pnpm test:api` passa (98
+unitários, 29 e2e) e `pnpm build:api` também; lint limpo; `pnpm format` estável. Contra o banco de
+dev: sem token → `401`; `admin@` → `organizationsOwned: 1` e `GRACE` `ACTIVE`; `teacher@` →
+`organizationsOwned: 0` e `subscription: null`; `PATCH` com `"  Teacher Renomeado  "`,
+`systemRole: "MASTER"` e `email` → `200`, nome com `trim`, papel e e-mail intactos; nome vazio →
+`400` em `name`. Com uma assinatura `TRIAL` vencida e uma organização **desativada** inseridas
+para o `teacher@`: `organizationsOwned: 1` e `status: "EXPIRED"`, e o `PATCH` continuou `200`.
+Usuário inativo → `401`. No fim, a assinatura e a organização de teste foram apagadas, o nome e o
+`isActive` do `teacher@` voltaram ao da seed, e os códigos OTP e refresh tokens dos logins foram
+apagados.
+
+Desvios:
+
+- **`SubscriptionsModule` já exportava o `SubscriptionsService`** desde a 0006; o
+  `ProfileModule` só o importa.
+- **`organizationsOwned` e `getActivePlan` são lidos em paralelo** (`Promise.all`), depois de
+  conferir que o usuário existe e está ativo.
+- **O `PATCH` confere o usuário antes de gravar** (inexistente ou inativo → `401`, sem update) e
+  depois devolve o perfil pelo mesmo `get` do `GET`.

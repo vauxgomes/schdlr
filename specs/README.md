@@ -30,6 +30,55 @@ próprias.
 existir quando `apps/api/package.json` for criado. Até lá, `pnpm --filter` não casa com nada.
 Ver a spec 0000, "Decisões já tomadas".
 
+## Contratos em vigor
+
+O que as specs já entregues decidiram e as próximas herdam. Cada item aponta para onde está a
+decisão; em caso de dúvida, vale a spec (e o Registro dela), não este resumo.
+
+**API**
+
+- Pastas, aliases (`@common`, `@config`, `@infra`, `@modules`, `@shared`) e `strict: true`; import
+  relativo só dentro do mesmo módulo (0001)
+- Env validado na partida pelo `envSchema`; variável nova entra no schema com a spec que a lê.
+  Nenhum `process.env` fora de `src/config/`, `prisma.config.ts` e `prisma/seed.ts` (0001)
+- `configureApp(app)` em `src/app.setup.ts` é a configuração da app; o `main.ts` e os e2e chamam o
+  mesmo (0004)
+- Toda rota exige JWT, salvo `@Public()`. Rota inexistente dá `404`, não `401` (0001)
+- `@RequireSystemRole('SUPPORT' | 'MASTER')` exige papel mínimo; o papel é lido do banco a cada
+  requisição. `MASTER` conta como `SUPPORT` (0006)
+- `@CurrentUser()` devolve só `{ sub }`; quem precisa do usuário consulta o banco e trata
+  inexistente ou inativo como `401` (0004)
+- Validação: `ZodValidationPipe` por parâmetro, `400` com `{ statusCode, message: "Validation
+failed", errors: [{ path, message }] }` (0001). `emailSchema` e `nameSchema` de
+  `auth/schemas/auth.schemas.ts` são reaproveitados (0004, 0007)
+- Erros de regra: a exceção do Nest recebe o objeto `{ statusCode, message }`, para o corpo não
+  ganhar o campo `error`. O `401` do guard e o `403` do `SystemRoleGuard` ficam no padrão do Nest
+  (0004, 0006)
+- E-mail: só pelo `MailService` (`send` ou um `sendX` com modelo em `templates/`); o corpo nunca
+  vai para o log (0003)
+
+**Plano e organização**
+
+- `getActivePlan(userId)` dá plano, status e limites, ou `null` sem assinatura. Limites em
+  `subscriptions/plans.ts` e contam registros **desativados** (0006)
+- Escrita em dado de organização exige o plano **do dono** `ACTIVE`; vencido lança
+  `PlanExpiredException` (`403 "Plan expired"`). Sem assinatura não se cria organização
+  (`403 "Subscription required"`). Leitura sempre liberada (0006)
+- Regras que o schema não expressa e que cada endpoint de escrita tem de validar: tabela "Regras
+  que ficam com a aplicação" da 0002
+
+**Testes e verificação**
+
+- `pnpm test:api` roda sem `.env` e sem banco: unitários com o `DatabaseService` substituído; e2e
+  com o `AppModule`, `configureApp` e os services substituídos. O env do e2e vem de
+  `test/setup-env.ts` (0001, 0004)
+- Nenhum teste envia e-mail de verdade (0003)
+- Verificação contra o banco de dev: entrar com `pnpm otp <email>` e os usuários da seed (0004,
+  0005), e no fim apagar o que o teste criou, devolvendo o banco ao estado da seed
+- `pnpm db:reset` precisa de autorização explícita do usuário quando quem chama é um agente
+  (Registro da 0002)
+- Dependências na linha do NestJS 11. Pacote que só publica ESM não carrega no Jest (Registro da 0001)
+
 ## Índice
 
 | id   | spec                                                                             | status  | depende de       |
@@ -41,4 +90,4 @@ Ver a spec 0000, "Decisões já tomadas".
 | 0004 | [Auth por OTP](0004-api-auth-por-otp.md)                                         | ✅ done | 0001, 0002, 0003 |
 | 0005 | [Seed do master e do tenant de teste](0005-api-seed-master-e-tenant-de-teste.md) | ✅ done | 0002             |
 | 0006 | [Assinaturas e papel de suporte](0006-api-assinaturas-e-papel-de-suporte.md)     | ✅ done | 0002, 0004, 0005 |
-| 0007 | [Perfil do usuário](0007-api-perfil-do-usuario.md)                               | ⬜ todo | 0004, 0006       |
+| 0007 | [Perfil do usuário](0007-api-perfil-do-usuario.md)                               | ✅ done | 0004, 0006       |
