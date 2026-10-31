@@ -1,7 +1,7 @@
 ---
 id: 0016
 title: Semestres
-status: todo
+status: done
 depends_on: [0008, 0009, 0011]
 ---
 
@@ -255,27 +255,27 @@ startDate`, senão `400` com o item `END_BEFORE_START` (um `custom` com `params.
 
 ## Critérios de aceite
 
-- [ ] Dono e responsável escrevem; coordenador e professor recebem `403`; quem não enxerga a
+- [x] Dono e responsável escrevem; coordenador e professor recebem `403`; quem não enxerga a
       unidade, `404`
-- [ ] Todo membro lista e lê os semestres, em qualquer status; `?status=` filtra
-- [ ] Semestre nasce em `PLANNING`; `status` no `POST`/`PATCH` é ignorado
-- [ ] `endDate` antes de `startDate` dá `400` com `END_BEFORE_START`, também no `PATCH` com uma
+- [x] Todo membro lista e lê os semestres, em qualquer status; `?status=` filtra
+- [x] Semestre nasce em `PLANNING`; `status` no `POST`/`PATCH` é ignorado
+- [x] `endDate` antes de `startDate` dá `400` com `END_BEFORE_START`, também no `PATCH` com uma
       data só; datas saem `YYYY-MM-DD`
-- [ ] Nome repetido na unidade dá `409 TERM_NAME_IN_USE`
-- [ ] Todas as transições da tabela passam; todas as outras, inclusive para o mesmo status, dão
+- [x] Nome repetido na unidade dá `409 TERM_NAME_IN_USE`
+- [x] Todas as transições da tabela passam; todas as outras, inclusive para o mesmo status, dão
       `409 INVALID_TERM_TRANSITION` com `params`
-- [ ] `FINISHED` e `CANCELLED` não se editam (`409 TERM_CLOSED`) nem mudam de status
-- [ ] `DELETE` apaga semestre sem projeto em qualquer status; com projeto dá `409 TERM_IN_USE`,
+- [x] `FINISHED` e `CANCELLED` não se editam (`409 TERM_CLOSED`) nem mudam de status
+- [x] `DELETE` apaga semestre sem projeto em qualquer status; com projeto dá `409 TERM_IN_USE`,
       inclusive pelo `P2003`
-- [ ] `nextStatuses` e `projectsCount` no formato
-- [ ] `TERM_TRANSITIONS` e `TERM_PROJECT_POLICY` exportados, com exatamente as tabelas acima
-- [ ] `assertProjectAction` cobre a matriz inteira em teste unitário: cada status × ação × gestor
+- [x] `nextStatuses` e `projectsCount` no formato
+- [x] `TERM_TRANSITIONS` e `TERM_PROJECT_POLICY` exportados, com exatamente as tabelas acima
+- [x] `assertProjectAction` cobre a matriz inteira em teste unitário: cada status × ação × gestor
       ou não, com `409 TERM_STATUS_FORBIDS` antes de `403 NOT_ALLOWED`
-- [ ] `TermAccessService` exportado, com `resolveTerm`, `assertTermWritable` e `assertProjectAction`
-- [ ] Códigos novos no catálogo da 0008; "Contratos em vigor" do README ganha o ciclo e a matriz
-- [ ] Testes unitários do service, da política e dos schemas; e2e das rotas com o service
+- [x] `TermAccessService` exportado, com `resolveTerm`, `assertTermWritable` e `assertProjectAction`
+- [x] Códigos novos no catálogo da 0008; "Contratos em vigor" do README ganha o ciclo e a matriz
+- [x] Testes unitários do service, da política e dos schemas; e2e das rotas com o service
       substituído
-- [ ] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
+- [x] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
 
 ## Verificação
 
@@ -344,3 +344,52 @@ kill %1
 
 Ao final, apagar os semestres criados no teste e o que tiver sido inserido por SQL, e apagar os
 códigos OTP e refresh tokens dos logins.
+
+## Registro
+
+**2026-10-31** — executada com `/spec 0016`, na branch `feature/catalogo-academico`, depois da 0015.
+
+Commits: `feat(api): semestres (spec 0016)`.
+
+Verificação: sem `.env`, `pnpm test:api` passa (506 unitários, 113 e2e) e `pnpm build:api` também;
+`tsc` e lint limpos; `pnpm format` estável. Contra o banco de dev, rodado em `bash` a partir de um
+script, todas as linhas da seção "Verificação" deram o esperado: `2026.1` com `"status":"STARTED"`
+no corpo → `201` em `PLANNING`, `nextStatuses` `["ADJUSTMENTS","CANCELLED"]`, datas `YYYY-MM-DD` e
+`createdBy` o `manager@`; nome repetido → `409 TERM_NAME_IN_USE`; fim antes do início → `400`
+`END_BEFORE_START` em `endDate`; o `coordinator@` → `403`; o `teacher@` lista com `canManageTerm:
+false`; `PATCH` só com `endDate` antes do início que fica → `400 END_BEFORE_START`. Transições:
+o `coordinator@` → `403`; `PLANNING → STARTED` e `PLANNING → PLANNING` → `409
+INVALID_TERM_TRANSITION` com `params`; `ADJUSTMENTS`, a volta para `PLANNING`, `ADJUSTMENTS` e
+`STARTED` → `200`; `STARTED → PLANNING` → `409`; a volta para `ADJUSTMENTS`, `STARTED` e `FINISHED`
+→ `200`, com `nextStatuses` `[]`; de `FINISHED`, `STARTED` e `CANCELLED` → `409`; `PATCH` em
+`FINISHED` → `409 TERM_CLOSED`; `?status=FINISHED` traz o `2026.1`. Com currículo e projeto
+inseridos por SQL: `projectsCount: 1` e `DELETE` → `409 TERM_IN_USE`; o `DELETE` direto por `psql`
+falha com SQLSTATE `23503` (`projects_term_id_fkey`), o `P2003` que o service trata; sem o projeto,
+o `coordinator@` apagando → `403` e o `manager@` apaga o semestre encerrado e vazio (`204`). Além
+do roteiro: o master → `404`; `PATCH` com `status` no corpo é ignorado (fica `PLANNING`, só a data
+muda); `?status=OPEN` → `400`; id fora do formato → `404 TERM_NOT_FOUND`; um `2026.2` cancelado e
+vazio também sai (`204`). No fim, nada do teste ficou no banco, e os códigos OTP e refresh tokens
+foram apagados.
+
+Não exercitado contra o banco: o `assertProjectAction`, que nenhuma rota usa ainda — coberto pelo
+teste unitário com a matriz inteira (5 status × 4 ações × 3 papéis, escrita à mão no teste), e o
+`P2003` em corrida de verdade.
+
+Desvios:
+
+- **Quem pode criar, publicar e apagar projeto** (quando o status deixa) é o gestor do projeto
+  (`isProjectManager`). A matriz da spec diz só "sim" nessas colunas; o papel ficou o mesmo de
+  "editar" em `PLANNING` e `ADJUSTMENTS`. Em `STARTED`, editar exige `canManageTerm` (dono ou
+  responsável), não `isProjectManager`. A spec de projeto calcula `isProjectManager` incluindo dono
+  e responsável.
+- **`term-policy.ts` também exporta `canTransition` e `isTermClosed`**, usados pelo service e pelo
+  `TermAccessService`, além das duas tabelas da spec.
+- **`END_BEFORE_START` do `PATCH` com uma data só** sai do service como
+  `AppException('VALIDATION_FAILED', undefined, [item])`, com o mesmo `path`, `code` e `message` do
+  item que o Zod gera (a constante `END_BEFORE_START` em `term.schemas.ts`). Com as duas datas no
+  corpo, é o próprio schema que barra.
+- **Ordem no `PATCH`**: semestre (`404`) → papel (`403`) → `assertTermWritable` (`409`/`403`) →
+  datas (`400`) → nome repetido (`409`). No `DELETE`: semestre → papel → `assertWritable` → com
+  projeto. A spec só fixava a do `…/status`.
+- **`PATCH` e `…/status` releem o semestre** depois de gravar, para devolver `createdBy` e
+  `projectsCount`.

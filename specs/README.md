@@ -106,6 +106,21 @@ CURRICULUM_NOT_FOUND` para currículo de outro curso ou id que não é cuid) e
   continuam valendo para o choque) — a spec de quadro aplica; `VIRTUAL` não é local físico e nunca
   gera choque de local — a spec de choque aplica; a célula só aloca local da unidade do projeto
   (0015)
+- Semestres em `modules/terms/`: o dono e o responsável escrevem; todo membro lê, em qualquer
+  status. Ciclo manual (as datas não disparam nada): `PLANNING ⇄ ADJUSTMENTS ⇄ STARTED → FINISHED`,
+  e `CANCELLED` a partir dos três primeiros; `FINISHED` e `CANCELLED` são finais e só leitura
+  (`TERM_CLOSED`); transição fora da tabela → `409 INVALID_TERM_TRANSITION` com `{ from, to }`.
+  Semestre sem projeto se apaga em qualquer status (`TERM_IN_USE` com projeto) (0016)
+- **Status do semestre × projetos** (`TERM_PROJECT_POLICY` em `terms/term-policy.ts`): criar e
+  apagar projeto só em `PLANNING`; editar (inclui ofertas, quadros e células) pelos gestores em
+  `PLANNING` e `ADJUSTMENTS`, só por dono e responsável em `STARTED`, por ninguém depois; publicar
+  e despublicar em `PLANNING` e `ADJUSTMENTS`. Gestores (dono, responsável, coordenador do curso
+  do currículo) veem todos os projetos; os demais nunca veem `DRAFT`, e veem os `PUBLISHED` só em
+  `ADJUSTMENTS`, `STARTED` e `FINISHED`. O `TermAccessService` (exportado pelo `TermsModule`) dá
+  `resolveTerm` (`404 TERM_NOT_FOUND`), `assertTermWritable` e `assertProjectAction(access,
+action, { isProjectManager })`: status primeiro (`409 TERM_STATUS_FORBIDS` com
+  `{ status, action }`), papel depois (`403`); não chama `assertWritable`. Projeto que o usuário
+  não vê é `404` (0016)
 - Um módulo por entidade, cada um na sua pasta e com os próprios schemas, mesmo quando os campos
   coincidem (organização e unidade: `modules/organizations/` e `modules/units/`). Para agrupar,
   pasta de módulos (nota da 0009)
@@ -142,4 +157,4 @@ CURRICULUM_NOT_FOUND` para currículo de outro curso ou id que não é cuid) e
 | 0013 | [Disciplinas](0013-api-disciplinas.md)                                           | ✅ done | 0012                         |
 | 0014 | [Duplicação de currículo](0014-api-duplicacao-de-curriculo.md)                   | ✅ done | 0013                         |
 | 0015 | [Locais](0015-api-locais.md)                                                     | ✅ done | 0008, 0009                   |
-| 0016 | [Semestres](0016-api-semestres.md)                                               | ⬜ todo | 0008, 0009, 0011             |
+| 0016 | [Semestres](0016-api-semestres.md)                                               | ✅ done | 0008, 0009, 0011             |

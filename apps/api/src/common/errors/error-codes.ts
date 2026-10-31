@@ -79,6 +79,21 @@ export const ERRORS = {
   LOCATION_INACTIVE: { status: HttpStatus.CONFLICT, message: 'Location is inactive' },
   LOCATION_NAME_IN_USE: { status: HttpStatus.CONFLICT, message: 'Location name already in use' },
   LOCATION_IN_USE: { status: HttpStatus.CONFLICT, message: 'Location is used by a board slot' },
+
+  // Semestres (0016)
+  TERM_NOT_FOUND: { status: HttpStatus.NOT_FOUND, message: 'Term not found' },
+  TERM_NAME_IN_USE: { status: HttpStatus.CONFLICT, message: 'Term name already in use' },
+  TERM_CLOSED: { status: HttpStatus.CONFLICT, message: 'Term is closed' },
+  INVALID_TERM_TRANSITION: {
+    status: HttpStatus.CONFLICT,
+    message: 'Invalid term status transition',
+  },
+  TERM_IN_USE: { status: HttpStatus.CONFLICT, message: 'Term has projects' },
+  // Lançado pelo TermAccessService.assertProjectAction, que a spec de projeto usa.
+  TERM_STATUS_FORBIDS: {
+    status: HttpStatus.CONFLICT,
+    message: 'Term status does not allow this action',
+  },
 } as const satisfies Record<string, { status: HttpStatus; message: string }>
 
 export type ErrorCode = keyof typeof ERRORS
