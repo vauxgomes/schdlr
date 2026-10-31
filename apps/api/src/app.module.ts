@@ -15,6 +15,7 @@ import { InvitationsModule } from '@modules/invitations/invitations.module'
 import { MembersModule } from '@modules/members/members.module'
 import { OrganizationsModule } from '@modules/organizations/organizations.module'
 import { ProfileModule } from '@modules/profile/profile.module'
+import { SubjectsModule } from '@modules/subjects/subjects.module'
 import { SubscriptionsModule } from '@modules/subscriptions/subscriptions.module'
 import { UnitsModule } from '@modules/units/units.module'
 import { UsersModule } from '@modules/users/users.module'
@@ -39,6 +40,7 @@ import { UsersModule } from '@modules/users/users.module'
     InvitationsModule,
     CoursesModule,
     CurriculaModule,
+    SubjectsModule,
   ],
   // A ordem importa: o SystemRoleGuard lê o usuário que o JwtAuthGuard pôs na requisição.
   providers: [

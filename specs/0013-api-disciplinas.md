@@ -1,7 +1,7 @@
 ---
 id: 0013
 title: Disciplinas
-status: todo
+status: done
 depends_on: [0012]
 ---
 
@@ -131,21 +131,21 @@ cor é a da disciplina nas células do quadro. Sem disciplinas, o currículo da 
 
 ## Critérios de aceite
 
-- [ ] Dono, responsável e coordenador do curso escrevem; professor e coordenador de outro curso
+- [x] Dono, responsável e coordenador do curso escrevem; professor e coordenador de outro curso
       recebem `403`; quem não enxerga a unidade, `404`
-- [ ] Todo membro lista as disciplinas, inclusive as desativadas, ordenadas por `level` e `code`
-- [ ] `workload` fora de 1–1000, `level` fora de 1–9999 e `color` fora de `#RRGGBB` dão `400`;
+- [x] Todo membro lista as disciplinas, inclusive as desativadas, ordenadas por `level` e `code`
+- [x] `workload` fora de 1–1000, `level` fora de 1–9999 e `color` fora de `#RRGGBB` dão `400`;
       `color` é gravada em maiúsculas; `level` e `color` ausentes ficam `1` e `#000000`
-- [ ] Código repetido no currículo dá `409 SUBJECT_CODE_IN_USE`; o mesmo código em outro currículo
+- [x] Código repetido no currículo dá `409 SUBJECT_CODE_IN_USE`; o mesmo código em outro currículo
       passa
-- [ ] Currículo ou curso desativado não recebe nem muda disciplina (`409`)
-- [ ] Escrita em disciplina desativada dá `409 SUBJECT_INACTIVE`; `{ isActive: true }` reativa
-- [ ] `DELETE` apaga; usada por oferta dá `409 SUBJECT_IN_USE`, inclusive pelo `P2003`
-- [ ] `subjectId` de outro currículo dá `404`
-- [ ] `subjectsCount` e `totalWorkload` do currículo somam só as disciplinas ativas
-- [ ] Códigos novos no catálogo da 0008
-- [ ] Testes unitários do service e dos schemas; e2e das rotas com os services substituídos
-- [ ] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
+- [x] Currículo ou curso desativado não recebe nem muda disciplina (`409`)
+- [x] Escrita em disciplina desativada dá `409 SUBJECT_INACTIVE`; `{ isActive: true }` reativa
+- [x] `DELETE` apaga; usada por oferta dá `409 SUBJECT_IN_USE`, inclusive pelo `P2003`
+- [x] `subjectId` de outro currículo dá `404`
+- [x] `subjectsCount` e `totalWorkload` do currículo somam só as disciplinas ativas
+- [x] Códigos novos no catálogo da 0008
+- [x] Testes unitários do service e dos schemas; e2e das rotas com os services substituídos
+- [x] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
 
 ## Verificação
 
@@ -213,3 +213,42 @@ kill %1
 
 Ao final, apagar o currículo de teste (leva as disciplinas) e o que tiver sido inserido por SQL, e
 apagar os códigos OTP e refresh tokens dos logins.
+
+## Registro
+
+**2026-10-31** — executada com `/spec next 2`, na branch `feature/catalogo-academico`, criada a
+partir da `development` para a 0013 e a 0014.
+
+Commits: `feat(api): disciplinas (spec 0013)`.
+
+Verificação: sem `.env`, `pnpm test:api` passa (343 unitários, 88 e2e) e `pnpm build:api` também;
+lint limpo; `pnpm format` estável. Contra o banco de dev, rodado em `bash` a partir de um script,
+todas as linhas da seção "Verificação" deram o esperado: `mat-101` com `#1e88e5` → `201`, `MAT-101`,
+`#1E88E5`, `level` 1; `FIS-101` → `201`, com `color` `#000000`; código repetido → `409
+SUBJECT_CODE_IN_USE`; `workload: 0` e `color: "azul"` → `400` com `too_small` e `invalid_format`; o
+`teacher@` criando → `403`; o `teacher@` lista `FIS-101, MAT-101` e o currículo mostra 2 disciplinas
+e 140 h; com a `FIS-101` desativada, 1 e 80 h, e ela continua na lista com `isActive: false`;
+editar a desativada → `409 SUBJECT_INACTIVE`, `{"isActive":true}` reativa; desativada e sem uso, o
+`DELETE` → `204`. Com termo, projeto e oferta inseridos por SQL: `inUse: true` e `DELETE` da
+`MAT-101` → `409 SUBJECT_IN_USE`; o `DELETE` direto por `psql` falha com SQLSTATE `23503`
+(`offerings_subject_id_fkey`), o `P2003` que o service trata. Com o currículo desativado, criar e
+editar disciplina → `409 CURRICULUM_INACTIVE`. Além do roteiro: o master → `404`; id apagado ou
+fora do formato → `404 SUBJECT_NOT_FOUND`; o mesmo `MAT-101` num segundo currículo → `201`, e o id
+da `MAT-101` do primeiro pelo caminho do segundo → `404`; num curso coordenado por outro, o
+`coordinator@` criando → `403` e o `manager@` → `201`. No fim, os currículos (com as disciplinas),
+o curso de teste, o termo, o projeto e a oferta foram apagados, e os códigos OTP e refresh tokens
+também.
+
+Desvios:
+
+- **`level` e `color` ausentes recebem o default no Zod** (`1` e `#000000`, os mesmos do schema do
+  Prisma), a pedido do usuário: no web os dois campos serão obrigatórios, e o corpo validado já
+  chega completo ao service.
+- **Ordem no `PATCH`**: disciplina (`404`) → papel (`403`) → `assertCurriculumWritable` →
+  disciplina desativada (`409 SUBJECT_INACTIVE`, salvo `{ isActive: true }`) → código repetido. No
+  `DELETE`: disciplina → papel → `assertCurriculumWritable` → em uso. Reativar a disciplina ainda
+  exige o currículo ativo.
+- **"Usada por oferta"** sai do `_count` de `offerings` já lido com a disciplina, sem consulta
+  separada.
+- **Sem `SubjectAccessService`**: a spec não pede contrato para disciplina, e a busca no currículo
+  ficou num método privado do service.

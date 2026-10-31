@@ -67,6 +67,12 @@ export const ERRORS = {
     message: 'Curriculum code already in use',
   },
   CURRICULUM_IN_USE: { status: HttpStatus.CONFLICT, message: 'Curriculum is used by a project' },
+
+  // Disciplinas (0013)
+  SUBJECT_NOT_FOUND: { status: HttpStatus.NOT_FOUND, message: 'Subject not found' },
+  SUBJECT_INACTIVE: { status: HttpStatus.CONFLICT, message: 'Subject is inactive' },
+  SUBJECT_CODE_IN_USE: { status: HttpStatus.CONFLICT, message: 'Subject code already in use' },
+  SUBJECT_IN_USE: { status: HttpStatus.CONFLICT, message: 'Subject is used by an offering' },
 } as const satisfies Record<string, { status: HttpStatus; message: string }>
 
 export type ErrorCode = keyof typeof ERRORS
