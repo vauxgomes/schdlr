@@ -94,6 +94,12 @@ decisão; em caso de dúvida, vale a spec (e o Registro dela), não este resumo.
   `assertCatalogWritable` (o `assertWritable` da unidade e, depois, `409 COURSE_INACTIVE`;
   `{ reactivating: true }` dispensa só o do curso). `codeSchema` em `courses/schemas/`. Quem sai
   da unidade deixa de coordenar os cursos dela (0011)
+- Currículos em `modules/curricula/`, escritos por quem tem `canManageCatalog`. O
+  `CurriculumAccessService` (exportado pelo `CurriculaModule`) dá `resolveCurriculum` (`404
+CURRICULUM_NOT_FOUND` para currículo de outro curso ou id que não é cuid) e
+  `assertCurriculumWritable` (o `assertCatalogWritable` e, depois, `409 CURRICULUM_INACTIVE`).
+  Currículo sem projeto se apaga, com as disciplinas; em uso, `409 CURRICULUM_IN_USE`, também pelo
+  `P2003` (`isForeignKeyViolation` em `@infra/database/prisma-errors`) (0012)
 - Um módulo por entidade, cada um na sua pasta e com os próprios schemas, mesmo quando os campos
   coincidem (organização e unidade: `modules/organizations/` e `modules/units/`). Para agrupar,
   pasta de módulos (nota da 0009)
@@ -126,6 +132,6 @@ decisão; em caso de dúvida, vale a spec (e o Registro dela), não este resumo.
 | 0009 | [Organização e unidade](0009-api-organizacao-e-unidade.md)                       | ✅ done | 0002, 0004, 0005, 0006, 0008 |
 | 0010 | [Membros e convites](0010-api-membros-e-convites.md)                             | ✅ done | 0003, 0004, 0008, 0009       |
 | 0011 | [Cursos](0011-api-cursos.md)                                                     | ✅ done | 0008, 0009, 0010             |
-| 0012 | [Currículos](0012-api-curriculos.md)                                             | ⬜ todo | 0011                         |
+| 0012 | [Currículos](0012-api-curriculos.md)                                             | ✅ done | 0011                         |
 | 0013 | [Disciplinas](0013-api-disciplinas.md)                                           | ⬜ todo | 0012                         |
 | 0014 | [Duplicação de currículo](0014-api-duplicacao-de-curriculo.md)                   | ⬜ todo | 0013                         |

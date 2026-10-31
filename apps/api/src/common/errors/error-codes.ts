@@ -58,6 +58,15 @@ export const ERRORS = {
     status: HttpStatus.BAD_REQUEST,
     message: 'Coordinator is not a member',
   },
+
+  // Currículos (0012)
+  CURRICULUM_NOT_FOUND: { status: HttpStatus.NOT_FOUND, message: 'Curriculum not found' },
+  CURRICULUM_INACTIVE: { status: HttpStatus.CONFLICT, message: 'Curriculum is inactive' },
+  CURRICULUM_CODE_IN_USE: {
+    status: HttpStatus.CONFLICT,
+    message: 'Curriculum code already in use',
+  },
+  CURRICULUM_IN_USE: { status: HttpStatus.CONFLICT, message: 'Curriculum is used by a project' },
 } as const satisfies Record<string, { status: HttpStatus; message: string }>
 
 export type ErrorCode = keyof typeof ERRORS

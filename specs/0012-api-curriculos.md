@@ -1,7 +1,7 @@
 ---
 id: 0012
 title: Currículos
-status: todo
+status: done
 depends_on: [0011]
 ---
 
@@ -153,23 +153,23 @@ assertCurriculumWritable(access: CurriculumAccess, options?: { reactivating?: bo
 
 ## Critérios de aceite
 
-- [ ] Dono, responsável e o coordenador do curso criam, editam e apagam; coordenador de **outro**
+- [x] Dono, responsável e o coordenador do curso criam, editam e apagam; coordenador de **outro**
       curso e professor recebem `403`; quem não enxerga a unidade, `404`
-- [ ] Todo membro lista e lê os currículos, inclusive os desativados
-- [ ] `code` é obrigatório e normalizado; repetido no mesmo curso dá `409`; o mesmo código em outro
+- [x] Todo membro lista e lê os currículos, inclusive os desativados
+- [x] `code` é obrigatório e normalizado; repetido no mesmo curso dá `409`; o mesmo código em outro
       curso passa
-- [ ] Curso desativado não recebe currículo novo (`409 COURSE_INACTIVE`)
-- [ ] Escrita em currículo desativado dá `409 CURRICULUM_INACTIVE`; `{ isActive: true }` reativa
-- [ ] `DELETE` apaga o currículo e as disciplinas; usado por projeto dá `409 CURRICULUM_IN_USE`,
+- [x] Curso desativado não recebe currículo novo (`409 COURSE_INACTIVE`)
+- [x] Escrita em currículo desativado dá `409 CURRICULUM_INACTIVE`; `{ isActive: true }` reativa
+- [x] `DELETE` apaga o currículo e as disciplinas; usado por projeto dá `409 CURRICULUM_IN_USE`,
       inclusive pelo `P2003`
-- [ ] `curriculumId` de outro curso dá `404 CURRICULUM_NOT_FOUND`
-- [ ] `subjectsCount`, `totalWorkload` e `inUse` no formato; `curriculaCount` do curso conta os
+- [x] `curriculumId` de outro curso dá `404 CURRICULUM_NOT_FOUND`
+- [x] `subjectsCount`, `totalWorkload` e `inUse` no formato; `curriculaCount` do curso conta os
       currículos
-- [ ] `CurriculumAccessService` exportado, com `resolveCurriculum` e `assertCurriculumWritable`
-- [ ] Códigos novos no catálogo da 0008
-- [ ] Testes unitários do `CurriculumAccessService`, do service e dos schemas; e2e das rotas com os
+- [x] `CurriculumAccessService` exportado, com `resolveCurriculum` e `assertCurriculumWritable`
+- [x] Códigos novos no catálogo da 0008
+- [x] Testes unitários do `CurriculumAccessService`, do service e dos schemas; e2e das rotas com os
       services substituídos
-- [ ] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
+- [x] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
 
 ## Verificação
 
@@ -231,3 +231,41 @@ kill %1
 
 Ao final, conferir que nenhum currículo, termo ou projeto de teste ficou, e apagar os códigos OTP
 e refresh tokens dos logins.
+
+## Registro
+
+**2026-10-31** — executada com `/spec 0012`, na branch `development`, logo depois da 0011.
+
+Commits: `feat(api): currículos (spec 0012)`.
+
+Verificação: sem `.env`, `pnpm test:api` passa (320 unitários, 78 e2e) e `pnpm build:api` também;
+lint limpo; `pnpm format` estável. Contra o banco de dev, rodado em `bash` a partir de um script,
+todas as linhas da seção "Verificação" deram o esperado: o `teacher@` criando → `403`; o
+`coordinator@` cria `2024` no `Curso Teste` (`201`); o mesmo código → `409
+CURRICULUM_CODE_IN_USE`; sem código → `400`; o `teacher@` lista 1 currículo, com
+`canManageCatalog: false`, e o curso passa a ter `curriculaCount: 1`; desativado pelo `manager@`
+(`200`), editar dá `409 CURRICULUM_INACTIVE`, o `teacher@` ainda o lê com `isActive: false`, e
+`{"isActive":true}` reativa. Com termo e projeto inseridos por SQL: `inUse: true` e `DELETE` → `409
+CURRICULUM_IN_USE`; sem eles, o `teacher@` apagando → `403` e o `coordinator@` → `204`. Além do
+roteiro: o master → `404`; três disciplinas inseridas por SQL (80 h e 60 h ativas, 40 h
+desativada) deram `subjectsCount: 2` e `totalWorkload: 140`, e sumiram com o `DELETE` (cascata);
+depois do `DELETE`, o id → `404 CURRICULUM_NOT_FOUND`, e um id fora do formato também; num segundo
+curso criado pelo `manager@`, o `coordinator@` (de outro curso) criando → `403`, o mesmo código
+`2024` → `201`, e com o curso desativado, criar currículo → `409 COURSE_INACTIVE`. O `DELETE`
+direto por `psql` de um currículo em uso falha com SQLSTATE `23503`
+(`projects_curriculum_id_fkey`), que o Prisma traduz para o `P2003` que o service trata. No fim, o
+segundo curso, os currículos, as disciplinas, o termo e o projeto de teste foram apagados, e os
+códigos OTP e refresh tokens também.
+
+Não exercitado contra o banco: o `P2003` em corrida de verdade (coberto pelo teste unitário).
+
+Desvios:
+
+- **`subjectsCount` e `totalWorkload`** saem de um `subject.groupBy` por `curriculumId`, filtrado
+  por `isActive: true` (uma consulta para a lista inteira); `inUse` vem do `_count` de `projects`.
+- **`course` no formato** vem do `CourseAccess` (o curso já resolvido), sem `include`.
+- **`description` no `POST`** usa `default(null)`; vazia, só espaços ou `null` vira `null`.
+- **Ordem no `PATCH`**: currículo (`404`) → papel (`403`) → `assertCurriculumWritable` → código
+  repetido (`409`). No `DELETE`: currículo → papel → `assertCatalogWritable` → em uso (`409`). A
+  spec só fixava a do `POST`.
+- **`PATCH` relê o currículo depois do `update`**, para devolver a grade e o `inUse`, como o `GET`.
