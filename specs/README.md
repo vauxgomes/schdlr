@@ -158,3 +158,5 @@ action, { isProjectManager })`: status primeiro (`409 TERM_STATUS_FORBIDS` com
 | 0014 | [Duplicação de currículo](0014-api-duplicacao-de-curriculo.md)                   | ✅ done | 0013                         |
 | 0015 | [Locais](0015-api-locais.md)                                                     | ✅ done | 0008, 0009                   |
 | 0016 | [Semestres](0016-api-semestres.md)                                               | ✅ done | 0008, 0009, 0011             |
+| 0017 | [Blocos de horários](0017-api-blocos-de-horarios.md)                             | ⬜ todo | 0008, 0009                   |
+| 0018 | [Projetos](0018-api-projetos.md)                                                 | ⬜ todo | 0011, 0012, 0016             |
