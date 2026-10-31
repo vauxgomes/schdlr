@@ -20,6 +20,7 @@ describe('currículos', () => {
     get: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
+    duplicate: jest.fn(),
   }
 
   beforeAll(async () => {
@@ -94,6 +95,28 @@ describe('currículos', () => {
   it('DELETE responde 204', async () => {
     await http().delete(`${K}/k-1`).set('Authorization', token).expect(204)
     expect(curricula.remove).toHaveBeenCalledWith('user-1', 'acme', 'sede', 'c-1', 'k-1')
+  })
+
+  it('POST duplicate normaliza o corpo e responde 201', async () => {
+    curricula.duplicate.mockResolvedValue({ id: 'k-2' })
+    await http()
+      .post(`${K}/k-1/duplicate`)
+      .set('Authorization', token)
+      .send({ name: 'Matriz 2024', code: ' 2024 ', targetCourseId: 'c-2' })
+      .expect(201, { id: 'k-2' })
+    expect(curricula.duplicate).toHaveBeenCalledWith('user-1', 'acme', 'sede', 'c-1', 'k-1', {
+      name: 'Matriz 2024',
+      code: '2024',
+      description: null,
+      targetCourseId: 'c-2',
+    })
+
+    await http()
+      .post(`${K}/k-1/duplicate`)
+      .set('Authorization', token)
+      .send({ name: 'Sem código' })
+      .expect(400)
+    expect(curricula.duplicate).toHaveBeenCalledTimes(1)
   })
 
   it.each([

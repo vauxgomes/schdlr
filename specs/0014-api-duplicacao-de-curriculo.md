@@ -1,7 +1,7 @@
 ---
 id: 0014
 title: Duplicação de currículo
-status: todo
+status: done
 depends_on: [0013]
 ---
 
@@ -82,16 +82,16 @@ Nenhum código novo. Os possíveis: `CURRICULUM_NOT_FOUND`, `COURSE_NOT_FOUND`, 
 
 ## Critérios de aceite
 
-- [ ] Duplicar no mesmo curso cria o currículo com as disciplinas ativas da origem, e só elas
-- [ ] Duplicar para outro curso da unidade funciona; curso de outra unidade dá `404`
-- [ ] Coordenador do curso de destino duplica a partir de qualquer curso da unidade; sem
+- [x] Duplicar no mesmo curso cria o currículo com as disciplinas ativas da origem, e só elas
+- [x] Duplicar para outro curso da unidade funciona; curso de outra unidade dá `404`
+- [x] Coordenador do curso de destino duplica a partir de qualquer curso da unidade; sem
       `canManageCatalog` no destino, `403`
-- [ ] Origem desativada pode ser copiada; destino desativado dá `409 COURSE_INACTIVE`
-- [ ] Código repetido no destino dá `409 CURRICULUM_CODE_IN_USE`, e nada é gravado
-- [ ] Currículo e disciplinas são criados numa transação; a origem não muda
-- [ ] Resposta `201` no formato da 0012, com `subjectsCount` e `totalWorkload` da cópia
-- [ ] Testes unitários do método de duplicar e do schema; e2e da rota com o service substituído
-- [ ] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
+- [x] Origem desativada pode ser copiada; destino desativado dá `409 COURSE_INACTIVE`
+- [x] Código repetido no destino dá `409 CURRICULUM_CODE_IN_USE`, e nada é gravado
+- [x] Currículo e disciplinas são criados numa transação; a origem não muda
+- [x] Resposta `201` no formato da 0012, com `subjectsCount` e `totalWorkload` da cópia
+- [x] Testes unitários do método de duplicar e do schema; e2e da rota com o service substituído
+- [x] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
 
 ## Verificação
 
@@ -157,3 +157,36 @@ kill %1
 
 Ao final, apagar por SQL os currículos (levam as disciplinas) e o curso `OUTRO` criados no teste,
 e apagar os códigos OTP e refresh tokens dos logins.
+
+## Registro
+
+**2026-10-31** — executada com `/spec next 2`, na branch `feature/catalogo-academico`, depois da 0013.
+
+Commits: `feat(api): duplicação de currículo (spec 0014)`.
+
+Verificação: sem `.env`, `pnpm test:api` passa (353 unitários, 89 e2e) e `pnpm build:api` também;
+lint limpo; `pnpm format` estável. Contra o banco de dev, rodado em `bash` a partir de um script,
+todas as linhas da seção "Verificação" deram o esperado: a `2018` com `MAT-101`, `FIS-101` e a
+`QUI-201` desativada, duplicada como `2024` → `201` com `subjectsCount: 2` e `totalWorkload: 140`, e
+a cópia tem só `FIS-101` e `MAT-101`, ativas, com carga, nível e cor da origem; o mesmo código →
+`409 CURRICULUM_CODE_IN_USE`; o `teacher@` → `403`; o `coordinator@` para o curso `OUTRO` (que não
+coordena) → `403`; o `manager@` para o `OUTRO` com o código `2018` → `201` (código é por curso);
+com a origem desativada, duplicar → `201`. Além do roteiro: `targetCourseId` inexistente → `404
+COURSE_NOT_FOUND`; com o `coordinator@` passando a coordenar o `OUTRO`, ele duplica de lá para o
+`Curso Teste` (`201`), partindo de um curso para outro em que tem o papel; com o `OUTRO`
+desativado, duplicar para ele → `409 COURSE_INACTIVE`; a origem continuou com as 3 disciplinas (2
+ativas). Uma linha do script, a do `manager@` para o `OUTRO`, não imprimiu o resultado por um erro
+no próprio script (o status colado ao JSON); a consulta final ao banco mostra a cópia `OUTRO/2018`
+com 2 disciplinas. No fim, os currículos (com as disciplinas) e o curso `OUTRO` foram apagados, o
+`Curso Teste` continua com o `coordinator@`, e os códigos OTP e refresh tokens foram apagados.
+
+Desvios:
+
+- **`targetCourseId` igual ao curso da origem** não resolve o curso de novo: o destino é o próprio
+  acesso da origem, como quando ele é omitido.
+- **`targetCourseId` no corpo é qualquer string**: fora do formato é o `404 COURSE_NOT_FOUND` do
+  `resolveCourse`, não `VALIDATION_FAILED`, como o `courseId` do caminho.
+- **O código é conferido antes da transação** (`409` sem abri-la); o `P2002` dentro dela vira o
+  mesmo `409` e nada fica gravado.
+- **As disciplinas da origem são lidas dentro da transação**, junto com a criação do currículo e o
+  `createMany`.

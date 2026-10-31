@@ -1,5 +1,6 @@
 import {
   createCurriculumSchema,
+  duplicateCurriculumSchema,
   isCurriculumReactivation,
   updateCurriculumSchema,
 } from './curriculum.schemas'
@@ -48,5 +49,23 @@ describe('updateCurriculumSchema', () => {
     expect(isCurriculumReactivation({ isActive: true })).toBe(true)
     expect(isCurriculumReactivation({ isActive: true, description: null })).toBe(false)
     expect(isCurriculumReactivation({ isActive: false })).toBe(false)
+  })
+})
+
+describe('duplicateCurriculumSchema', () => {
+  it('os campos do currículo, com targetCourseId opcional', () => {
+    expect(duplicateCurriculumSchema.parse({ name: 'Matriz 2024', code: ' 2024 ' })).toEqual({
+      name: 'Matriz 2024',
+      code: '2024',
+      description: null,
+    })
+    expect(
+      duplicateCurriculumSchema.parse({ name: 'X', code: 'X', targetCourseId: 'c-2' })
+        .targetCourseId,
+    ).toBe('c-2')
+  })
+
+  it('code é obrigatório', () => {
+    expect(duplicateCurriculumSchema.safeParse({ name: 'X' }).success).toBe(false)
   })
 })

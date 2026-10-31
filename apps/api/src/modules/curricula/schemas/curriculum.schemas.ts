@@ -18,6 +18,12 @@ export const createCurriculumSchema = z.object({
   description: descriptionSchema.default(null),
 })
 
+// Os campos do currículo novo e o curso de destino; ausente, o curso da origem (0014). Curso que
+// não se resolve na unidade é 404 do service, não formato.
+export const duplicateCurriculumSchema = createCurriculumSchema.extend({
+  targetCourseId: z.string().optional(),
+})
+
 // Chaves extras são descartadas pelo z.object.
 export const updateCurriculumSchema = z
   .object({
@@ -33,6 +39,7 @@ export const updateCurriculumSchema = z
 
 export type CreateCurriculumInput = z.infer<typeof createCurriculumSchema>
 export type UpdateCurriculumInput = z.infer<typeof updateCurriculumSchema>
+export type DuplicateCurriculumInput = z.infer<typeof duplicateCurriculumSchema>
 
 /** PATCH só com `isActive: true`: reativa, sem o 409 de currículo inativo. */
 export const isCurriculumReactivation = (body: UpdateCurriculumInput) =>

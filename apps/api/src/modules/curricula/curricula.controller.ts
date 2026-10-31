@@ -17,8 +17,10 @@ import type { JwtPayload } from '@modules/auth/jwt-payload'
 import { CurriculaService } from './curricula.service'
 import {
   createCurriculumSchema,
+  duplicateCurriculumSchema,
   updateCurriculumSchema,
   type CreateCurriculumInput,
+  type DuplicateCurriculumInput,
   type UpdateCurriculumInput,
 } from './schemas/curriculum.schemas'
 
@@ -69,6 +71,18 @@ export class CurriculaController {
     @CurrentUser() user: JwtPayload,
   ) {
     return this.curricula.update(user.sub, orgSlug, unitSlug, courseId, curriculumId, body)
+  }
+
+  @Post(':curriculumId/duplicate')
+  duplicate(
+    @Param('orgSlug') orgSlug: string,
+    @Param('unitSlug') unitSlug: string,
+    @Param('courseId') courseId: string,
+    @Param('curriculumId') curriculumId: string,
+    @Body(new ZodValidationPipe(duplicateCurriculumSchema)) body: DuplicateCurriculumInput,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.curricula.duplicate(user.sub, orgSlug, unitSlug, courseId, curriculumId, body)
   }
 
   @Delete(':curriculumId')

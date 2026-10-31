@@ -9,6 +9,7 @@ import { CourseAccess, CourseAccessService } from '@modules/courses/course-acces
 import { CurriculumAccessService } from './curriculum-access.service'
 import {
   CreateCurriculumInput,
+  DuplicateCurriculumInput,
   isCurriculumReactivation,
   UpdateCurriculumInput,
 } from './schemas/curriculum.schemas'
@@ -134,6 +135,55 @@ export class CurriculaService {
       throw error
     }
     return this.view(curriculum.id, access)
+  }
+
+  /**
+   * Cria um currículo a partir do currículo do caminho, com cópia das disciplinas ativas dele, no
+   * mesmo curso ou em outro da unidade (spec 0014). Basta enxergar a origem, mesmo desativada; o
+   * papel e a escrita são conferidos no destino. A cópia é independente da origem.
+   */
+  async duplicate(
+    userId: string,
+    orgSlug: string,
+    unitSlug: string,
+    courseId: string,
+    curriculumId: string,
+    { name, code, description, targetCourseId }: DuplicateCurriculumInput,
+  ): Promise<CurriculumView> {
+    const source = await this.curricula.resolveCurriculum(
+      userId,
+      orgSlug,
+      unitSlug,
+      courseId,
+      curriculumId,
+    )
+    const target =
+      targetCourseId === undefined || targetCourseId === source.course.id
+        ? source
+        : await this.courses.resolveCourse(userId, orgSlug, unitSlug, targetCourseId)
+    if (!target.canManageCatalog) throw new AppException('NOT_ALLOWED')
+    await this.courses.assertCatalogWritable(target)
+    await this.assertCodeFree(target.course.id, code)
+
+    try {
+      const copy = await this.database.$transaction(async (tx) => {
+        const subjects = await tx.subject.findMany({
+          where: { curriculumId: source.curriculum.id, isActive: true },
+          select: { name: true, code: true, workload: true, level: true, color: true },
+        })
+        const curriculum = await tx.curriculum.create({
+          data: { name, code, description, courseId: target.course.id },
+        })
+        await tx.subject.createMany({
+          data: subjects.map((subject) => ({ ...subject, curriculumId: curriculum.id })),
+        })
+        return curriculum
+      })
+      return this.view(copy.id, target)
+    } catch (error) {
+      if (isUniqueViolation(error)) throw new AppException('CURRICULUM_CODE_IN_USE')
+      throw error
+    }
   }
 
   /**
