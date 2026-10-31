@@ -1,7 +1,7 @@
 ---
 id: 0017
 title: Blocos de horários
-status: doing
+status: done
 depends_on: [0008, 0009]
 ---
 
@@ -206,30 +206,30 @@ TIME_TABLE_NAME_IN_USE`. Responde `201` com o bloco novo. É o caminho para muda
 
 ## Critérios de aceite
 
-- [ ] Dono e responsável escrevem; coordenador e professor recebem `403`; quem não enxerga a
+- [x] Dono e responsável escrevem; coordenador e professor recebem `403`; quem não enxerga a
       unidade, `404`
-- [ ] Todo membro lista e lê os blocos, inclusive os desativados, com os horários por `startTime`
-- [ ] `HH:MM` entra e sai, de `00:00` a `23:59`; `24:00` dá `400`; `endTime <= startTime` dá `400`
+- [x] Todo membro lista e lê os blocos, inclusive os desativados, com os horários por `startTime`
+- [x] `HH:MM` entra e sai, de `00:00` a `23:59`; `24:00` dá `400`; `endTime <= startTime` dá `400`
       `END_NOT_AFTER_START`
-- [ ] Horários que encostam (`07:00–07:50`, `07:50–08:40`) passam; que se sobrepõem dão `409
+- [x] Horários que encostam (`07:00–07:50`, `07:50–08:40`) passam; que se sobrepõem dão `409
 TIME_SLOT_OVERLAP` com `params`, na criação e na edição; na lista do `POST` do bloco, `400
 SLOTS_OVERLAP`
-- [ ] Criar e editar horário travam o bloco; o `POST` do bloco com horários é tudo ou nada
-- [ ] Nome do horário é obrigatório (`400` sem ele); nome repetido dá `409` (bloco na unidade,
+- [x] Criar e editar horário travam o bloco; o `POST` do bloco com horários é tudo ou nada
+- [x] Nome do horário é obrigatório (`400` sem ele); nome repetido dá `409` (bloco na unidade,
       horário no bloco)
-- [ ] Horário com célula não muda de hora nem se apaga (`409 TIME_SLOT_IN_USE`); renomear passa
-- [ ] Bloco usado por quadro não se apaga (`409 TIME_TABLE_IN_USE`, inclusive pelo `P2003`); sem
+- [x] Horário com célula não muda de hora nem se apaga (`409 TIME_SLOT_IN_USE`); renomear passa
+- [x] Bloco usado por quadro não se apaga (`409 TIME_TABLE_IN_USE`, inclusive pelo `P2003`); sem
       uso, apaga com os horários
-- [ ] `duplicate` copia os horários num bloco novo e ativo, inclusive de origem desativada
-- [ ] O 49º horário dá `409 TIME_TABLE_FULL`
-- [ ] Escrita em bloco desativado ou nos horários dele dá `409 TIME_TABLE_INACTIVE`;
+- [x] `duplicate` copia os horários num bloco novo e ativo, inclusive de origem desativada
+- [x] O 49º horário dá `409 TIME_TABLE_FULL`
+- [x] Escrita em bloco desativado ou nos horários dele dá `409 TIME_TABLE_INACTIVE`;
       `{ isActive: true }` reativa
-- [ ] `toMinutes`/`toHHMM` e a função de sobreposição exportadas, com teste unitário dos limites
+- [x] `toMinutes`/`toHHMM` e a função de sobreposição exportadas, com teste unitário dos limites
       (`00:00`, `23:59`, `24:00` recusado, intervalos que encostam)
-- [ ] Códigos novos no catálogo da 0008; "Contratos em vigor" do README ganha o que as próximas
+- [x] Códigos novos no catálogo da 0008; "Contratos em vigor" do README ganha o que as próximas
       specs herdam
-- [ ] Testes unitários dos services e dos schemas; e2e das rotas com os services substituídos
-- [ ] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
+- [x] Testes unitários dos services e dos schemas; e2e das rotas com os services substituídos
+- [x] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
 
 ## Verificação
 
@@ -297,3 +297,54 @@ kill %1
 
 Ao final, apagar os blocos criados no teste e o que tiver sido inserido por SQL, e apagar os
 códigos OTP e refresh tokens dos logins.
+
+## Registro
+
+**2026-10-31** — executada com `/spec 0017`, na branch `development`.
+
+Commits: `feat(api): blocos de horários (spec 0017)`.
+
+Verificação: sem `.env`, `pnpm test:api` passa (569 unitários, 130 e2e) e `pnpm build:api` também;
+`tsc` e lint limpos; `pnpm format` estável. Contra o banco de dev, rodado em `bash` a partir de um
+script, todas as linhas da seção "Verificação" deram o esperado: `Manhã` com `M2` e `M1` (fora de
+ordem no corpo) → `201`, devolvidos por início, encostando; a lista com `07:00–08:00` e
+`07:30–08:30` → `400` `SLOTS_OVERLAP` em `slots.1`, e nada ficou gravado; o `coordinator@` → `403`;
+`M3` sobre o `M2` → `409 TIME_SLOT_OVERLAP` com `params` do `M2`; `M3` invertido → `400
+END_NOT_AFTER_START`; `N5` até `23:59` → `201`; `N6` até `24:00` → `400 invalid_format`; sem nome →
+`400`; o `teacher@` lista os três horários por início, com `canManage: false`; duplicar → `201`,
+ativo, com os 3 horários; desativado, acrescentar horário → `409 TIME_TABLE_INACTIVE`, e
+`{"isActive":true}` reativa. Com currículo, termo, projeto, quadro e célula no `M1` inseridos por
+SQL: `boardsCount: 1` e o `M1` com `inUse`; mudar a hora do `M1` → `409 TIME_SLOT_IN_USE`,
+renomear → `200`, apagar → `409`; acrescentar horário ao bloco usado → `201`; apagar o bloco → `409
+TIME_TABLE_IN_USE`, e o `DELETE` direto por `psql` falha com SQLSTATE `23503`
+(`boards_time_table_id_fkey`), o `P2003` que o service trata. Sem eles, o `M2` e o bloco saem
+(`204`), e os horários vão junto. Além do roteiro: o master → `404`; nome de bloco repetido → `409
+TIME_TABLE_NAME_IN_USE`; nome de horário repetido no bloco → `409 TIME_SLOT_NAME_IN_USE`; `M1`
+estendido sobre o `M2` → `409`; `PATCH` só com `endTime` antes do início que fica → `400
+END_NOT_AFTER_START`; renomear bloco desativado → `409`; duplicar bloco desativado → `201`; id fora
+do formato → `404`; horário de outro bloco → `404 TIME_SLOT_NOT_FOUND`; um bloco com 48 horários
+(`201`) recusa o 49º com `409 TIME_TABLE_FULL` e `params: { max: 48 }`. No fim, os blocos de teste
+e o que foi inserido por SQL foram apagados, e os códigos OTP e refresh tokens também.
+
+Não exercitado contra o banco: duas gravações simultâneas no mesmo bloco (a trava `FOR UPDATE` está
+coberta no teste unitário, que confere o SQL) e o `P2003` em corrida.
+
+Desvios:
+
+- **Nome de horário repetido na lista do `POST` do bloco** → `409 TIME_SLOT_NAME_IN_USE`, conferido
+  antes de gravar. A spec não dizia; reaproveita o código do nome repetido no bloco em vez de criar
+  um item novo de `VALIDATION_FAILED`.
+- **"Mudar a hora" de horário com célula** é mandar `startTime` ou `endTime` **diferente** do atual:
+  reenviar a mesma hora passa.
+- **Ordem no `PATCH` do horário**: bloco (`404`) → papel (`403`) → `assertWritable` → bloco
+  desativado (`409`) → horário (`404`) → resultado das horas (`400`) → hora com célula (`409
+TIME_SLOT_IN_USE`) → nome e sobreposição, na transação travada. No `PATCH`/`DELETE` do bloco:
+  bloco → papel → `assertWritable` → desativado ou em uso.
+- **O bloco é criado com os horários numa operação aninhada do Prisma** (`slots: { create }`), que é
+  atômica; o `duplicate` copia do mesmo jeito, lendo os horários da origem antes.
+- **`TimeTablesService` é exportado** (`findInUnit`, `view` e `canManageTimeTables`) e usado pelo
+  `TimeSlotsService`, que importa o `TimeTablesModule`. `MAX_SLOTS` mora em
+  `time-tables/schemas/`. `toMinutes`, `toHHMM` e `overlaps` moram em `time-slots/time.ts`, com o
+  `hhmmSchema` em `time-slots/schemas/`.
+- **`END_NOT_AFTER_START` do `PATCH` com uma hora só** sai do service com o mesmo `path`, `code` e
+  `message` do item que o Zod gera (a constante `END_NOT_AFTER_START`).

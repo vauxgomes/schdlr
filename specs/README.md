@@ -121,6 +121,14 @@ CURRICULUM_NOT_FOUND` para currículo de outro curso ou id que não é cuid) e
 action, { isProjectManager })`: status primeiro (`409 TERM_STATUS_FORBIDS` com
   `{ status, action }`), papel depois (`403`); não chama `assertWritable`. Projeto que o usuário
   não vê é `404` (0016)
+- Blocos de horários em `modules/time-tables/` e os horários em `modules/time-slots/`: o dono e o
+  responsável escrevem; todo membro lê, inclusive os desativados. A API fala `HH:MM` (`00:00` a
+  `23:59`, nada atravessa a meia-noite) e o banco guarda minutos; `toMinutes`, `toHHMM` e
+  `overlaps` (intervalo semiaberto `[start, end)`) em `time-slots/time.ts`. Horário com célula não
+  muda de hora nem se apaga. **O que as próximas specs herdam:** bloco desativado não é escolhido
+  por quadro novo (os que o usam continuam); o horário da célula é do bloco do quadro; horário
+  acrescentado depois de o quadro existir — a spec de quadro decide se cria as células sob demanda
+  ou as materializa; o choque usa a mesma `overlaps`, entre horários de blocos diferentes (0017)
 - Um módulo por entidade, cada um na sua pasta e com os próprios schemas, mesmo quando os campos
   coincidem (organização e unidade: `modules/organizations/` e `modules/units/`). Para agrupar,
   pasta de módulos (nota da 0009)
@@ -158,5 +166,5 @@ action, { isProjectManager })`: status primeiro (`409 TERM_STATUS_FORBIDS` com
 | 0014 | [Duplicação de currículo](0014-api-duplicacao-de-curriculo.md)                   | ✅ done | 0013                         |
 | 0015 | [Locais](0015-api-locais.md)                                                     | ✅ done | 0008, 0009                   |
 | 0016 | [Semestres](0016-api-semestres.md)                                               | ✅ done | 0008, 0009, 0011             |
-| 0017 | [Blocos de horários](0017-api-blocos-de-horarios.md)                             | ⬜ todo | 0008, 0009                   |
+| 0017 | [Blocos de horários](0017-api-blocos-de-horarios.md)                             | ✅ done | 0008, 0009                   |
 | 0018 | [Projetos](0018-api-projetos.md)                                                 | ⬜ todo | 0011, 0012, 0016             |

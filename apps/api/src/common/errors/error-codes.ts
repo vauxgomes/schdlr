@@ -94,6 +94,23 @@ export const ERRORS = {
     status: HttpStatus.CONFLICT,
     message: 'Term status does not allow this action',
   },
+
+  // Blocos de horários (0017)
+  TIME_TABLE_NOT_FOUND: { status: HttpStatus.NOT_FOUND, message: 'Time table not found' },
+  TIME_TABLE_NAME_IN_USE: {
+    status: HttpStatus.CONFLICT,
+    message: 'Time table name already in use',
+  },
+  TIME_TABLE_INACTIVE: { status: HttpStatus.CONFLICT, message: 'Time table is inactive' },
+  TIME_TABLE_IN_USE: { status: HttpStatus.CONFLICT, message: 'Time table is used by a board' },
+  TIME_TABLE_FULL: { status: HttpStatus.CONFLICT, message: 'Time table has too many slots' },
+  TIME_SLOT_NOT_FOUND: { status: HttpStatus.NOT_FOUND, message: 'Time slot not found' },
+  TIME_SLOT_NAME_IN_USE: { status: HttpStatus.CONFLICT, message: 'Time slot name already in use' },
+  TIME_SLOT_OVERLAP: { status: HttpStatus.CONFLICT, message: 'Time slot overlaps another' },
+  TIME_SLOT_IN_USE: {
+    status: HttpStatus.CONFLICT,
+    message: 'Time slot is used by a board slot',
+  },
 } as const satisfies Record<string, { status: HttpStatus; message: string }>
 
 export type ErrorCode = keyof typeof ERRORS
