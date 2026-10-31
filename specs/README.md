@@ -135,3 +135,5 @@ CURRICULUM_NOT_FOUND` para currículo de outro curso ou id que não é cuid) e
 | 0012 | [Currículos](0012-api-curriculos.md)                                             | ✅ done | 0011                         |
 | 0013 | [Disciplinas](0013-api-disciplinas.md)                                           | ✅ done | 0012                         |
 | 0014 | [Duplicação de currículo](0014-api-duplicacao-de-curriculo.md)                   | ✅ done | 0013                         |
+| 0015 | [Locais](0015-api-locais.md)                                                     | ⬜ todo | 0008, 0009                   |
+| 0016 | [Semestres](0016-api-semestres.md)                                               | ⬜ todo | 0008, 0009, 0011             |
