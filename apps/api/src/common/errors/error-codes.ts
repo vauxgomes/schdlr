@@ -73,6 +73,12 @@ export const ERRORS = {
   SUBJECT_INACTIVE: { status: HttpStatus.CONFLICT, message: 'Subject is inactive' },
   SUBJECT_CODE_IN_USE: { status: HttpStatus.CONFLICT, message: 'Subject code already in use' },
   SUBJECT_IN_USE: { status: HttpStatus.CONFLICT, message: 'Subject is used by an offering' },
+
+  // Locais (0015)
+  LOCATION_NOT_FOUND: { status: HttpStatus.NOT_FOUND, message: 'Location not found' },
+  LOCATION_INACTIVE: { status: HttpStatus.CONFLICT, message: 'Location is inactive' },
+  LOCATION_NAME_IN_USE: { status: HttpStatus.CONFLICT, message: 'Location name already in use' },
+  LOCATION_IN_USE: { status: HttpStatus.CONFLICT, message: 'Location is used by a board slot' },
 } as const satisfies Record<string, { status: HttpStatus; message: string }>
 
 export type ErrorCode = keyof typeof ERRORS

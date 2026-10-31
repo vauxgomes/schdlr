@@ -100,6 +100,12 @@ CURRICULUM_NOT_FOUND` para currículo de outro curso ou id que não é cuid) e
   `assertCurriculumWritable` (o `assertCatalogWritable` e, depois, `409 CURRICULUM_INACTIVE`).
   Currículo sem projeto se apaga, com as disciplinas; em uso, `409 CURRICULUM_IN_USE`, também pelo
   `P2003` (`isForeignKeyViolation` em `@infra/database/prisma-errors`) (0012)
+- Locais em `modules/locations/`: o dono e o responsável escrevem; todo membro da unidade lê,
+  inclusive os desativados. Local sem célula se apaga; alocado, `409 LOCATION_IN_USE`. **O que as
+  próximas specs herdam:** local desativado não recebe alocação nova (as que existem ficam e
+  continuam valendo para o choque) — a spec de quadro aplica; `VIRTUAL` não é local físico e nunca
+  gera choque de local — a spec de choque aplica; a célula só aloca local da unidade do projeto
+  (0015)
 - Um módulo por entidade, cada um na sua pasta e com os próprios schemas, mesmo quando os campos
   coincidem (organização e unidade: `modules/organizations/` e `modules/units/`). Para agrupar,
   pasta de módulos (nota da 0009)
@@ -135,5 +141,5 @@ CURRICULUM_NOT_FOUND` para currículo de outro curso ou id que não é cuid) e
 | 0012 | [Currículos](0012-api-curriculos.md)                                             | ✅ done | 0011                         |
 | 0013 | [Disciplinas](0013-api-disciplinas.md)                                           | ✅ done | 0012                         |
 | 0014 | [Duplicação de currículo](0014-api-duplicacao-de-curriculo.md)                   | ✅ done | 0013                         |
-| 0015 | [Locais](0015-api-locais.md)                                                     | ⬜ todo | 0008, 0009                   |
+| 0015 | [Locais](0015-api-locais.md)                                                     | ✅ done | 0008, 0009                   |
 | 0016 | [Semestres](0016-api-semestres.md)                                               | ⬜ todo | 0008, 0009, 0011             |

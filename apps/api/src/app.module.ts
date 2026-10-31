@@ -12,6 +12,7 @@ import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard'
 import { SystemRoleGuard } from '@modules/auth/guards/system-role.guard'
 import { HealthModule } from '@modules/health/health.module'
 import { InvitationsModule } from '@modules/invitations/invitations.module'
+import { LocationsModule } from '@modules/locations/locations.module'
 import { MembersModule } from '@modules/members/members.module'
 import { OrganizationsModule } from '@modules/organizations/organizations.module'
 import { ProfileModule } from '@modules/profile/profile.module'
@@ -41,6 +42,7 @@ import { UsersModule } from '@modules/users/users.module'
     CoursesModule,
     CurriculaModule,
     SubjectsModule,
+    LocationsModule,
   ],
   // A ordem importa: o SystemRoleGuard lê o usuário que o JwtAuthGuard pôs na requisição.
   providers: [

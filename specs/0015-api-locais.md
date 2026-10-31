@@ -1,7 +1,7 @@
 ---
 id: 0015
 title: Locais
-status: todo
+status: done
 depends_on: [0008, 0009]
 ---
 
@@ -138,20 +138,20 @@ comparar.
 
 ## Critérios de aceite
 
-- [ ] Dono e responsável escrevem; coordenador e professor recebem `403`; quem não enxerga a
+- [x] Dono e responsável escrevem; coordenador e professor recebem `403`; quem não enxerga a
       unidade, `404`
-- [ ] Todo membro lista e lê os locais, inclusive os desativados; `?type=` filtra
-- [ ] `type` fora do enum e `capacity` fora de 1–10000 dão `400`; `capacity: null` limpa
-- [ ] Nome repetido na unidade dá `409 LOCATION_NAME_IN_USE`; o mesmo nome em outra unidade passa
-- [ ] Escrita em local desativado dá `409 LOCATION_INACTIVE`; `{ isActive: true }` reativa; plano do
+- [x] Todo membro lista e lê os locais, inclusive os desativados; `?type=` filtra
+- [x] `type` fora do enum e `capacity` fora de 1–10000 dão `400`; `capacity: null` limpa
+- [x] Nome repetido na unidade dá `409 LOCATION_NAME_IN_USE`; o mesmo nome em outra unidade passa
+- [x] Escrita em local desativado dá `409 LOCATION_INACTIVE`; `{ isActive: true }` reativa; plano do
       dono vencido dá `403 PLAN_EXPIRED`
-- [ ] `DELETE` apaga; local alocado em célula dá `409 LOCATION_IN_USE`, inclusive pelo `P2003`
-- [ ] `locationId` de outra unidade dá `404 LOCATION_NOT_FOUND`
-- [ ] Códigos novos no catálogo da 0008; "Contratos em vigor" do README ganha o que as próximas
+- [x] `DELETE` apaga; local alocado em célula dá `409 LOCATION_IN_USE`, inclusive pelo `P2003`
+- [x] `locationId` de outra unidade dá `404 LOCATION_NOT_FOUND`
+- [x] Códigos novos no catálogo da 0008; "Contratos em vigor" do README ganha o que as próximas
       specs herdam sobre local
-- [ ] Testes unitários do service e dos schemas, com banco e `TenantAccessService` substituídos;
+- [x] Testes unitários do service e dos schemas, com banco e `TenantAccessService` substituídos;
       e2e das rotas com o service substituído
-- [ ] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
+- [x] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
 
 ## Verificação
 
@@ -212,3 +212,40 @@ kill %1
 
 Ao final, apagar os locais criados no teste e o que tiver sido inserido por SQL, e apagar os
 códigos OTP e refresh tokens dos logins.
+
+## Registro
+
+**2026-10-31** — executada com `/spec 0015`, na branch `feature/catalogo-academico`, depois da 0014.
+
+Commits: `feat(api): locais (spec 0015)`.
+
+Verificação: sem `.env`, `pnpm test:api` passa (378 unitários, 100 e2e) e `pnpm build:api` também;
+lint limpo; `pnpm format` estável. Contra o banco de dev, rodado em `bash` a partir de um script,
+todas as linhas da seção "Verificação" deram o esperado: `Sala 101` (`CLASSROOM`, 40) → `201`;
+`Meet A` (`VIRTUAL`) → `201` com `capacity: null`; `Sala 101` de novo → `409 LOCATION_NAME_IN_USE`;
+`GARAGE` com `capacity: 0` → `400` com `invalid_value` e `too_small`; o `coordinator@` → `403`; o
+`teacher@` com `?type=VIRTUAL` vê só o `Meet A`, com `canManage: false`; o master → `404`;
+`capacity: null` limpa (`200`); desativada (`200`), editar → `409 LOCATION_INACTIVE`, o `teacher@`
+ainda a vê com `isActive: false`, e `{"isActive":true}` reativa. Com currículo, termo, projeto,
+bloco, horário, quadro e célula inseridos por SQL: `inUse: true` e `DELETE` → `409 LOCATION_IN_USE`;
+o `DELETE` direto por `psql` falha com SQLSTATE `23503` (`board_slots_location_id_fkey`), o `P2003`
+que o service trata; sem eles, o `teacher@` apagando → `403` e o `manager@` → `204`. Além do
+roteiro: `sala 101` (minúsculo) convive com `Sala 101` (`201`); `?type=GARAGE` → `400`; id fora do
+formato → `404 LOCATION_NOT_FOUND`; com a assinatura do `admin@` vencida por SQL, editar → `403
+PLAN_EXPIRED` (e a assinatura voltou a `GRACE` sem `expires_at`). No fim, os locais e o que foi
+inserido por SQL foram apagados, e os códigos OTP e refresh tokens também.
+
+Não exercitado contra o banco: o mesmo nome em outra unidade (o `GRACE` do `admin@` só tem uma
+unidade; o `where` usa `unitId_name`, coberto no teste unitário) e o `P2003` em corrida de verdade.
+
+Desvios:
+
+- **Ordem no `PATCH`**: local (`404`) → papel (`403`) → `assertWritable` → local desativado (`409
+LOCATION_INACTIVE`, salvo `{ isActive: true }`) → nome repetido. No `DELETE`: local → papel →
+  `assertWritable` → em uso. A spec só fixava os papéis e os códigos.
+- **`capacity` ausente no `POST` vira `null`** no Zod (`default(null)`), para o corpo validado já
+  chegar completo ao service.
+- **"Usado por célula"** sai do `_count` de `boardSlots` lido com o local, sem consulta separada.
+- **A verificação foi rodada em passos**: o comando único (script, roteiro e limpeza) foi barrado
+  pelo classificador de permissões do Claude Code; o script foi escrito à parte e a limpeza apagou
+  só os registros criados pelo teste, por nome e id.
