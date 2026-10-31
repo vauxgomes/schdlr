@@ -1,7 +1,7 @@
 ---
 id: 0011
 title: Cursos
-status: todo
+status: done
 depends_on: [0008, 0009, 0010]
 ---
 
@@ -179,24 +179,24 @@ COORDINATOR_NOT_A_MEMBER`
 
 ## Critérios de aceite
 
-- [ ] Dono e responsável criam e editam curso; coordenador e outros membros recebem `403`;
+- [x] Dono e responsável criam e editam curso; coordenador e outros membros recebem `403`;
       quem não enxerga a unidade, `404`
-- [ ] Todo membro lista e lê os cursos, inclusive os desativados
-- [ ] Acima de `coursesPerUnit` dá `403 PLAN_LIMIT_REACHED` com `params`, contando os desativados;
+- [x] Todo membro lista e lê os cursos, inclusive os desativados
+- [x] Acima de `coursesPerUnit` dá `403 PLAN_LIMIT_REACHED` com `params`, contando os desativados;
       contagem e criação numa transação com a unidade travada
-- [ ] `code` normalizado para maiúsculas; repetido na unidade dá `409 COURSE_CODE_IN_USE`; o mesmo
+- [x] `code` normalizado para maiúsculas; repetido na unidade dá `409 COURSE_CODE_IN_USE`; o mesmo
       código em outra unidade passa; vários cursos sem código convivem
-- [ ] `coordinatorId` que não é membro da unidade dá `400 COORDINATOR_NOT_A_MEMBER`; `null` tira o
+- [x] `coordinatorId` que não é membro da unidade dá `400 COORDINATOR_NOT_A_MEMBER`; `null` tira o
       coordenador
-- [ ] Remover o membro (ou ele sair) zera o coordenador dos cursos dele naquela unidade, e só nela
-- [ ] Escrita em curso desativado dá `409 COURSE_INACTIVE`; `{ isActive: true }` reativa; plano do
+- [x] Remover o membro (ou ele sair) zera o coordenador dos cursos dele naquela unidade, e só nela
+- [x] Escrita em curso desativado dá `409 COURSE_INACTIVE`; `{ isActive: true }` reativa; plano do
       dono vencido dá `403 PLAN_EXPIRED`
-- [ ] `courseId` de outra unidade dá `404 COURSE_NOT_FOUND`
-- [ ] `CourseAccessService` exportado, com `resolveCourse` e `assertCatalogWritable` como acima
-- [ ] Códigos novos no catálogo da 0008
-- [ ] Testes unitários do `CourseAccessService`, do service e dos schemas, com banco e
+- [x] `courseId` de outra unidade dá `404 COURSE_NOT_FOUND`
+- [x] `CourseAccessService` exportado, com `resolveCourse` e `assertCatalogWritable` como acima
+- [x] Códigos novos no catálogo da 0008
+- [x] Testes unitários do `CourseAccessService`, do service e dos schemas, com banco e
       `TenantAccessService` substituídos; e2e das rotas com os services substituídos
-- [ ] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
+- [x] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
 
 ## Verificação
 
@@ -266,3 +266,50 @@ kill %1
 Ao final, devolver o banco ao estado da seed: apagar por SQL os cursos criados no teste (o `Curso
 Teste` da seed fica), recriar o `UnitMember` do `teacher@` com `isTeacher: true`, e apagar os
 códigos OTP e refresh tokens dos logins.
+
+## Registro
+
+**2026-10-31** — executada com `/spec 0011`, na branch `development`.
+
+Commits: `feat(api): cursos (spec 0011)`.
+
+Verificação: sem `.env`, `pnpm test:api` passa (288 unitários, 68 e2e) e `pnpm build:api` também;
+lint limpo; `pnpm format` estável. Contra o banco de dev, rodado em `bash` a partir de um script,
+todas as linhas da seção "Verificação" deram o esperado: o `teacher@` lista o `Curso Teste` com o
+`coordinator@`; o master recebe `404` (`ORGANIZATION_NOT_FOUND`); o `coordinator@` criando → `403
+NOT_ALLOWED`; o `manager@` cria `Informática` com `" info "` → `201`, `code: "INFO"`; `INFO` de
+novo → `409 COURSE_CODE_IN_USE`; o `admin@` (dono, não membro) como coordenador → `400
+COORDINATOR_NOT_A_MEMBER`; três lotes → `201`, o sexto → `403 PLAN_LIMIT_REACHED` com `params: {
+limit: "coursesPerUnit", max: 5 }`; o `teacher@` passou a coordenar o `INFO` (`200`), saiu da
+unidade (`204`) e o `INFO` ficou com `coordinator: null`; desativado (`200`), editar dá `409
+COURSE_INACTIVE`, o `coordinator@` ainda o vê na lista com `isActive: false`, e `{"isActive":true}`
+reativa (`200`). Além do roteiro: `courseId` fora do formato → `404 COURSE_NOT_FOUND`; o
+`coordinator@` editando → `403`; `code: null` remove o código; `PATCH` vazio → `400` com o item
+`EMPTY_UPDATE`; com a assinatura do `admin@` vencida por SQL, `PATCH` do `manager@` → `403
+PLAN_EXPIRED` e `GET` → `200`. Na lista, o `coordinator@` tem `canManageCatalog: true` só no `Curso
+Teste`. No fim, os cursos criados foram apagados (o `Curso Teste` ficou), o `UnitMember` do
+`teacher@` foi recriado com `isTeacher: true`, a assinatura do `admin@` voltou a `GRACE` sem
+`expires_at`, e os códigos OTP e refresh tokens foram apagados.
+
+Não exercitado contra o banco (só nos unitários): código repetido em outra unidade e curso de
+outra unidade (o `GRACE` do `admin@` só tem uma unidade), e o limite do coordenador "só naquela
+unidade" (o `where` do `updateMany` tem o `unitId`).
+
+Desvios:
+
+- **`courseRoles(access, coordinatorId, userId)`** é exportado do `course-access.service.ts`: o
+  `resolveCourse` e a listagem (que não resolve curso a curso) calculam o `access` pela mesma
+  função. O tipo `CourseAccess` é `UnitAccess & CourseRoles & { course }`, o mesmo da spec.
+- **`codeSchema` é o código obrigatório** (de 1 a 20, maiúsculas, formato da spec), para o
+  currículo, cujo `code` não é nulo. O "vazio ou ausente vira `null`" é do curso, num schema
+  interno (`courseCodeSchema`) que aceita `null` e string vazia e passa o resto pelo
+  `codeSchema`.
+- **`coordinatorId` no corpo é qualquer string** (ou `null`): o que não é membro, inclusive id fora
+  do formato, dá `400 COORDINATOR_NOT_A_MEMBER`, não `VALIDATION_FAILED`.
+- **Ordem no `PATCH`**: curso (`404`) → papel (`403`) → `assertCatalogWritable` (`409`/`403`) →
+  coordenador (`400`) → código (`409`). A spec só fixava a do `POST`. O `P2002` no `update` também
+  vira `COURSE_CODE_IN_USE`.
+- **`MembersService.remove`** usa `$transaction([updateMany, delete])` (a forma em lote). Nota
+  datada na 0010.
+- **O `GET` de um curso** resolve com o `resolveCourse` e relê o curso com coordenador e contagem
+  de currículos (duas consultas).

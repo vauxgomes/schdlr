@@ -49,6 +49,15 @@ export const ERRORS = {
   INVITATION_NOT_FOUND: { status: HttpStatus.NOT_FOUND, message: 'Invitation not found' },
   INVITATION_EXPIRED: { status: HttpStatus.GONE, message: 'Invitation expired' },
   INVITATION_NOT_PENDING: { status: HttpStatus.CONFLICT, message: 'Invitation is not pending' },
+
+  // Cursos (0011)
+  COURSE_NOT_FOUND: { status: HttpStatus.NOT_FOUND, message: 'Course not found' },
+  COURSE_INACTIVE: { status: HttpStatus.CONFLICT, message: 'Course is inactive' },
+  COURSE_CODE_IN_USE: { status: HttpStatus.CONFLICT, message: 'Course code already in use' },
+  COORDINATOR_NOT_A_MEMBER: {
+    status: HttpStatus.BAD_REQUEST,
+    message: 'Coordinator is not a member',
+  },
 } as const satisfies Record<string, { status: HttpStatus; message: string }>
 
 export type ErrorCode = keyof typeof ERRORS

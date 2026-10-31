@@ -433,3 +433,9 @@ Desvios:
   cancelamento por responsável e o `sign-up` de usuário criado pelo convite.
 - **Falha real de envio não foi exercitada**: nenhum teste envia e-mail. O `503` com o convite
   mantido está coberto pelo teste unitário com o `MailService` substituído.
+
+## Notas posteriores
+
+**2026-10-31 — spec 0011.** O "Não entra" sobre o coordenador que deixa a unidade foi resolvido
+pela 0011: o `MembersService.remove`, na mesma transação do `delete`, zera o `coordinatorId` dos
+cursos daquela unidade coordenados pela pessoa. A resposta do `DELETE` (`204`) não mudou.

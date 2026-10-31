@@ -6,6 +6,7 @@ import { validateEnv } from '@config/env.schema'
 import { DatabaseModule } from '@infra/database/database.module'
 import { MailModule } from '@infra/mail/mail.module'
 import { AuthModule } from '@modules/auth/auth.module'
+import { CoursesModule } from '@modules/courses/courses.module'
 import { JwtAuthGuard } from '@modules/auth/guards/jwt-auth.guard'
 import { SystemRoleGuard } from '@modules/auth/guards/system-role.guard'
 import { HealthModule } from '@modules/health/health.module'
@@ -35,6 +36,7 @@ import { UsersModule } from '@modules/users/users.module'
     UnitsModule,
     MembersModule,
     InvitationsModule,
+    CoursesModule,
   ],
   // A ordem importa: o SystemRoleGuard lê o usuário que o JwtAuthGuard pôs na requisição.
   providers: [

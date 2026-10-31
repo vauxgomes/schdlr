@@ -36,12 +36,18 @@ async function codeOf(promise: Promise<unknown>) {
 }
 
 describe('MembersService', () => {
-  let db: { unitMember: Record<'findMany' | 'findUnique' | 'update' | 'delete', jest.Mock> }
+  let db: {
+    $transaction: jest.Mock
+    course: { updateMany: jest.Mock }
+    unitMember: Record<'findMany' | 'findUnique' | 'update' | 'delete', jest.Mock>
+  }
   let tenants: Record<'resolveUnit' | 'assertWritable', jest.Mock>
   let service: MembersService
 
   beforeEach(() => {
     db = {
+      $transaction: jest.fn((operations: unknown[]) => Promise.all(operations)),
+      course: { updateMany: jest.fn() },
       unitMember: {
         findMany: jest.fn(),
         findUnique: jest.fn(),
@@ -131,6 +137,19 @@ describe('MembersService', () => {
       await expect(service.remove(caller, 'acme', 'sede', 'target')).resolves.toBeUndefined()
       expect(tenants.assertWritable).toHaveBeenCalled()
       expect(db.unitMember.delete).toHaveBeenCalledWith({ where: { id: 'm-1' } })
+    })
+
+    it('quem sai deixa de coordenar os cursos da unidade, na mesma transação', async () => {
+      tenants.resolveUnit.mockResolvedValue(access({ isOwner: true }))
+      db.unitMember.findUnique.mockResolvedValue(member())
+      db.course.updateMany.mockReturnValue('updateMany')
+      db.unitMember.delete.mockReturnValue('delete')
+      await service.remove('owner', 'acme', 'sede', 'target')
+      expect(db.course.updateMany).toHaveBeenCalledWith({
+        where: { unitId: 'unit-1', coordinatorId: 'target' },
+        data: { coordinatorId: null },
+      })
+      expect(db.$transaction).toHaveBeenCalledWith(['updateMany', 'delete'])
     })
 
     it.each([

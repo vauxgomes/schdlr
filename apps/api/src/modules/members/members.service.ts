@@ -64,7 +64,10 @@ export class MembersService {
     return toView(updated)
   }
 
-  /** Remove o membro, ou o próprio sai. Apaga a linha: UnitMember não tem isActive. */
+  /**
+   * Remove o membro, ou o próprio sai. Apaga a linha: UnitMember não tem isActive. Quem sai deixa
+   * de coordenar os cursos da unidade (0011).
+   */
   async remove(userId: string, orgSlug: string, unitSlug: string, targetId: string): Promise<void> {
     const access = await this.tenants.resolveUnit(userId, orgSlug, unitSlug)
     const target = await this.findMember(access, targetId)
@@ -74,7 +77,13 @@ export class MembersService {
     if (!allowed) throw new AppException('NOT_ALLOWED')
     await this.tenants.assertWritable(access)
 
-    await this.database.unitMember.delete({ where: { id: target.id } })
+    await this.database.$transaction([
+      this.database.course.updateMany({
+        where: { unitId: access.unit.id, coordinatorId: targetId },
+        data: { coordinatorId: null },
+      }),
+      this.database.unitMember.delete({ where: { id: target.id } }),
+    ])
   }
 
   private async findMember({ unit }: UnitAccess, userId: string) {
