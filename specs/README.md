@@ -178,26 +178,29 @@ PROJECT_NOT_FOUND`, inclusive na escrita. O `ProjectAccessService` (exportado pe
 
 ## Índice
 
-| id   | spec                                                                             | status  | depende de                   |
-| ---- | -------------------------------------------------------------------------------- | ------- | ---------------------------- |
-| 0000 | [Monorepo pnpm, CI e compose](0000-infra-monorepo-pnpm.md)                       | ✅ done | —                            |
-| 0001 | [Boilerplate da API em NestJS](0001-api-boilerplate-nestjs.md)                   | ✅ done | 0000                         |
-| 0002 | [Schema do domínio](0002-api-schema-do-dominio.md)                               | ✅ done | 0001                         |
-| 0003 | [Envio de e-mail](0003-api-envio-de-email.md)                                    | ✅ done | 0001, 0002                   |
-| 0004 | [Auth por OTP](0004-api-auth-por-otp.md)                                         | ✅ done | 0001, 0002, 0003             |
-| 0005 | [Seed do master e do tenant de teste](0005-api-seed-master-e-tenant-de-teste.md) | ✅ done | 0002                         |
-| 0006 | [Assinaturas e papel de suporte](0006-api-assinaturas-e-papel-de-suporte.md)     | ✅ done | 0002, 0004, 0005             |
-| 0007 | [Perfil do usuário](0007-api-perfil-do-usuario.md)                               | ✅ done | 0004, 0006                   |
-| 0008 | [Códigos de erro](0008-api-codigos-de-erro.md)                                   | ✅ done | 0001, 0004, 0006, 0007       |
-| 0009 | [Organização e unidade](0009-api-organizacao-e-unidade.md)                       | ✅ done | 0002, 0004, 0005, 0006, 0008 |
-| 0010 | [Membros e convites](0010-api-membros-e-convites.md)                             | ✅ done | 0003, 0004, 0008, 0009       |
-| 0011 | [Cursos](0011-api-cursos.md)                                                     | ✅ done | 0008, 0009, 0010             |
-| 0012 | [Currículos](0012-api-curriculos.md)                                             | ✅ done | 0011                         |
-| 0013 | [Disciplinas](0013-api-disciplinas.md)                                           | ✅ done | 0012                         |
-| 0014 | [Duplicação de currículo](0014-api-duplicacao-de-curriculo.md)                   | ✅ done | 0013                         |
-| 0015 | [Locais](0015-api-locais.md)                                                     | ✅ done | 0008, 0009                   |
-| 0016 | [Semestres](0016-api-semestres.md)                                               | ✅ done | 0008, 0009, 0011             |
-| 0017 | [Blocos de horários](0017-api-blocos-de-horarios.md)                             | ✅ done | 0008, 0009                   |
-| 0018 | [Projetos](0018-api-projetos.md)                                                 | ✅ done | 0011, 0012, 0016             |
-| 0019 | [Ofertas](0019-api-ofertas.md)                                                   | ✅ done | 0010, 0013, 0018             |
-| 0020 | [Quadros](0020-api-quadros.md)                                                   | ✅ done | 0015, 0017, 0018, 0019       |
+| id   | spec                                                                             | status  | depende de                         |
+| ---- | -------------------------------------------------------------------------------- | ------- | ---------------------------------- |
+| 0000 | [Monorepo pnpm, CI e compose](0000-infra-monorepo-pnpm.md)                       | ✅ done | —                                  |
+| 0001 | [Boilerplate da API em NestJS](0001-api-boilerplate-nestjs.md)                   | ✅ done | 0000                               |
+| 0002 | [Schema do domínio](0002-api-schema-do-dominio.md)                               | ✅ done | 0001                               |
+| 0003 | [Envio de e-mail](0003-api-envio-de-email.md)                                    | ✅ done | 0001, 0002                         |
+| 0004 | [Auth por OTP](0004-api-auth-por-otp.md)                                         | ✅ done | 0001, 0002, 0003                   |
+| 0005 | [Seed do master e do tenant de teste](0005-api-seed-master-e-tenant-de-teste.md) | ✅ done | 0002                               |
+| 0006 | [Assinaturas e papel de suporte](0006-api-assinaturas-e-papel-de-suporte.md)     | ✅ done | 0002, 0004, 0005                   |
+| 0007 | [Perfil do usuário](0007-api-perfil-do-usuario.md)                               | ✅ done | 0004, 0006                         |
+| 0008 | [Códigos de erro](0008-api-codigos-de-erro.md)                                   | ✅ done | 0001, 0004, 0006, 0007             |
+| 0009 | [Organização e unidade](0009-api-organizacao-e-unidade.md)                       | ✅ done | 0002, 0004, 0005, 0006, 0008       |
+| 0010 | [Membros e convites](0010-api-membros-e-convites.md)                             | ✅ done | 0003, 0004, 0008, 0009             |
+| 0011 | [Cursos](0011-api-cursos.md)                                                     | ✅ done | 0008, 0009, 0010                   |
+| 0012 | [Currículos](0012-api-curriculos.md)                                             | ✅ done | 0011                               |
+| 0013 | [Disciplinas](0013-api-disciplinas.md)                                           | ✅ done | 0012                               |
+| 0014 | [Duplicação de currículo](0014-api-duplicacao-de-curriculo.md)                   | ✅ done | 0013                               |
+| 0015 | [Locais](0015-api-locais.md)                                                     | ✅ done | 0008, 0009                         |
+| 0016 | [Semestres](0016-api-semestres.md)                                               | ✅ done | 0008, 0009, 0011                   |
+| 0017 | [Blocos de horários](0017-api-blocos-de-horarios.md)                             | ✅ done | 0008, 0009                         |
+| 0018 | [Projetos](0018-api-projetos.md)                                                 | ✅ done | 0011, 0012, 0016                   |
+| 0019 | [Ofertas](0019-api-ofertas.md)                                                   | ✅ done | 0010, 0013, 0018                   |
+| 0020 | [Quadros](0020-api-quadros.md)                                                   | ✅ done | 0015, 0017, 0018, 0019             |
+| 0021 | [Professores](0021-api-professores.md)                                           | ⬜ todo | 0005, 0008, 0009, 0010, 0019       |
+| 0022 | [Detecção de choque](0022-api-deteccao-de-choque.md)                             | ⬜ todo | 0015, 0017, 0018, 0019, 0020, 0021 |
+| 0023 | [Choque ao publicar](0023-api-choque-ao-publicar.md)                             | ⬜ todo | 0018, 0022                         |
