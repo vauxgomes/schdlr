@@ -127,6 +127,17 @@ export const ERRORS = {
     status: HttpStatus.BAD_REQUEST,
     message: 'Teacher must be a teacher of the unit',
   },
+
+  // Quadros (0020)
+  BOARD_NOT_FOUND: { status: HttpStatus.NOT_FOUND, message: 'Board not found' },
+  BOARD_NAME_IN_USE: { status: HttpStatus.CONFLICT, message: 'Board name already in use' },
+  BOARD_NOT_EMPTY: { status: HttpStatus.CONFLICT, message: 'Board has slots' },
+  BOARD_SLOT_NOT_FOUND: { status: HttpStatus.NOT_FOUND, message: 'Board slot not found' },
+  INVALID_OFFERING: {
+    status: HttpStatus.BAD_REQUEST,
+    message: 'Offering must belong to the project',
+  },
+  INVALID_LOCATION: { status: HttpStatus.BAD_REQUEST, message: 'Location must belong to the unit' },
 } as const satisfies Record<string, { status: HttpStatus; message: string }>
 
 export type ErrorCode = keyof typeof ERRORS

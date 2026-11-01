@@ -150,6 +150,16 @@ PROJECT_NOT_FOUND`, inclusive na escrita. O `ProjectAccessService` (exportado pe
   `STARTED`; em `FINISHED`/`CANCELLED`, não. **O que as próximas specs herdam:** `slotsCount` da
   oferta já conta as células; oferta sem professor pode ser alocada e não gera choque de
   professor (0019)
+- Quadros em `modules/boards/` e células em `modules/board-slots/`: lê quem vê o projeto, escreve
+  quem a matriz deixa editar. **Célula existe só com conteúdo**: a linha de `BoardSlot` só existe
+  com oferta, local ou bloqueio; vazia é a ausência da linha, e o `GET` do quadro sintetiza a grade
+  inteira (horários do bloco × dias letivos). `PUT …/slots/:timeSlotId/:weekday` recebe o estado
+  inteiro (`offeringId`, `locationId`, `isBlocked`); o vazio apaga a linha. Bloqueada é vazia;
+  oferta do projeto, local da unidade; local desativado só barra alocação nova. Trocar o bloco só
+  com o quadro sem célula. Remover oferta apaga as células dela sem local e zera a oferta nas
+  outras. A oferta traz `slotsCount` e `weeklyMinutes`; o quadro, o resumo `offerings` só dele.
+  **O que as próximas specs herdam:** nada aqui verifica choque — a spec de choque acrescenta ao
+  `PUT` da célula e ao `GET` do quadro (0020)
 - Um módulo por entidade, cada um na sua pasta e com os próprios schemas, mesmo quando os campos
   coincidem (organização e unidade: `modules/organizations/` e `modules/units/`). Para agrupar,
   pasta de módulos (nota da 0009)
@@ -190,4 +200,4 @@ PROJECT_NOT_FOUND`, inclusive na escrita. O `ProjectAccessService` (exportado pe
 | 0017 | [Blocos de horários](0017-api-blocos-de-horarios.md)                             | ✅ done | 0008, 0009                   |
 | 0018 | [Projetos](0018-api-projetos.md)                                                 | ✅ done | 0011, 0012, 0016             |
 | 0019 | [Ofertas](0019-api-ofertas.md)                                                   | ✅ done | 0010, 0013, 0018             |
-| 0020 | [Quadros](0020-api-quadros.md)                                                   | ⬜ todo | 0015, 0017, 0018, 0019       |
+| 0020 | [Quadros](0020-api-quadros.md)                                                   | ✅ done | 0015, 0017, 0018, 0019       |

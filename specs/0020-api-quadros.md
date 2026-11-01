@@ -1,7 +1,7 @@
 ---
 id: 0020
 title: Quadros
-status: todo
+status: done
 depends_on: [0015, 0017, 0018, 0019]
 ---
 
@@ -213,27 +213,27 @@ TIME_TABLE_INACTIVE` (0017: bloco desativado não é escolhido por quadro novo)
 
 ## Critérios de aceite
 
-- [ ] Gestores criam, renomeiam e apagam quadros conforme a matriz da 0016; quem não vê o projeto
+- [x] Gestores criam, renomeiam e apagam quadros conforme a matriz da 0016; quem não vê o projeto
       recebe `404`
-- [ ] Bloco de fora da unidade dá `404`; desativado dá `409` no quadro novo e continua valendo no
+- [x] Bloco de fora da unidade dá `404`; desativado dá `409` no quadro novo e continua valendo no
       quadro que já o usa
-- [ ] Trocar o bloco só com o quadro vazio (`409 BOARD_NOT_EMPTY`)
-- [ ] O `GET` devolve a grade inteira (horários × dias letivos), com as células vazias sintetizadas;
+- [x] Trocar o bloco só com o quadro vazio (`409 BOARD_NOT_EMPTY`)
+- [x] O `GET` devolve a grade inteira (horários × dias letivos), com as células vazias sintetizadas;
       horário acrescentado ao bloco depois aparece como linha vazia
-- [ ] `PUT` cria, atualiza e, com o estado vazio, apaga a linha; posição fora da grade dá `404`
-- [ ] Bloqueada com oferta ou local dá `400 BLOCKED_SLOT_MUST_BE_EMPTY`
-- [ ] Oferta de outro projeto e local de outra unidade dão `400`; local desativado só barra
+- [x] `PUT` cria, atualiza e, com o estado vazio, apaga a linha; posição fora da grade dá `404`
+- [x] Bloqueada com oferta ou local dá `400 BLOCKED_SLOT_MUST_BE_EMPTY`
+- [x] Oferta de outro projeto e local de outra unidade dão `400`; local desativado só barra
       alocação nova
-- [ ] Oferta sem professor, oferta de disciplina desativada, local sem oferta e oferta sem local
+- [x] Oferta sem professor, oferta de disciplina desativada, local sem oferta e oferta sem local
       são aceitos; a mesma oferta em vários quadros também
-- [ ] Remover oferta apaga as células dela sem local e zera a oferta nas que têm local
-- [ ] `slotsCount` e `weeklyMinutes` da oferta e o resumo `offerings` do quadro batem com as células
-- [ ] Reduzir o projeto a 5 dias com célula de sábado continua dando `409 WORKING_DAYS_IN_USE`
-- [ ] Códigos novos no catálogo da 0008; nota datada na 0019; "Contratos em vigor" do README ganha
+- [x] Remover oferta apaga as células dela sem local e zera a oferta nas que têm local
+- [x] `slotsCount` e `weeklyMinutes` da oferta e o resumo `offerings` do quadro batem com as células
+- [x] Reduzir o projeto a 5 dias com célula de sábado continua dando `409 WORKING_DAYS_IN_USE`
+- [x] Códigos novos no catálogo da 0008; nota datada na 0019; "Contratos em vigor" do README ganha
       "célula existe só com conteúdo"
-- [ ] Testes unitários dos services (grade sintetizada, `PUT` nos três estados, remoção de oferta)
+- [x] Testes unitários dos services (grade sintetizada, `PUT` nos três estados, remoção de oferta)
       e dos schemas; e2e das rotas com os services substituídos
-- [ ] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
+- [x] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
 
 ## Verificação
 
@@ -319,3 +319,47 @@ kill %1
 
 Ao final, apagar por SQL o projeto, o semestre, o currículo, o bloco e o local de teste, e os
 códigos OTP e refresh tokens dos logins.
+
+## Registro
+
+**2026-10-31** — executada com `/spec 0020`, na branch `development`.
+
+Commits: `feat(api): quadros (spec 0020)`.
+
+Verificação: sem `.env`, `pnpm test:api` passa (714 unitários, 157 e2e) e `pnpm build:api` também;
+`tsc` e lint limpos; `pnpm format` estável. Contra o banco de dev, rodado em `bash` a partir de um
+script, todas as linhas da seção "Verificação" deram o esperado, mais: bloco inexistente → `404
+TIME_TABLE_NOT_FOUND` e desativado → `409 TIME_TABLE_INACTIVE` no quadro novo; horário de outro
+bloco e dia fora do formato → `404 BOARD_SLOT_NOT_FOUND`; oferta de fora do projeto → `400
+INVALID_OFFERING`, local de fora da unidade → `400 INVALID_LOCATION`; local sem oferta e a FIS-101
+(sem professor) sem local → `200`; a MAT-101 num segundo quadro (`INFO 2B`) → `200`, com
+`slotsCount 2` e `weeklyMinutes 100`, e a lista resumida com `filledSlots` 2 e 1; o `INFO 2B`
+esvaziado renomeia e troca para outro bloco (`200`); com o bloco do quadro desativado, alocar e
+limpar continuam passando; com 6 dias e uma célula de sábado, voltar a 5 → `409
+WORKING_DAYS_IN_USE`, e sem ela → `200`; remover a MAT-101 apagou a célula M2/seg (sem local) e
+deixou a M1/seg só com o local, conferido no banco; em `STARTED`, o `coordinator@` escrevendo →
+`403`, o `manager@` → `200` e o `teacher@` lê (`200`); apagar o quadro → `204`, sem nenhuma célula
+sobrando. No fim, projeto, semestre, currículo, os dois blocos, o local, os códigos OTP e os
+refresh tokens foram apagados.
+
+Durante a execução, o usuário perguntou por um `GET` que trouxesse todos os quadros com a grade de
+uma vez; decidiu que não é preciso: o web chama `GET …/boards` e depois cada quadro.
+
+Desvios:
+
+- **`PATCH` com `timeTableId` igual ao atual, num quadro com célula, dá `409 BOARD_NOT_EMPTY`**,
+  como o roteiro da Verificação espera. A checagem de "vazio" vale sempre que `timeTableId` vem no
+  corpo; as do bloco (`404`, `409 TIME_TABLE_INACTIVE`) só quando ele muda, e é isso que deixa o
+  bloco desativado que o quadro já usa continuar valendo.
+- **Ordem nas escritas**: projeto (`404`) → quadro (`404`) → posição da célula (`404`) →
+  `assertProjectWritable` (`409`/`403`) → bloco, oferta e local (`404`/`400`/`409`) → nome (`409`).
+  O corpo inválido (`400 VALIDATION_FAILED`) vem antes de tudo, pelo pipe. A spec não fixava.
+- **O formato da célula** (`withCellDetails`, `toCellView`, `emptyCell`) mora em
+  `board-slots/board-slot-view.ts`, e o `BoardsService` o importa para montar a grade. O
+  `BoardsModule` exporta o `BoardsService` (`findBoard`) para o `BoardSlotsModule`.
+- **O `weekday` do caminho** só aceita dígitos (`/^\d+$/`); `1a`, `x` ou `0` dão `404`.
+- **O resumo `offerings` do quadro** sai na ordem da grade (primeira célula de cada oferta, por
+  horário e dia). `filledSlots` e `blockedSlots` da lista são contados em memória, sobre
+  `offeringId` e `isBlocked` das células.
+- **Oferta (0019)**: o `_count` de `boardSlots` deu lugar a um `select` das durações dos horários
+  das células; `slotsCount` é o tamanho dessa lista e `weeklyMinutes`, a soma.

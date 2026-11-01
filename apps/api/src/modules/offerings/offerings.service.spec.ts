@@ -29,7 +29,9 @@ const row = (overrides: { teacher?: unknown; isActive?: boolean; slots?: number 
     isActive: overrides.isActive ?? true,
   },
   teacher: overrides.teacher ?? null,
-  _count: { boardSlots: overrides.slots ?? 0 },
+  boardSlots: Array.from({ length: overrides.slots ?? 0 }, (_, i) => ({
+    timeSlot: { startTime: 420 + i * 50, endTime: 470 + i * 50 },
+  })),
 })
 const teacher = { id: TCH_ID, email: 'teacher@schdlr.dev', name: 'Teacher Teste' }
 
@@ -48,7 +50,7 @@ describe('OfferingsService', () => {
     offering: Record<'findMany' | 'findFirst' | 'update' | 'delete' | 'createMany', jest.Mock>
     subject: { findMany: jest.Mock }
     unitMember: { findFirst: jest.Mock }
-    boardSlot: { updateMany: jest.Mock }
+    boardSlot: Record<'updateMany' | 'deleteMany', jest.Mock>
   }
   let projects: Record<'resolveProject' | 'assertProjectWritable', jest.Mock>
   let service: OfferingsService
@@ -65,7 +67,7 @@ describe('OfferingsService', () => {
       },
       subject: { findMany: jest.fn().mockResolvedValue([]) },
       unitMember: { findFirst: jest.fn().mockResolvedValue({ id: 'm-1' }) },
-      boardSlot: { updateMany: jest.fn() },
+      boardSlot: { updateMany: jest.fn(), deleteMany: jest.fn() },
     }
     projects = {
       resolveProject: jest.fn().mockResolvedValue(projectAccess()),
@@ -94,6 +96,7 @@ describe('OfferingsService', () => {
           },
           teacher,
           slotsCount: 2,
+          weeklyMinutes: 100,
           createdAt: new Date('2026-10-31T10:00:00.000Z'),
           updatedAt: new Date('2026-10-31T10:00:00.000Z'),
         },
@@ -212,17 +215,21 @@ describe('OfferingsService', () => {
   })
 
   describe('remove', () => {
-    it('desaloca as células da oferta e a apaga, na mesma transação', async () => {
+    it('apaga as células sem local, zera a oferta nas outras e a apaga, numa transação', async () => {
+      db.boardSlot.deleteMany.mockReturnValue('deleteMany')
       db.boardSlot.updateMany.mockReturnValue('updateMany')
       db.offering.delete.mockReturnValue('delete')
       await expect(service.remove('crd', 'acme', 'sede', 'prj-1', OFF_ID)).resolves.toBeUndefined()
       expect(projects.assertProjectWritable).toHaveBeenCalledWith(projectAccess())
+      expect(db.boardSlot.deleteMany).toHaveBeenCalledWith({
+        where: { offeringId: OFF_ID, locationId: null },
+      })
       expect(db.boardSlot.updateMany).toHaveBeenCalledWith({
         where: { offeringId: OFF_ID },
         data: { offeringId: null },
       })
       expect(db.offering.delete).toHaveBeenCalledWith({ where: { id: OFF_ID } })
-      expect(db.$transaction).toHaveBeenCalledWith(['updateMany', 'delete'])
+      expect(db.$transaction).toHaveBeenCalledWith(['deleteMany', 'updateMany', 'delete'])
     })
 
     it('a matriz barra antes de mexer no banco', async () => {

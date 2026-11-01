@@ -22,6 +22,7 @@ export type OfferingView = {
   }
   teacher: { id: string; email: string; name: string } | null
   slotsCount: number
+  weeklyMinutes: number
   createdAt: Date
   updatedAt: Date
 }
@@ -39,7 +40,8 @@ const withDetails = {
     },
   },
   teacher: { select: { id: true, email: true, name: true } },
-  _count: { select: { boardSlots: true } },
+  // As durações dos horários das células, em todos os quadros: slotsCount e weeklyMinutes (0020).
+  boardSlots: { select: { timeSlot: { select: { startTime: true, endTime: true } } } },
 } satisfies Prisma.OfferingInclude
 
 type OfferingWithDetails = Prisma.OfferingGetPayload<{ include: typeof withDetails }>
@@ -114,8 +116,8 @@ export class OfferingsService {
   }
 
   /**
-   * Desaloca as células da oferta e a apaga, na mesma transação. As células ficam no quadro, com
-   * o local; quem desaloca é a aplicação, não a FK.
+   * Desaloca as células da oferta e a apaga, na mesma transação. Célula que ficaria vazia (sem
+   * local) é apagada; a que tem local fica, sem oferta (0020). Quem decide é a aplicação, não a FK.
    */
   async remove(
     userId: string,
@@ -129,6 +131,7 @@ export class OfferingsService {
     await this.projects.assertProjectWritable(access)
 
     await this.database.$transaction([
+      this.database.boardSlot.deleteMany({ where: { offeringId: offering.id, locationId: null } }),
       this.database.boardSlot.updateMany({
         where: { offeringId: offering.id },
         data: { offeringId: null },
@@ -184,9 +187,21 @@ function toView({
   id,
   subject,
   teacher,
-  _count,
+  boardSlots,
   createdAt,
   updatedAt,
 }: OfferingWithDetails): OfferingView {
-  return { id, subject, teacher, slotsCount: _count.boardSlots, createdAt, updatedAt }
+  const weeklyMinutes = boardSlots.reduce(
+    (total, { timeSlot }) => total + timeSlot.endTime - timeSlot.startTime,
+    0,
+  )
+  return {
+    id,
+    subject,
+    teacher,
+    slotsCount: boardSlots.length,
+    weeklyMinutes,
+    createdAt,
+    updatedAt,
+  }
 }

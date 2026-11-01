@@ -344,3 +344,11 @@ Desvios:
   (`$transaction([update, updateMany])`); o `remove` acrescenta o `updateMany` das ofertas ao
   lote que já zerava o coordenador. Os semestres abertos são derivados de `isTermClosed`
   (`PLANNING`, `ADJUSTMENTS`, `STARTED`).
+
+## Notas posteriores
+
+**2026-10-31 — spec 0020.** A remoção de oferta não deixa mais célula vazia: o lote do
+`OfferingsService.remove` passou a ser `deleteMany` (células da oferta sem local) → `updateMany`
+(as que sobram, `offeringId` nulo) → `delete` da oferta. A célula com local fica, sem oferta. O
+formato da oferta ganhou `weeklyMinutes` ao lado do `slotsCount`, e os dois saem das durações dos
+horários das células, não mais do `_count`.
