@@ -14,6 +14,7 @@ import { HealthModule } from '@modules/health/health.module'
 import { InvitationsModule } from '@modules/invitations/invitations.module'
 import { LocationsModule } from '@modules/locations/locations.module'
 import { MembersModule } from '@modules/members/members.module'
+import { OfferingsModule } from '@modules/offerings/offerings.module'
 import { OrganizationsModule } from '@modules/organizations/organizations.module'
 import { ProfileModule } from '@modules/profile/profile.module'
 import { ProjectsModule } from '@modules/projects/projects.module'
@@ -51,6 +52,7 @@ import { UsersModule } from '@modules/users/users.module'
     TimeTablesModule,
     TimeSlotsModule,
     ProjectsModule,
+    OfferingsModule,
   ],
   // A ordem importa: o SystemRoleGuard lê o usuário que o JwtAuthGuard pôs na requisição.
   providers: [

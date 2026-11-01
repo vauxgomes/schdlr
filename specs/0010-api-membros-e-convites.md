@@ -439,3 +439,10 @@ Desvios:
 **2026-10-31 — spec 0011.** O "Não entra" sobre o coordenador que deixa a unidade foi resolvido
 pela 0011: o `MembersService.remove`, na mesma transação do `delete`, zera o `coordinatorId` dos
 cursos daquela unidade coordenados pela pessoa. A resposta do `DELETE` (`204`) não mudou.
+
+**2026-10-31 — spec 0019.** O "Não entra" sobre o professor que deixa a unidade foi resolvido
+pela 0019: o `MembersService` zera o `teacherId` das ofertas dos projetos da unidade em semestres
+`PLANNING`, `ADJUSTMENTS` e `STARTED` quando o membro é removido ou sai (`remove`, no mesmo lote
+que zera o coordenador) e quando o `isTeacher` passa de `true` para `false` (`update`, na mesma
+transação). Em `FINISHED` e `CANCELLED` a oferta fica como estava. As respostas das rotas de
+membro não mudaram.

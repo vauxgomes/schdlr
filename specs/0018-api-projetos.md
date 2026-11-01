@@ -376,3 +376,9 @@ Desvios:
   do schema. Reverificado contra o banco: criar com `"status":"DRAFT"` no corpo → `201` `PUBLISHED`;
   publicar → `409 INVALID_PROJECT_TRANSITION`; o `teacher@` não vê em `PLANNING` (`[]`, `404`) e vê
   em `ADJUSTMENTS` sem publicar à mão (`200`); despublicado, volta a `404`.
+
+## Notas posteriores
+
+**2026-10-31 — spec 0019.** O projeto não nasce mais sem oferta: o `ProjectsService.create` grava
+o projeto e gera as ofertas das disciplinas ativas do currículo (`generateOfferings`, de
+`offerings/generate-offerings.ts`) no mesmo `$transaction`. O formato do projeto não mudou.

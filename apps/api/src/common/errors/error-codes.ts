@@ -120,6 +120,13 @@ export const ERRORS = {
     message: 'Invalid project status transition',
   },
   WORKING_DAYS_IN_USE: { status: HttpStatus.CONFLICT, message: 'Saturday has board slots' },
+
+  // Ofertas (0019)
+  OFFERING_NOT_FOUND: { status: HttpStatus.NOT_FOUND, message: 'Offering not found' },
+  INVALID_TEACHER: {
+    status: HttpStatus.BAD_REQUEST,
+    message: 'Teacher must be a teacher of the unit',
+  },
 } as const satisfies Record<string, { status: HttpStatus; message: string }>
 
 export type ErrorCode = keyof typeof ERRORS

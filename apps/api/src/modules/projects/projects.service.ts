@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { AppException } from '@common/errors/app.exception'
 import { DatabaseService } from '@infra/database/database.service'
 import { isUniqueViolation } from '@infra/database/prisma-errors'
+import { generateOfferings } from '@modules/offerings/generate-offerings'
 import { TenantAccessService, UnitAccess } from '@modules/tenancy/tenant-access.service'
 import { TermAccessService } from '@modules/terms/term-access.service'
 import { isProjectActionAllowed, isProjectVisible } from '@modules/terms/term-policy'
@@ -95,7 +96,7 @@ export class ProjectsService {
   /**
    * Nasce PUBLISHED, criado por quem chamou: só se cria em PLANNING, onde os demais não veem
    * projeto nenhum, e despublicar é opcional (0018). O gestor é calculado pelo curso do currículo
-   * escolhido: o coordenador cria só para o curso que coordena.
+   * escolhido: o coordenador cria só para o curso que coordena. Já nasce com as ofertas (0019).
    */
   async create(
     userId: string,
@@ -131,18 +132,23 @@ export class ProjectsService {
     await this.assertNameFree(term.id, name)
 
     try {
-      const project = await this.database.project.create({
-        data: {
-          name,
-          workingDays,
-          unitId: access.unit.id,
-          termId: term.id,
-          curriculumId: curriculum.id,
-          createdById: userId,
-          // Não o default DRAFT do schema (0002).
-          status: 'PUBLISHED',
-        },
-        include: withDetails,
+      // As ofertas nascem com o projeto, na mesma transação (0019).
+      const project = await this.database.$transaction(async (tx) => {
+        const created = await tx.project.create({
+          data: {
+            name,
+            workingDays,
+            unitId: access.unit.id,
+            termId: term.id,
+            curriculumId: curriculum.id,
+            createdById: userId,
+            // Não o default DRAFT do schema (0002).
+            status: 'PUBLISHED',
+          },
+          include: withDetails,
+        })
+        await generateOfferings(tx, created)
+        return created
       })
       return toView(project, access, userId)
     } catch (error) {

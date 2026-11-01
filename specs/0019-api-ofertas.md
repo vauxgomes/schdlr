@@ -1,7 +1,7 @@
 ---
 id: 0019
 title: Ofertas
-status: todo
+status: done
 depends_on: [0010, 0013, 0018]
 ---
 
@@ -183,26 +183,26 @@ TERM_STATUS_FORBIDS`)
 
 ## Critérios de aceite
 
-- [ ] Criar projeto gera uma oferta sem professor por disciplina ativa do currículo, na mesma
+- [x] Criar projeto gera uma oferta sem professor por disciplina ativa do currículo, na mesma
       transação
-- [ ] `generate` cria só as que faltam, das disciplinas ativas; a segunda chamada seguida cria `0`;
+- [x] `generate` cria só as que faltam, das disciplinas ativas; a segunda chamada seguida cria `0`;
       não apaga nem muda professor de nenhuma oferta
-- [ ] Oferta removida de disciplina ativa volta na regeração; de disciplina desativada, não volta
-- [ ] Oferta de disciplina desativada continua no projeto, com `subject.isActive: false`, aceita
+- [x] Oferta removida de disciplina ativa volta na regeração; de disciplina desativada, não volta
+- [x] Oferta de disciplina desativada continua no projeto, com `subject.isActive: false`, aceita
       professor e não é apagada pela regeração
-- [ ] `PATCH` aceita professor da unidade e `null`; quem não é professor da unidade (sem
+- [x] `PATCH` aceita professor da unidade e `null`; quem não é professor da unidade (sem
       `isTeacher`, de fora ou usuário inativo) dá `400 INVALID_TEACHER`
-- [ ] `DELETE` zera o `offeringId` das células da oferta e a apaga, numa transação, e responde `204`
-- [ ] Escrever segue a matriz da 0016: `STARTED` só dono e responsável, `FINISHED`/`CANCELLED` dão
+- [x] `DELETE` zera o `offeringId` das células da oferta e a apaga, numa transação, e responde `204`
+- [x] Escrever segue a matriz da 0016: `STARTED` só dono e responsável, `FINISHED`/`CANCELLED` dão
       `409 TERM_STATUS_FORBIDS`; quem não vê o projeto recebe `404`
-- [ ] Remover o membro, ou tirar o `isTeacher` dele, zera o professor nas ofertas da unidade em
+- [x] Remover o membro, ou tirar o `isTeacher` dele, zera o professor nas ofertas da unidade em
       projetos de semestres `PLANNING`, `ADJUSTMENTS` e `STARTED`, e não nos `FINISHED`/`CANCELLED`
-- [ ] Listagem ordenada por `level` e `code`; `?teacherId=` e `?withoutTeacher=true` filtram
-- [ ] Códigos novos no catálogo da 0008; nota datada na 0010; "Contratos em vigor" do README ganha
+- [x] Listagem ordenada por `level` e `code`; `?teacherId=` e `?withoutTeacher=true` filtram
+- [x] Códigos novos no catálogo da 0008; nota datada na 0010; "Contratos em vigor" do README ganha
       a geração, a remoção e o professor que deixa a unidade
-- [ ] Testes unitários do service (geração, regeração, remoção) e dos schemas, e do `MembersService`
+- [x] Testes unitários do service (geração, regeração, remoção) e dos schemas, e do `MembersService`
       com o professor que sai; e2e das rotas com o service substituído
-- [ ] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
+- [x] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
 
 ## Verificação
 
@@ -294,3 +294,53 @@ kill %1
 Ao final, apagar por SQL o projeto (leva as ofertas, o quadro e a célula), o semestre e o currículo
 de teste (leva as disciplinas), conferir que o `teacher@` continua com `isTeacher: true`, e apagar
 os códigos OTP e refresh tokens dos logins.
+
+## Registro
+
+**2026-10-31** — executada com `/spec 0019`, na branch `development`.
+
+Commits: `feat(api): ofertas (spec 0019)`.
+
+Verificação: sem `.env`, `pnpm test:api` passa (675 unitários, 149 e2e) e `pnpm build:api` também;
+`tsc` e lint limpos; `pnpm format` estável. Contra o banco de dev, rodado em `bash` a partir de um
+script, todas as linhas da seção "Verificação" deram o esperado: o projeto nasce com as 3 ofertas
+sem professor e a regeração seguida dá `created 0`; o `teacher@` entra na MAT-101 (`200`), o
+`coordinator@` (sem `isTeacher`) e um id fora do formato dão `400 INVALID_TEACHER`, `{}` dá `400`
+com `EMPTY_UPDATE`; `?teacherId=` traz a MAT-101 e `?withoutTeacher=true` as outras duas; remover
+a MAT-101 (`204`) e regerar a traz de volta sem professor (`created 1`); a QUI-201 desativada
+continua na lista com `subject.isActive: false` e aceita professor; removida, não volta; a BIO-101
+acrescentada depois entra na regeração (`created 1`); com quadro e célula da FIS-101 inseridos por
+SQL, o `slotsCount` dá `1`, o `DELETE` responde `204` e a célula fica com `offering_id` nulo;
+tirar o `isTeacher` do `teacher@` em `PLANNING` deixa a FIS-101 sem professor. Em `STARTED`:
+`coordinator@` regerando → `403`, `manager@` → `200`, o `teacher@` lê (`200`) e apagar → `403`. Em
+`FINISHED`: regerar → `409 TERM_STATUS_FORBIDS` com `{ status, action: "edit" }`, e tirar o
+`isTeacher` do `teacher@` **não** mexe na FIS-101, que continua com ele. Além do roteiro: oferta
+inexistente e id fora do formato → `404 OFFERING_NOT_FOUND`; o `teacher@` em `PLANNING` → `404
+PROJECT_NOT_FOUND`. No fim, projeto, semestre, currículo e o bloco de horários inserido por SQL
+foram apagados, o `teacher@` ficou com `isTeacher: true`, e os códigos OTP e refresh tokens
+também se foram.
+
+Não exercitado contra o banco: o `remove` do membro (coberto pelo teste unitário do
+`MembersService`) e o local na célula desalocada (a unidade de teste não tem local; o `updateMany`
+só toca o `offeringId`).
+
+Desvios:
+
+- **`BoardSlot.offeringId` é `SetNull` no schema, não `Restrict`.** A spec parte do `Restrict` do
+  corpo da 0002, mas o Registro dela mudou para `SetNull` (e vale o `schema.prisma`). Nada muda
+  aqui: o `DELETE` zera as células com `updateMany` antes de apagar, na mesma transação, como a
+  spec pede, e a FK só repetiria o que a aplicação já fez. Sem migration.
+- **`generateOfferings(tx, project)`** é uma função solta em `offerings/generate-offerings.ts`, não
+  um método de service: o `ProjectsService.create` a chama dentro da transação, e o
+  `ProjectsModule` não pode importar o `OfferingsModule`, que importa ele (pelo
+  `ProjectAccessService`). O `create` passou de `project.create` para um `$transaction`
+  interativo.
+- **Ordem nas escritas**: projeto (`404`) → oferta (`404`) → `assertProjectWritable` (`409`/`403`)
+  → professor (`400 INVALID_TEACHER`). A spec não fixava.
+- **`?teacherId=` e `?withoutTeacher=true` juntos** combinam com E (lista vazia). `teacherId` na
+  query não é validado: fora do formato, só não casa com nada. `withoutTeacher` é `stringbool`
+  (`false` não filtra; fora de booleano, `400`).
+- **Membro**: o `update` só abre transação quando o `isTeacher` passa de `true` para `false`
+  (`$transaction([update, updateMany])`); o `remove` acrescenta o `updateMany` das ofertas ao
+  lote que já zerava o coordenador. Os semestres abertos são derivados de `isTermClosed`
+  (`PLANNING`, `ADJUSTMENTS`, `STARTED`).

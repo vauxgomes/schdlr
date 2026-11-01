@@ -726,3 +726,10 @@ Desvios:
 - Na tabela de "Regras que ficam com a aplicação", a linha de `Location` (`capacity` nulo ou
   `> 0`) ficou grudada no fim da linha de `Subject` e não aparece como linha própria. A regra
   vale igual; a tabela não foi corrigida para não editar o corpo da spec.
+
+## Notas posteriores
+
+**2026-10-31 — spec 0019.** O desvio do Registro dizia que não haveria endpoint de remoção de
+oferta; a 0019 criou um (`DELETE …/offerings/:offeringId`). Ele zera o `offeringId` das células
+com `updateMany` antes de apagar, na mesma transação. O `SetNull` de `BoardSlot.offeringId`
+continua, sem migration.

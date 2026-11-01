@@ -139,6 +139,17 @@ PROJECT_NOT_FOUND`, inclusive na escrita. O `ProjectAccessService` (exportado pe
   `assertWritable` da unidade e depois a matriz. **Toda escrita em oferta, quadro e célula** chama
   `assertProjectWritable(access)`. Semestre e currículo do projeto são fixos; curso ou currículo
   desativado depois não trava o projeto (0018)
+- Ofertas em `modules/offerings/`: lê quem vê o projeto, escreve quem a matriz deixa editar. A
+  única fonte é a geração (`generateOfferings` em `offerings/generate-offerings.ts`): uma oferta
+  sem professor por disciplina **ativa** do currículo que ainda não tem oferta no projeto, só
+  acréscimo, com `createMany` + `skipDuplicates`; roda na transação do `create` do projeto e em
+  `POST …/offerings/generate`. Oferta de disciplina desativada fica e continua válida. Professor
+  da oferta é membro `isTeacher` com usuário ativo (`400 INVALID_TEACHER`). Remover a oferta zera
+  o `offeringId` das células dela na mesma transação (a célula e o local ficam). Quem é removido
+  ou perde o `isTeacher` sai das ofertas da unidade em semestres `PLANNING`, `ADJUSTMENTS` e
+  `STARTED`; em `FINISHED`/`CANCELLED`, não. **O que as próximas specs herdam:** `slotsCount` da
+  oferta já conta as células; oferta sem professor pode ser alocada e não gera choque de
+  professor (0019)
 - Um módulo por entidade, cada um na sua pasta e com os próprios schemas, mesmo quando os campos
   coincidem (organização e unidade: `modules/organizations/` e `modules/units/`). Para agrupar,
   pasta de módulos (nota da 0009)
@@ -178,4 +189,4 @@ PROJECT_NOT_FOUND`, inclusive na escrita. O `ProjectAccessService` (exportado pe
 | 0016 | [Semestres](0016-api-semestres.md)                                               | ✅ done | 0008, 0009, 0011             |
 | 0017 | [Blocos de horários](0017-api-blocos-de-horarios.md)                             | ✅ done | 0008, 0009                   |
 | 0018 | [Projetos](0018-api-projetos.md)                                                 | ✅ done | 0011, 0012, 0016             |
-| 0019 | [Ofertas](0019-api-ofertas.md)                                                   | ⬜ todo | 0010, 0013, 0018             |
+| 0019 | [Ofertas](0019-api-ofertas.md)                                                   | ✅ done | 0010, 0013, 0018             |

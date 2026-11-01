@@ -39,6 +39,7 @@ describe('MembersService', () => {
   let db: {
     $transaction: jest.Mock
     course: { updateMany: jest.Mock }
+    offering: { updateMany: jest.Mock }
     unitMember: Record<'findMany' | 'findUnique' | 'update' | 'delete', jest.Mock>
   }
   let tenants: Record<'resolveUnit' | 'assertWritable', jest.Mock>
@@ -48,6 +49,7 @@ describe('MembersService', () => {
     db = {
       $transaction: jest.fn((operations: unknown[]) => Promise.all(operations)),
       course: { updateMany: jest.fn() },
+      offering: { updateMany: jest.fn() },
       unitMember: {
         findMany: jest.fn(),
         findUnique: jest.fn(),
@@ -115,6 +117,40 @@ describe('MembersService', () => {
       )
     })
 
+    it('tirar o isTeacher tira o professor das ofertas dos semestres abertos, na mesma transação', async () => {
+      tenants.resolveUnit.mockResolvedValue(access({ isManager: true }))
+      db.unitMember.findUnique.mockResolvedValue(member({ isTeacher: true }))
+      db.unitMember.update.mockReturnValue('update')
+      db.offering.updateMany.mockReturnValue('updateMany')
+      db.$transaction.mockResolvedValue([member()])
+      await expect(
+        service.update('u', 'acme', 'sede', 'target', { isTeacher: false }),
+      ).resolves.toMatchObject({ isTeacher: false })
+      expect(db.offering.updateMany).toHaveBeenCalledWith({
+        where: {
+          teacherId: 'target',
+          project: {
+            unitId: 'unit-1',
+            term: { status: { in: ['PLANNING', 'ADJUSTMENTS', 'STARTED'] } },
+          },
+        },
+        data: { teacherId: null },
+      })
+      expect(db.$transaction).toHaveBeenCalledWith(['update', 'updateMany'])
+    })
+
+    it.each([
+      ['já sem isTeacher', { isTeacher: false }, { isTeacher: false }],
+      ['ganhando isTeacher', { isTeacher: false }, { isTeacher: true }],
+      ['mexendo só no isManager', { isTeacher: true }, { isManager: true }],
+    ])('%s não mexe nas ofertas', async (_label, target, body) => {
+      tenants.resolveUnit.mockResolvedValue(access({ isOwner: true }))
+      db.unitMember.findUnique.mockResolvedValue(member(target))
+      await service.update('u', 'acme', 'sede', 'target', body)
+      expect(db.offering.updateMany).not.toHaveBeenCalled()
+      expect(db.$transaction).not.toHaveBeenCalled()
+    })
+
     it('plano vencido não grava', async () => {
       tenants.resolveUnit.mockResolvedValue(access({ isOwner: true }))
       tenants.assertWritable.mockRejectedValue(new PlanExpiredException())
@@ -139,17 +175,34 @@ describe('MembersService', () => {
       expect(db.unitMember.delete).toHaveBeenCalledWith({ where: { id: 'm-1' } })
     })
 
-    it('quem sai deixa de coordenar os cursos da unidade, na mesma transação', async () => {
+    it('quem sai deixa de coordenar os cursos e sai das ofertas, na mesma transação', async () => {
       tenants.resolveUnit.mockResolvedValue(access({ isOwner: true }))
       db.unitMember.findUnique.mockResolvedValue(member())
-      db.course.updateMany.mockReturnValue('updateMany')
+      db.course.updateMany.mockReturnValue('courses')
+      db.offering.updateMany.mockReturnValue('offerings')
       db.unitMember.delete.mockReturnValue('delete')
       await service.remove('owner', 'acme', 'sede', 'target')
       expect(db.course.updateMany).toHaveBeenCalledWith({
         where: { unitId: 'unit-1', coordinatorId: 'target' },
         data: { coordinatorId: null },
       })
-      expect(db.$transaction).toHaveBeenCalledWith(['updateMany', 'delete'])
+      expect(db.$transaction).toHaveBeenCalledWith(['courses', 'offerings', 'delete'])
+    })
+
+    it('quem sai deixa as ofertas da unidade só nos semestres abertos', async () => {
+      tenants.resolveUnit.mockResolvedValue(access({ isOwner: true }))
+      db.unitMember.findUnique.mockResolvedValue(member({ isTeacher: true }))
+      await service.remove('owner', 'acme', 'sede', 'target')
+      expect(db.offering.updateMany).toHaveBeenCalledWith({
+        where: {
+          teacherId: 'target',
+          project: {
+            unitId: 'unit-1',
+            term: { status: { in: ['PLANNING', 'ADJUSTMENTS', 'STARTED'] } },
+          },
+        },
+        data: { teacherId: null },
+      })
     })
 
     it.each([

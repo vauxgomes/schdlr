@@ -26,6 +26,7 @@ const row = (overrides: { termStatus?: TermStatus; status?: string; name?: strin
   name: overrides.name ?? 'INFO 2026.1',
   status: overrides.status ?? 'DRAFT',
   workingDays: 5,
+  curriculumId: CUR_ID,
   createdAt: new Date('2026-10-31T10:00:00.000Z'),
   updatedAt: new Date('2026-10-31T10:00:00.000Z'),
   term: { id: TERM_ID, name: '2026.1', status: overrides.termStatus ?? 'PLANNING' },
@@ -70,6 +71,7 @@ const codeOf = async (promise: Promise<unknown>) => (await errorOf(promise)).cod
 
 describe('ProjectsService', () => {
   let db: {
+    $transaction: jest.Mock
     project: Record<
       'findMany' | 'findUnique' | 'findUniqueOrThrow' | 'create' | 'update' | 'delete',
       jest.Mock
@@ -77,6 +79,8 @@ describe('ProjectsService', () => {
     term: { findFirst: jest.Mock }
     curriculum: { findFirst: jest.Mock }
     boardSlot: { count: jest.Mock }
+    subject: { findMany: jest.Mock }
+    offering: { createMany: jest.Mock }
   }
   let tenants: Record<'resolveUnit' | 'assertWritable', jest.Mock>
   let projects: Record<'resolveProject' | 'assertProjectWritable', jest.Mock>
@@ -85,6 +89,7 @@ describe('ProjectsService', () => {
 
   beforeEach(() => {
     db = {
+      $transaction: jest.fn((fn: (tx: unknown) => unknown) => fn(db)),
       project: {
         findMany: jest.fn(),
         findUnique: jest.fn().mockResolvedValue(null),
@@ -102,6 +107,8 @@ describe('ProjectsService', () => {
         }),
       },
       boardSlot: { count: jest.fn().mockResolvedValue(0) },
+      subject: { findMany: jest.fn().mockResolvedValue([]) },
+      offering: { createMany: jest.fn() },
     }
     tenants = { resolveUnit: jest.fn().mockResolvedValue(unitAccess()), assertWritable: jest.fn() }
     projects = { resolveProject: jest.fn(), assertProjectWritable: jest.fn() }
@@ -224,6 +231,29 @@ describe('ProjectsService', () => {
           },
         }),
       )
+    })
+
+    it('gera as ofertas das disciplinas ativas na mesma transação do create', async () => {
+      db.subject.findMany.mockResolvedValue([{ id: 'sub-1' }, { id: 'sub-2' }])
+      db.offering.createMany.mockResolvedValue({ count: 2 })
+      await service.create('crd', 'acme', 'sede', input)
+      expect(db.$transaction).toHaveBeenCalledTimes(1)
+      expect(db.subject.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            curriculumId: CUR_ID,
+            isActive: true,
+            offerings: { none: { projectId: 'prj-1' } },
+          },
+        }),
+      )
+      expect(db.offering.createMany).toHaveBeenCalledWith({
+        data: [
+          { projectId: 'prj-1', subjectId: 'sub-1' },
+          { projectId: 'prj-1', subjectId: 'sub-2' },
+        ],
+        skipDuplicates: true,
+      })
     })
 
     it('semestre ou currículo fora da unidade dão 404', async () => {
