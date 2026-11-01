@@ -178,3 +178,4 @@ PROJECT_NOT_FOUND`, inclusive na escrita. O `ProjectAccessService` (exportado pe
 | 0016 | [Semestres](0016-api-semestres.md)                                               | ✅ done | 0008, 0009, 0011             |
 | 0017 | [Blocos de horários](0017-api-blocos-de-horarios.md)                             | ✅ done | 0008, 0009                   |
 | 0018 | [Projetos](0018-api-projetos.md)                                                 | ✅ done | 0011, 0012, 0016             |
+| 0019 | [Ofertas](0019-api-ofertas.md)                                                   | ⬜ todo | 0010, 0013, 0018             |
