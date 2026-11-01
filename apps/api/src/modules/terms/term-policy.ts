@@ -1,4 +1,4 @@
-import { TermStatus } from '@prisma/client'
+import { ProjectStatus, TermStatus } from '@prisma/client'
 
 // O ciclo do semestre e o que cada status permite com os projetos dele (spec 0016). Dado puro,
 // sem banco: a spec de projeto aplica, pelo TermAccessService.assertProjectAction.
@@ -37,3 +37,37 @@ export const canTransition = (from: TermStatus, to: TermStatus) =>
 
 /** Fechado: só leitura, sem volta. */
 export const isTermClosed = (status: TermStatus) => TERM_TRANSITIONS[status].length === 0
+
+/** O papel de quem age num projeto: gestor dele, e dono ou responsável pela unidade. */
+export type ProjectRoles = { isProjectManager: boolean; canManageTerm: boolean }
+
+/** A ação existe neste status do semestre, para alguém. Apagar segue `create`. */
+export const isProjectActionOpen = (status: TermStatus, action: ProjectAction) => {
+  const policy = TERM_PROJECT_POLICY[status]
+  if (action === 'edit') return policy.edit !== 'NOBODY'
+  if (action === 'publish') return policy.publish
+  return policy.create
+}
+
+/**
+ * A matriz "status × projetos" inteira, sem lançar: a ação existe no status e o papel basta. Em
+ * STARTED, editar é só de dono e responsável; o resto é do gestor do projeto (0016, 0018).
+ */
+export const isProjectActionAllowed = (
+  status: TermStatus,
+  action: ProjectAction,
+  { isProjectManager, canManageTerm }: ProjectRoles,
+) => {
+  if (!isProjectActionOpen(status, action)) return false
+  const unitAdminsOnly = action === 'edit' && TERM_PROJECT_POLICY[status].edit === 'UNIT_ADMINS'
+  return unitAdminsOnly ? canManageTerm : isProjectManager
+}
+
+/** Gestor do projeto vê sempre; os demais, só o publicado, e só se o status do semestre deixa. */
+export const isProjectVisible = (
+  termStatus: TermStatus,
+  projectStatus: ProjectStatus,
+  isProjectManager: boolean,
+) =>
+  isProjectManager ||
+  (TERM_PROJECT_POLICY[termStatus].othersSee === 'PUBLISHED' && projectStatus === 'PUBLISHED')

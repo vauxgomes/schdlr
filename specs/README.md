@@ -129,6 +129,16 @@ action, { isProjectManager })`: status primeiro (`409 TERM_STATUS_FORBIDS` com
   por quadro novo (os que o usam continuam); o horário da célula é do bloco do quadro; horário
   acrescentado depois de o quadro existir — a spec de quadro decide se cria as células sob demanda
   ou as materializa; o choque usa a mesma `overlaps`, entre horários de blocos diferentes (0017)
+- Projetos em `modules/projects/`. **Gestor do projeto** é o dono, o responsável ou o coordenador
+  do curso do currículo do projeto (`isProjectManagerOf`); o coordenador cria só para o curso que
+  coordena. **Visibilidade** (`isProjectVisible` em `terms/term-policy.ts`): o gestor vê sempre; os
+  demais só os `PUBLISHED`, e só em `ADJUSTMENTS`, `STARTED` e `FINISHED`; o que não se vê é `404
+PROJECT_NOT_FOUND`, inclusive na escrita. O `ProjectAccessService` (exportado pelo
+  `ProjectsModule`) dá `resolveProject` (aplica a visibilidade; `ProjectAccess` traz `term`,
+  `curriculum`, `course` e `isProjectManager`) e `assertProjectWritable(access, action = 'edit')`:
+  `assertWritable` da unidade e depois a matriz. **Toda escrita em oferta, quadro e célula** chama
+  `assertProjectWritable(access)`. Semestre e currículo do projeto são fixos; curso ou currículo
+  desativado depois não trava o projeto (0018)
 - Um módulo por entidade, cada um na sua pasta e com os próprios schemas, mesmo quando os campos
   coincidem (organização e unidade: `modules/organizations/` e `modules/units/`). Para agrupar,
   pasta de módulos (nota da 0009)
@@ -167,4 +177,4 @@ action, { isProjectManager })`: status primeiro (`409 TERM_STATUS_FORBIDS` com
 | 0015 | [Locais](0015-api-locais.md)                                                     | ✅ done | 0008, 0009                   |
 | 0016 | [Semestres](0016-api-semestres.md)                                               | ✅ done | 0008, 0009, 0011             |
 | 0017 | [Blocos de horários](0017-api-blocos-de-horarios.md)                             | ✅ done | 0008, 0009                   |
-| 0018 | [Projetos](0018-api-projetos.md)                                                 | ⬜ todo | 0011, 0012, 0016             |
+| 0018 | [Projetos](0018-api-projetos.md)                                                 | ✅ done | 0011, 0012, 0016             |

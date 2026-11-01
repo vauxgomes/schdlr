@@ -1,7 +1,7 @@
 ---
 id: 0018
 title: Projetos
-status: todo
+status: done
 depends_on: [0011, 0012, 0016]
 ---
 
@@ -210,30 +210,30 @@ TERM_STATUS_FORBIDS` fora de `PLANNING`; `403` para quem não é gestor daquele 
 
 ## Critérios de aceite
 
-- [ ] Gestor do projeto (dono, responsável, coordenador do curso) cria, edita, publica e apaga
+- [x] Gestor do projeto (dono, responsável, coordenador do curso) cria, edita, publica e apaga
       conforme a matriz; coordenador de outro curso e professor recebem `403` onde veem e `404`
       onde não veem
-- [ ] Visibilidade da matriz em todos os status do semestre: os demais não veem nada em
+- [x] Visibilidade da matriz em todos os status do semestre: os demais não veem nada em
       `PLANNING` e `CANCELLED`, e só os `PUBLISHED` nos outros; rascunho, nunca
-- [ ] Ação fora do status do semestre dá `409 TERM_STATUS_FORBIDS` antes do `403`
-- [ ] Em `STARTED`, dono e responsável editam e o coordenador não; ninguém publica
-- [ ] `termId` e `curriculumId` de fora da unidade dão `404`; curso ou currículo desativado não
+- [x] Ação fora do status do semestre dá `409 TERM_STATUS_FORBIDS` antes do `403`
+- [x] Em `STARTED`, dono e responsável editam e o coordenador não; ninguém publica
+- [x] `termId` e `curriculumId` de fora da unidade dão `404`; curso ou currículo desativado não
       recebe projeto novo (`409`)
-- [ ] Nome repetido no semestre dá `409 PROJECT_NAME_IN_USE`; o mesmo nome em outro semestre passa
-- [ ] `workingDays` só 5 ou 6; reduzir para 5 com célula de sábado dá `409 WORKING_DAYS_IN_USE`
-- [ ] Projeto nasce `PUBLISHED`, com `status` no corpo ignorado
-- [ ] Publicar e despublicar; para o mesmo status, `409 INVALID_PROJECT_TRANSITION`
-- [ ] `DELETE` só em `PLANNING`, e leva ofertas, quadros e células
-- [ ] `isProjectActionAllowed` extraída, o `assertProjectAction` a usa, e o teste da matriz da
+- [x] Nome repetido no semestre dá `409 PROJECT_NAME_IN_USE`; o mesmo nome em outro semestre passa
+- [x] `workingDays` só 5 ou 6; reduzir para 5 com célula de sábado dá `409 WORKING_DAYS_IN_USE`
+- [x] Projeto nasce `PUBLISHED`, com `status` no corpo ignorado
+- [x] Publicar e despublicar; para o mesmo status, `409 INVALID_PROJECT_TRANSITION`
+- [x] `DELETE` só em `PLANNING`, e leva ofertas, quadros e células
+- [x] `isProjectActionAllowed` extraída, o `assertProjectAction` a usa, e o teste da matriz da
       0016 continua passando sem mudança
-- [ ] `ProjectAccessService` exportado, com `resolveProject` e `assertProjectWritable`
-- [ ] `access` no formato bate com o que as rotas permitem
-- [ ] Códigos novos no catálogo da 0008; "Contratos em vigor" do README ganha o gestor do projeto,
+- [x] `ProjectAccessService` exportado, com `resolveProject` e `assertProjectWritable`
+- [x] `access` no formato bate com o que as rotas permitem
+- [x] Códigos novos no catálogo da 0008; "Contratos em vigor" do README ganha o gestor do projeto,
       a visibilidade e o `ProjectAccessService`
-- [ ] Testes unitários do `ProjectAccessService` (visibilidade em cada status do semestre × status
+- [x] Testes unitários do `ProjectAccessService` (visibilidade em cada status do semestre × status
       do projeto × gestor ou não), do service e dos schemas; e2e das rotas com os services
       substituídos
-- [ ] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
+- [x] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
 
 ## Verificação
 
@@ -320,3 +320,59 @@ kill %1
 Ao final, apagar por SQL o projeto, o semestre, os currículos e o curso `OUTRO` criados no teste
 (o `DELETE` da API não passa em `FINISHED`), e os códigos OTP e refresh tokens dos logins. A
 visibilidade em `CANCELLED` fica coberta pelo teste unitário do `ProjectAccessService`.
+
+## Registro
+
+**2026-10-31** — executada com `/spec 0018`, na branch `development`.
+
+Commits: `feat(api): projetos (spec 0018)`.
+
+Verificação: sem `.env`, `pnpm test:api` passa (647 unitários, 141 e2e) e `pnpm build:api` também;
+`tsc` e lint limpos; `pnpm format` estável. Contra o banco de dev, rodado em `bash` a partir de um
+script, todas as linhas da seção "Verificação" deram o esperado. Em `PLANNING`: o `coordinator@`
+cria `INFO 2026.1` (`201`, `PUBLISHED`, 5 dias, `access` todo `true`, com `"status":"DRAFT"` no
+corpo ignorado); no curso que não coordena → `403`; nome repetido → `409 PROJECT_NAME_IN_USE`; 7 dias
+→ `400`; publicar → `409 INVALID_PROJECT_TRANSITION` (já nasce publicado); o `teacher@` lista `[]`
+e lê `404`. Em `ADJUSTMENTS`: o `teacher@` vê o publicado com `access` todo `false`; criar → `409
+TERM_STATUS_FORBIDS`; o `coordinator@` passa a 6 dias (`200`); apagar → `409 TERM_STATUS_FORBIDS`;
+despublicar → `200`, e o `teacher@` lê o rascunho → `404`; `DRAFT` de novo → `409
+INVALID_PROJECT_TRANSITION` com `{ from, to }`; publicar de novo → `200`. Em `STARTED`: o
+`coordinator@` editando → `403`, o `manager@` → `200`; despublicar → `409 TERM_STATUS_FORBIDS`. Em
+`FINISHED`: editar → `409 TERM_STATUS_FORBIDS`; o `teacher@` lê o publicado (`200`). Além do
+roteiro: `termId` fora do formato → `404 TERM_NOT_FOUND`; `curriculumId` inexistente → `404
+CURRICULUM_NOT_FOUND`; o `teacher@` criando em `PLANNING` → `403`; o master → `404`; o `teacher@`
+editando o projeto que não vê → `404`, e o que vê → `403`; em `ADJUSTMENTS`, o `teacher@` criando →
+`409` antes do `403`; currículo desativado → `409 CURRICULUM_INACTIVE`, curso desativado → `409
+COURSE_INACTIVE`; com uma célula de sábado inserida por SQL, voltar a 5 dias → `409
+WORKING_DAYS_IN_USE`, e sem ela → `200`; o mesmo nome num segundo semestre → `201`, e o `DELETE`
+dele em `PLANNING` (com quadro e célula inseridos por SQL) → `204`, levando quadro e célula, com o
+`projectsCount` do semestre voltando a `0`; o `teacher@` apagando esse projeto, que não vê → `404`.
+Uma linha do script, a do `204`, imprimiu `undefined` por formatar uma resposta sem corpo; o
+resultado está nas consultas seguintes. No fim, os projetos, semestres, currículos, o curso `OUTRO`
+e o que foi inserido por SQL foram apagados, e os códigos OTP e refresh tokens também.
+
+Não exercitado contra o banco: a visibilidade em `CANCELLED` (coberta, como a spec previa, pelo
+teste do `ProjectAccessService`: 5 status do semestre × 2 do projeto × gestor ou não, escrita à mão).
+
+Desvios:
+
+- **Além de `isProjectActionAllowed`, `term-policy.ts` ganhou `isProjectActionOpen`** (a ação
+  existe no status, para alguém) e **`isProjectVisible`** (a regra de "quem vê"). O
+  `assertProjectAction` usa as duas primeiras para manter o `409` antes do `403`; o teste da
+  matriz da 0016 passou sem mudança. `isProjectActionAllowed` recebe `roles` como
+  `{ isProjectManager, canManageTerm }`.
+- **`isProjectManagerOf(access, course, userId)`** é exportado de `project-access.service.ts`: o
+  `resolveProject`, a criação e a listagem calculam o gestor pela mesma função.
+- **O `POST` resolve o semestre e o currículo direto no banco** (na unidade do `resolveUnit`), sem
+  `resolveTerm`, e chama o `assertProjectAction` com o `TermAccess` montado ali, para não resolver a
+  unidade duas vezes.
+- **A listagem lê os projetos da unidade e filtra a visibilidade em memória**, projeto a projeto,
+  com a mesma `isProjectVisible` do `resolveProject`.
+- **Ordem no `PATCH`**: projeto (`404`) → `assertProjectWritable(edit)` → sábado em uso (`409`) →
+  nome repetido (`409`). A spec só fixava a do `POST` e a do `…/status`.
+- **`PATCH` e `…/status` releem o projeto** depois de gravar, para devolver o formato inteiro.
+- **O projeto nasce `PUBLISHED`** (a spec mudou depois da primeira execução, e o commit foi refeito
+  com `--amend`): o `create` grava `status: 'PUBLISHED'` explicitamente, no lugar do default `DRAFT`
+  do schema. Reverificado contra o banco: criar com `"status":"DRAFT"` no corpo → `201` `PUBLISHED`;
+  publicar → `409 INVALID_PROJECT_TRANSITION`; o `teacher@` não vê em `PLANNING` (`[]`, `404`) e vê
+  em `ADJUSTMENTS` sem publicar à mão (`200`); despublicado, volta a `404`.

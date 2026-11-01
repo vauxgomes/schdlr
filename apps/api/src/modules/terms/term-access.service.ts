@@ -6,7 +6,12 @@ import { AppException } from '@common/errors/app.exception'
 import { DatabaseService } from '@infra/database/database.service'
 import { TenantAccessService, UnitAccess } from '@modules/tenancy/tenant-access.service'
 
-import { isTermClosed, ProjectAction, TERM_PROJECT_POLICY } from './term-policy'
+import {
+  isProjectActionAllowed,
+  isProjectActionOpen,
+  isTermClosed,
+  ProjectAction,
+} from './term-policy'
 
 export type TermAccess = UnitAccess & {
   term: Term
@@ -57,19 +62,11 @@ export class TermAccessService {
     action: ProjectAction,
     { isProjectManager }: { isProjectManager: boolean },
   ): void {
-    const policy = TERM_PROJECT_POLICY[term.status]
-    const allowedNow =
-      action === 'edit'
-        ? policy.edit !== 'NOBODY'
-        : action === 'publish'
-          ? policy.publish
-          : policy.create
-    if (!allowedNow) {
+    if (!isProjectActionOpen(term.status, action)) {
       throw new AppException('TERM_STATUS_FORBIDS', { status: term.status, action })
     }
-
-    const hasRole =
-      action === 'edit' && policy.edit === 'UNIT_ADMINS' ? canManageTerm : isProjectManager
-    if (!hasRole) throw new AppException('NOT_ALLOWED')
+    if (!isProjectActionAllowed(term.status, action, { isProjectManager, canManageTerm })) {
+      throw new AppException('NOT_ALLOWED')
+    }
   }
 }

@@ -111,6 +111,15 @@ export const ERRORS = {
     status: HttpStatus.CONFLICT,
     message: 'Time slot is used by a board slot',
   },
+
+  // Projetos (0018)
+  PROJECT_NOT_FOUND: { status: HttpStatus.NOT_FOUND, message: 'Project not found' },
+  PROJECT_NAME_IN_USE: { status: HttpStatus.CONFLICT, message: 'Project name already in use' },
+  INVALID_PROJECT_TRANSITION: {
+    status: HttpStatus.CONFLICT,
+    message: 'Invalid project status transition',
+  },
+  WORKING_DAYS_IN_USE: { status: HttpStatus.CONFLICT, message: 'Saturday has board slots' },
 } as const satisfies Record<string, { status: HttpStatus; message: string }>
 
 export type ErrorCode = keyof typeof ERRORS
