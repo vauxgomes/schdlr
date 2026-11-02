@@ -733,3 +733,13 @@ Desvios:
 oferta; a 0019 criou um (`DELETE …/offerings/:offeringId`). Ele zera o `offeringId` das células
 com `updateMany` antes de apagar, na mesma transação. O `SetNull` de `BoardSlot.offeringId`
 continua, sem migration.
+
+**2026-11-01 — spec 0021.** O professor deixou de ser flag do membro: saiu `UnitMember.isTeacher`
+e entrou o model `Teacher` (da organização, `userId` opcional e fixo desde a criação, `@@unique` em
+`[organizationId, name]` e `[organizationId, userId]`). `Offering.teacherId` passou a referenciar
+`Teacher`, com `onDelete: Restrict` (era `User` com `SetNull`); a coluna `teacher_id` ficou.
+`User.offerings` saiu e entraram `User.teacherProfiles` e `Organization.teachers`.
+`UnitInvitation.isTeacher` ficou, com outro sentido (aceitar cria um `Teacher`). A regra cruzada
+"professor da oferta é membro `isTeacher` ativo da unidade" passou a ser "professor da oferta é um
+`Teacher` ativo da organização da unidade do projeto". Migration `20261102001155_teachers`, gerada
+pelo Prisma.

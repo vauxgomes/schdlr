@@ -106,7 +106,7 @@ describe('TermAccessService', () => {
       },
       STARTED: {
         create: { admin: '409', coordinator: '409', other: '409' },
-        edit: { admin: 'ok', coordinator: '403', other: '403' },
+        edit: { admin: '409', coordinator: '409', other: '409' }, // ninguém (0021)
         publish: { admin: '409', coordinator: '409', other: '409' },
         delete: { admin: '409', coordinator: '409', other: '409' },
       },

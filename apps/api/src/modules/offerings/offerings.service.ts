@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { AppException } from '@common/errors/app.exception'
 import { DatabaseService } from '@infra/database/database.service'
 import { ProjectAccess, ProjectAccessService } from '@modules/projects/project-access.service'
+import { teacherName } from '@modules/teachers/teacher-name'
 
 import { generateOfferings } from './generate-offerings'
 import { ListOfferingsQuery, UpdateOfferingInput } from './schemas/offering.schemas'
@@ -20,7 +21,11 @@ export type OfferingView = {
     color: string
     isActive: boolean
   }
-  teacher: { id: string; email: string; name: string } | null
+  teacher: {
+    id: string
+    name: string
+    user: { id: string; email: string; name: string } | null
+  } | null
   slotsCount: number
   weeklyMinutes: number
   createdAt: Date
@@ -39,7 +44,9 @@ const withDetails = {
       isActive: true,
     },
   },
-  teacher: { select: { id: true, email: true, name: true } },
+  teacher: {
+    select: { id: true, name: true, user: { select: { id: true, email: true, name: true } } },
+  },
   // As durações dos horários das células, em todos os quadros: slotsCount e weeklyMinutes (0020).
   boardSlots: { select: { timeSlot: { select: { startTime: true, endTime: true } } } },
 } satisfies Prisma.OfferingInclude
@@ -93,7 +100,10 @@ export class OfferingsService {
     return toView(await this.findOffering(access, offeringId))
   }
 
-  /** Define ou tira o professor. O mesmo professor em várias ofertas é permitido. */
+  /**
+   * Define, troca ou tira o professor: trocar a vaga pela pessoa é trocar o Teacher (0021). O
+   * mesmo professor em várias ofertas é permitido.
+   */
   async update(
     userId: string,
     orgSlug: string,
@@ -105,7 +115,7 @@ export class OfferingsService {
     const access = await this.projects.resolveProject(userId, orgSlug, unitSlug, projectId)
     const offering = await this.findOffering(access, offeringId)
     await this.projects.assertProjectWritable(access)
-    if (teacherId) await this.assertTeacher(access, teacherId)
+    if (teacherId && teacherId !== offering.teacherId) await this.assertTeacher(access, teacherId)
 
     const updated = await this.database.offering.update({
       where: { id: offering.id },
@@ -171,15 +181,19 @@ export class OfferingsService {
     return offering
   }
 
-  /** Professor da unidade: membro com isTeacher e usuário ativo (0002). */
+  /**
+   * Teacher da organização da unidade (0021); desativado não entra em oferta nova, mas fica nas que
+   * já o tinham.
+   */
   private async assertTeacher({ unit }: ProjectAccess, teacherId: string) {
-    const member =
+    const teacher =
       z.cuid().safeParse(teacherId).success &&
-      (await this.database.unitMember.findFirst({
-        where: { unitId: unit.id, userId: teacherId, isTeacher: true, user: { isActive: true } },
-        select: { id: true },
+      (await this.database.teacher.findFirst({
+        where: { id: teacherId, organizationId: unit.organizationId },
+        select: { isActive: true },
       }))
-    if (!member) throw new AppException('INVALID_TEACHER')
+    if (!teacher) throw new AppException('INVALID_TEACHER')
+    if (!teacher.isActive) throw new AppException('TEACHER_INACTIVE')
   }
 }
 
@@ -198,7 +212,7 @@ function toView({
   return {
     id,
     subject,
-    teacher,
+    teacher: teacher && { ...teacher, name: teacherName(teacher) },
     slotsCount: boardSlots.length,
     weeklyMinutes,
     createdAt,

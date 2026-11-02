@@ -446,3 +446,13 @@ pela 0019: o `MembersService` zera o `teacherId` das ofertas dos projetos da uni
 que zera o coordenador) e quando o `isTeacher` passa de `true` para `false` (`update`, na mesma
 transação). Em `FINISHED` e `CANCELLED` a oferta fica como estava. As respostas das rotas de
 membro não mudaram.
+
+**2026-11-01 — spec 0021.** O `PATCH …/members/:userId` perdeu o `isTeacher` e recebe só
+`{ isManager }` (sem ele, `EMPTY_UPDATE`); como `isManager` é só do dono, o responsável não edita
+mais membro nenhum. O `isTeacher` do convite não liga mais flag no membro: aceitar cria um `Teacher`
+vinculado ao convidado, com o nome do usuário (homônimo leva o e-mail entre parênteses), na mesma
+transação, e nada se ele já for professor na organização. "Somar as flags" vale só para
+`isManager`. O e-mail do convite não mudou. O ajuste da 0019 no `MembersService` foi desfeito: sair
+da unidade não tira a pessoa das ofertas. O `isTeacher` do formato do membro continua, calculado:
+ter `Teacher` ativo na organização. `UnitAccess.isTeacher` passou a ser o mesmo
+(`TenantAccessService.isTeacher`).

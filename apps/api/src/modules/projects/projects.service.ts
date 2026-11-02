@@ -256,7 +256,7 @@ function toView(
   userId: string,
 ): ProjectView {
   const isProjectManager = isProjectManagerOf(access, course, userId)
-  const roles = { isProjectManager, canManageTerm: access.isOwner || access.isManager }
+  const roles = { isProjectManager }
   return {
     id,
     name,

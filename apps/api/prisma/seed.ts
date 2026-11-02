@@ -122,16 +122,11 @@ async function seedTenant(tx: Tx, masterId: string) {
   )
 
   const members = [
-    { user: users.manager, email: TENANT_USERS.manager.email, isManager: true, isTeacher: false },
-    { user: users.teacher, email: TENANT_USERS.teacher.email, isManager: false, isTeacher: true },
-    {
-      user: users.coordinator,
-      email: TENANT_USERS.coordinator.email,
-      isManager: false,
-      isTeacher: false,
-    },
+    { user: users.manager, email: TENANT_USERS.manager.email, isManager: true },
+    { user: users.teacher, email: TENANT_USERS.teacher.email, isManager: false },
+    { user: users.coordinator, email: TENANT_USERS.coordinator.email, isManager: false },
   ]
-  for (const { user, email, isManager, isTeacher } of members) {
+  for (const { user, email, isManager } of members) {
     await ensure(
       'membro',
       email,
@@ -139,8 +134,24 @@ async function seedTenant(tx: Tx, masterId: string) {
         tx.unitMember.findUnique({
           where: { unitId_userId: { unitId: unit.id, userId: user.id } },
         }),
+      () => tx.unitMember.create({ data: { unitId: unit.id, userId: user.id, isManager } }),
+    )
+  }
+
+  // Ser professor é ter um Teacher (0021): o teacher@ tem o dele, e há uma vaga sem usuário.
+  const teachers = [
+    { name: TENANT_USERS.teacher.name, userId: users.teacher.id },
+    { name: 'Professor a contratar 1', userId: null },
+  ]
+  for (const { name, userId } of teachers) {
+    await ensure(
+      'professor',
+      name,
       () =>
-        tx.unitMember.create({ data: { unitId: unit.id, userId: user.id, isManager, isTeacher } }),
+        tx.teacher.findUnique({
+          where: { organizationId_name: { organizationId: organization.id, name } },
+        }),
+      () => tx.teacher.create({ data: { organizationId: organization.id, name, userId } }),
     )
   }
 

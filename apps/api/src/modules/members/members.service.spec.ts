@@ -10,15 +10,14 @@ const member = (overrides: Record<string, unknown> = {}) => ({
   unitId: 'unit-1',
   userId: 'target',
   isManager: false,
-  isTeacher: false,
   createdAt: new Date('2026-10-29T22:00:00.000Z'),
-  user: { email: 'teacher@schdlr.dev', name: 'Teacher' },
+  user: { email: 'teacher@schdlr.dev', name: 'Teacher', teacherProfiles: [] as { id: string }[] },
   ...overrides,
 })
 
 const access = (role: { isOwner?: boolean; isManager?: boolean } = {}) => ({
   organization: { id: 'org-1', ownerId: 'owner', isActive: true },
-  unit: { id: 'unit-1', isActive: true },
+  unit: { id: 'unit-1', organizationId: 'org-1', isActive: true },
   membership: null,
   isOwner: false,
   isManager: false,
@@ -39,7 +38,6 @@ describe('MembersService', () => {
   let db: {
     $transaction: jest.Mock
     course: { updateMany: jest.Mock }
-    offering: { updateMany: jest.Mock }
     unitMember: Record<'findMany' | 'findUnique' | 'update' | 'delete', jest.Mock>
   }
   let tenants: Record<'resolveUnit' | 'assertWritable', jest.Mock>
@@ -49,7 +47,6 @@ describe('MembersService', () => {
     db = {
       $transaction: jest.fn((operations: unknown[]) => Promise.all(operations)),
       course: { updateMany: jest.fn() },
-      offering: { updateMany: jest.fn() },
       unitMember: {
         findMany: jest.fn(),
         findUnique: jest.fn(),
@@ -64,9 +61,10 @@ describe('MembersService', () => {
     )
   })
 
-  it('list devolve o formato da spec, por nome', async () => {
+  it('list devolve o formato da spec, por nome; isTeacher vem do Teacher ativo (0021)', async () => {
     tenants.resolveUnit.mockResolvedValue(access())
-    db.unitMember.findMany.mockResolvedValue([member()])
+    const teacher = { email: 'teacher@schdlr.dev', name: 'Teacher', teacherProfiles: [{ id: 't' }] }
+    db.unitMember.findMany.mockResolvedValue([member(), member({ user: teacher })])
     await expect(service.list('u', 'acme', 'sede')).resolves.toEqual([
       {
         userId: 'target',
@@ -76,86 +74,67 @@ describe('MembersService', () => {
         isTeacher: false,
         createdAt: new Date('2026-10-29T22:00:00.000Z'),
       },
+      expect.objectContaining({ isTeacher: true }),
     ])
-    expect(db.unitMember.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { unitId: 'unit-1' }, orderBy: { user: { name: 'asc' } } }),
-    )
+    expect(db.unitMember.findMany).toHaveBeenCalledWith({
+      where: { unitId: 'unit-1' },
+      include: {
+        user: {
+          select: {
+            email: true,
+            name: true,
+            teacherProfiles: {
+              where: { organizationId: 'org-1', isActive: true },
+              select: { id: true },
+            },
+          },
+        },
+      },
+      orderBy: { user: { name: 'asc' } },
+    })
   })
 
   describe('update', () => {
     beforeEach(() => {
       db.unitMember.findUnique.mockResolvedValue(member())
-      db.unitMember.update.mockResolvedValue(member({ isTeacher: true }))
+      db.unitMember.update.mockResolvedValue(member({ isManager: true }))
     })
 
-    it.each([
-      ['dono muda isManager', { isOwner: true }, { isManager: true }],
-      ['responsável muda isTeacher', { isManager: true }, { isTeacher: true }],
-    ])('%s', async (_label, role, body) => {
-      tenants.resolveUnit.mockResolvedValue(access(role))
-      await expect(service.update('u', 'acme', 'sede', 'target', body)).resolves.toBeDefined()
+    it('dono muda isManager', async () => {
+      tenants.resolveUnit.mockResolvedValue(access({ isOwner: true }))
+      await expect(
+        service.update('u', 'acme', 'sede', 'target', { isManager: true }),
+      ).resolves.toMatchObject({ isManager: true })
       expect(tenants.assertWritable).toHaveBeenCalled()
       expect(db.unitMember.update).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { id: 'm-1' }, data: body }),
+        expect.objectContaining({ where: { id: 'm-1' }, data: { isManager: true } }),
       )
     })
 
     it.each([
-      ['responsável com isManager, mesmo sem mudar', { isManager: true }, { isManager: false }],
-      ['membro sem papel', {}, { isTeacher: true }],
-    ])('%s dá NOT_ALLOWED', async (_label, role, body) => {
+      ['responsável com isManager, mesmo sem mudar', { isManager: true }],
+      ['membro sem papel', {}],
+    ])('%s dá NOT_ALLOWED', async (_label, role) => {
       tenants.resolveUnit.mockResolvedValue(access(role))
-      expect(await codeOf(service.update('u', 'acme', 'sede', 'target', body))).toBe('NOT_ALLOWED')
+      expect(
+        await codeOf(service.update('u', 'acme', 'sede', 'target', { isManager: false })),
+      ).toBe('NOT_ALLOWED')
       expect(db.unitMember.update).not.toHaveBeenCalled()
     })
 
     it('quem não é membro dá MEMBER_NOT_FOUND', async () => {
       tenants.resolveUnit.mockResolvedValue(access({ isOwner: true }))
       db.unitMember.findUnique.mockResolvedValue(null)
-      expect(await codeOf(service.update('u', 'acme', 'sede', 'x', { isTeacher: true }))).toBe(
+      expect(await codeOf(service.update('u', 'acme', 'sede', 'x', { isManager: true }))).toBe(
         'MEMBER_NOT_FOUND',
       )
-    })
-
-    it('tirar o isTeacher tira o professor das ofertas dos semestres abertos, na mesma transação', async () => {
-      tenants.resolveUnit.mockResolvedValue(access({ isManager: true }))
-      db.unitMember.findUnique.mockResolvedValue(member({ isTeacher: true }))
-      db.unitMember.update.mockReturnValue('update')
-      db.offering.updateMany.mockReturnValue('updateMany')
-      db.$transaction.mockResolvedValue([member()])
-      await expect(
-        service.update('u', 'acme', 'sede', 'target', { isTeacher: false }),
-      ).resolves.toMatchObject({ isTeacher: false })
-      expect(db.offering.updateMany).toHaveBeenCalledWith({
-        where: {
-          teacherId: 'target',
-          project: {
-            unitId: 'unit-1',
-            term: { status: { in: ['PLANNING', 'ADJUSTMENTS', 'STARTED'] } },
-          },
-        },
-        data: { teacherId: null },
-      })
-      expect(db.$transaction).toHaveBeenCalledWith(['update', 'updateMany'])
-    })
-
-    it.each([
-      ['já sem isTeacher', { isTeacher: false }, { isTeacher: false }],
-      ['ganhando isTeacher', { isTeacher: false }, { isTeacher: true }],
-      ['mexendo só no isManager', { isTeacher: true }, { isManager: true }],
-    ])('%s não mexe nas ofertas', async (_label, target, body) => {
-      tenants.resolveUnit.mockResolvedValue(access({ isOwner: true }))
-      db.unitMember.findUnique.mockResolvedValue(member(target))
-      await service.update('u', 'acme', 'sede', 'target', body)
-      expect(db.offering.updateMany).not.toHaveBeenCalled()
-      expect(db.$transaction).not.toHaveBeenCalled()
     })
 
     it('plano vencido não grava', async () => {
       tenants.resolveUnit.mockResolvedValue(access({ isOwner: true }))
       tenants.assertWritable.mockRejectedValue(new PlanExpiredException())
       await expect(
-        service.update('u', 'acme', 'sede', 'target', { isTeacher: true }),
+        service.update('u', 'acme', 'sede', 'target', { isManager: true }),
       ).rejects.toBeInstanceOf(PlanExpiredException)
       expect(db.unitMember.update).not.toHaveBeenCalled()
     })
@@ -175,34 +154,18 @@ describe('MembersService', () => {
       expect(db.unitMember.delete).toHaveBeenCalledWith({ where: { id: 'm-1' } })
     })
 
-    it('quem sai deixa de coordenar os cursos e sai das ofertas, na mesma transação', async () => {
+    it('quem sai deixa de coordenar os cursos, na mesma transação, e não sai das ofertas', async () => {
       tenants.resolveUnit.mockResolvedValue(access({ isOwner: true }))
       db.unitMember.findUnique.mockResolvedValue(member())
       db.course.updateMany.mockReturnValue('courses')
-      db.offering.updateMany.mockReturnValue('offerings')
       db.unitMember.delete.mockReturnValue('delete')
       await service.remove('owner', 'acme', 'sede', 'target')
       expect(db.course.updateMany).toHaveBeenCalledWith({
         where: { unitId: 'unit-1', coordinatorId: 'target' },
         data: { coordinatorId: null },
       })
-      expect(db.$transaction).toHaveBeenCalledWith(['courses', 'offerings', 'delete'])
-    })
-
-    it('quem sai deixa as ofertas da unidade só nos semestres abertos', async () => {
-      tenants.resolveUnit.mockResolvedValue(access({ isOwner: true }))
-      db.unitMember.findUnique.mockResolvedValue(member({ isTeacher: true }))
-      await service.remove('owner', 'acme', 'sede', 'target')
-      expect(db.offering.updateMany).toHaveBeenCalledWith({
-        where: {
-          teacherId: 'target',
-          project: {
-            unitId: 'unit-1',
-            term: { status: { in: ['PLANNING', 'ADJUSTMENTS', 'STARTED'] } },
-          },
-        },
-        data: { teacherId: null },
-      })
+      // Continua professor da organização: o Teacher e as ofertas ficam (0021).
+      expect(db.$transaction).toHaveBeenCalledWith(['courses', 'delete'])
     })
 
     it.each([

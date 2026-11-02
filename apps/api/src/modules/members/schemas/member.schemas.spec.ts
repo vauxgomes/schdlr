@@ -1,14 +1,14 @@
 import { updateMemberSchema } from './member.schemas'
 
 describe('updateMemberSchema', () => {
-  it('aceita uma flag e descarta o resto', () => {
-    expect(updateMemberSchema.parse({ isTeacher: false, userId: 'x' })).toEqual({
-      isTeacher: false,
+  it('aceita isManager e descarta o resto', () => {
+    expect(updateMemberSchema.parse({ isManager: false, userId: 'x' })).toEqual({
+      isManager: false,
     })
   })
 
-  it('sem flag é EMPTY_UPDATE', () => {
-    const result = updateMemberSchema.safeParse({})
+  it('sem isManager é EMPTY_UPDATE, inclusive só com isTeacher (0021)', () => {
+    const result = updateMemberSchema.safeParse({ isTeacher: true })
     expect(result.success).toBe(false)
     const [issue] = result.error!.issues
     expect(issue.code === 'custom' && issue.params).toEqual({ code: 'EMPTY_UPDATE' })

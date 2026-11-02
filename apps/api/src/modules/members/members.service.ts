@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common'
-import { Prisma, TermStatus } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 
 import { AppException } from '@common/errors/app.exception'
 import { DatabaseService } from '@infra/database/database.service'
 import { TenantAccessService, UnitAccess } from '@modules/tenancy/tenant-access.service'
-import { isTermClosed } from '@modules/terms/term-policy'
 
 import { UpdateMemberInput } from './schemas/member.schemas'
 
@@ -17,14 +16,19 @@ export type MemberView = {
   createdAt: Date
 }
 
-const withUser = {
-  user: { select: { email: true, name: true } },
-} satisfies Prisma.UnitMemberInclude
+// isTeacher: o usuário tem um Teacher ativo na organização da unidade (0021).
+const withUser = (organizationId: string) =>
+  ({
+    user: {
+      select: {
+        email: true,
+        name: true,
+        teacherProfiles: { where: { organizationId, isActive: true }, select: { id: true } },
+      },
+    },
+  }) satisfies Prisma.UnitMemberInclude
 
-type MemberWithUser = Prisma.UnitMemberGetPayload<{ include: typeof withUser }>
-
-// PLANNING, ADJUSTMENTS e STARTED. Em semestre fechado a grade é histórico e fica como estava (0019).
-const OPEN_TERM_STATUSES = Object.values(TermStatus).filter((status) => !isTermClosed(status))
+type MemberWithUser = Prisma.UnitMemberGetPayload<{ include: ReturnType<typeof withUser> }>
 
 /** Só o dono cria, promove ou remove responsável; o responsável cuida do resto da equipe. */
 @Injectable()
@@ -39,13 +43,12 @@ export class MembersService {
     const { unit } = await this.tenants.resolveUnit(userId, orgSlug, unitSlug)
     const members = await this.database.unitMember.findMany({
       where: { unitId: unit.id },
-      include: withUser,
+      include: withUser(unit.organizationId),
       orderBy: { user: { name: 'asc' } },
     })
     return members.map(toView)
   }
 
-  /** Quem deixa de ser professor (isTeacher de true para false) sai das ofertas da unidade (0019). */
   async update(
     userId: string,
     orgSlug: string,
@@ -56,28 +59,22 @@ export class MembersService {
     const access = await this.tenants.resolveUnit(userId, orgSlug, unitSlug)
     const target = await this.findMember(access, targetId)
 
-    // isManager só o dono, mesmo que o valor não mude.
-    const allowed = access.isOwner || (access.isManager && body.isManager === undefined)
-    if (!allowed) throw new AppException('NOT_ALLOWED')
+    // isManager, a única flag, é só do dono, mesmo que o valor não mude.
+    if (!access.isOwner) throw new AppException('NOT_ALLOWED')
     await this.tenants.assertWritable(access)
 
-    const update = this.database.unitMember.update({
+    const updated = await this.database.unitMember.update({
       where: { id: target.id },
       data: body,
-      include: withUser,
+      include: withUser(access.unit.organizationId),
     })
-    if (!target.isTeacher || body.isTeacher !== false) return toView(await update)
-
-    const [updated] = await this.database.$transaction([
-      update,
-      this.clearTeacher(access, targetId),
-    ])
     return toView(updated)
   }
 
   /**
    * Remove o membro, ou o próprio sai. Apaga a linha: UnitMember não tem isActive. Quem sai deixa
-   * de coordenar os cursos da unidade (0011) e sai das ofertas dela (0019).
+   * de coordenar os cursos da unidade (0011). Continua professor da organização: o Teacher e as
+   * ofertas dele ficam (0021).
    */
   async remove(userId: string, orgSlug: string, unitSlug: string, targetId: string): Promise<void> {
     const access = await this.tenants.resolveUnit(userId, orgSlug, unitSlug)
@@ -93,20 +90,8 @@ export class MembersService {
         where: { unitId: access.unit.id, coordinatorId: targetId },
         data: { coordinatorId: null },
       }),
-      this.clearTeacher(access, targetId),
       this.database.unitMember.delete({ where: { id: target.id } }),
     ])
-  }
-
-  /** Tira o professor das ofertas da unidade, só nos projetos de semestres abertos. */
-  private clearTeacher({ unit }: UnitAccess, teacherId: string) {
-    return this.database.offering.updateMany({
-      where: {
-        teacherId,
-        project: { unitId: unit.id, term: { status: { in: OPEN_TERM_STATUSES } } },
-      },
-      data: { teacherId: null },
-    })
   }
 
   private async findMember({ unit }: UnitAccess, userId: string) {
@@ -118,6 +103,7 @@ export class MembersService {
   }
 }
 
-function toView({ userId, user, isManager, isTeacher, createdAt }: MemberWithUser): MemberView {
+function toView({ userId, user, isManager, createdAt }: MemberWithUser): MemberView {
+  const isTeacher = user.teacherProfiles.length > 0
   return { userId, email: user.email, name: user.name, isManager, isTeacher, createdAt }
 }

@@ -113,7 +113,8 @@ CURRICULUM_NOT_FOUND` para currículo de outro curso ou id que não é cuid) e
   Semestre sem projeto se apaga em qualquer status (`TERM_IN_USE` com projeto) (0016)
 - **Status do semestre × projetos** (`TERM_PROJECT_POLICY` em `terms/term-policy.ts`): criar e
   apagar projeto só em `PLANNING`; editar (inclui ofertas, quadros e células) pelos gestores em
-  `PLANNING` e `ADJUSTMENTS`, só por dono e responsável em `STARTED`, por ninguém depois; publicar
+  `PLANNING` e `ADJUSTMENTS` e por ninguém a partir de `STARTED` — mudar com as aulas começadas é
+  voltar o semestre a `ADJUSTMENTS` (0021); o semestre em si segue editável em `STARTED`; publicar
   e despublicar em `PLANNING` e `ADJUSTMENTS`. Gestores (dono, responsável, coordenador do curso
   do currículo) veem todos os projetos; os demais nunca veem `DRAFT`, e veem os `PUBLISHED` só em
   `ADJUSTMENTS`, `STARTED` e `FINISHED`. O `TermAccessService` (exportado pelo `TermsModule`) dá
@@ -144,10 +145,10 @@ PROJECT_NOT_FOUND`, inclusive na escrita. O `ProjectAccessService` (exportado pe
   sem professor por disciplina **ativa** do currículo que ainda não tem oferta no projeto, só
   acréscimo, com `createMany` + `skipDuplicates`; roda na transação do `create` do projeto e em
   `POST …/offerings/generate`. Oferta de disciplina desativada fica e continua válida. Professor
-  da oferta é membro `isTeacher` com usuário ativo (`400 INVALID_TEACHER`). Remover a oferta zera
-  o `offeringId` das células dela na mesma transação (a célula e o local ficam). Quem é removido
-  ou perde o `isTeacher` sai das ofertas da unidade em semestres `PLANNING`, `ADJUSTMENTS` e
-  `STARTED`; em `FINISHED`/`CANCELLED`, não. **O que as próximas specs herdam:** `slotsCount` da
+  da oferta é um `Teacher` ativo da organização (`400 INVALID_TEACHER`, `409 TEACHER_INACTIVE`
+  quando muda para um desativado); formato `teacher: { id, name, user | null }`. Remover a oferta
+  zera o `offeringId` das células dela na mesma transação (a célula e o local ficam). Sair da
+  unidade não mexe nas ofertas (0021). **O que as próximas specs herdam:** `slotsCount` da
   oferta já conta as células; oferta sem professor pode ser alocada e não gera choque de
   professor (0019)
 - Quadros em `modules/boards/` e células em `modules/board-slots/`: lê quem vê o projeto, escreve
@@ -160,6 +161,18 @@ PROJECT_NOT_FOUND`, inclusive na escrita. O `ProjectAccessService` (exportado pe
   outras. A oferta traz `slotsCount` e `weeklyMinutes`; o quadro, o resumo `offerings` só dele.
   **O que as próximas specs herdam:** nada aqui verifica choque — a spec de choque acrescenta ao
   `PUT` da célula e ao `GET` do quadro (0020)
+- **Professor é o `Teacher`, da organização** (`modules/teachers/`, rotas em
+  `/api/organizations/:orgSlug/teachers`), não uma flag do membro: `UnitMember.isTeacher` saiu. O
+  `userId` é opcional e fixo desde a criação: sem ele, é uma **vaga a contratar**, que nunca vira
+  pessoa; a pessoa ganha o próprio `Teacher` (`POST` com `userId` de membro ativo da organização,
+  ou aceitando convite com `isTeacher`) e o gestor troca o professor das ofertas. Um usuário é no
+  máximo um `Teacher` por organização. **Com usuário, o `name` devolvido é sempre o do usuário**
+  (`teacherName` em `teachers/teacher-name.ts`); o `name` guardado vale para a vaga. Lê todo membro;
+  escrevem o dono e os responsáveis de unidade ativa. Só a vaga sem oferta alocada se apaga; o resto
+  se desativa. `UnitAccess.isTeacher` (e o `isTeacher` da lista de membros) = ter `Teacher` ativo
+  na organização (`TenantAccessService.isTeacher`). **O que as próximas specs herdam:** o choque
+  de professor compara `Offering.teacherId` (um `Teacher`, vaga inclusive); o horário do professor
+  acha as aulas da pessoa por `Teacher.userId` (0021)
 - Um módulo por entidade, cada um na sua pasta e com os próprios schemas, mesmo quando os campos
   coincidem (organização e unidade: `modules/organizations/` e `modules/units/`). Para agrupar,
   pasta de módulos (nota da 0009)
@@ -201,6 +214,6 @@ PROJECT_NOT_FOUND`, inclusive na escrita. O `ProjectAccessService` (exportado pe
 | 0018 | [Projetos](0018-api-projetos.md)                                                 | ✅ done | 0011, 0012, 0016                   |
 | 0019 | [Ofertas](0019-api-ofertas.md)                                                   | ✅ done | 0010, 0013, 0018                   |
 | 0020 | [Quadros](0020-api-quadros.md)                                                   | ✅ done | 0015, 0017, 0018, 0019             |
-| 0021 | [Professores](0021-api-professores.md)                                           | ⬜ todo | 0005, 0008, 0009, 0010, 0019       |
+| 0021 | [Professores](0021-api-professores.md)                                           | ✅ done | 0005, 0008, 0009, 0010, 0019       |
 | 0022 | [Detecção de choque](0022-api-deteccao-de-choque.md)                             | ⬜ todo | 0015, 0017, 0018, 0019, 0020, 0021 |
 | 0023 | [Choque ao publicar](0023-api-choque-ao-publicar.md)                             | ⬜ todo | 0018, 0022                         |

@@ -9,14 +9,16 @@ const TCH_ID = 'cmhteacher000000000000001'
 
 const projectAccess = () =>
   ({
-    unit: { id: 'unit-1', isActive: true },
+    unit: { id: 'unit-1', organizationId: 'org-1', isActive: true },
     project: { id: 'prj-1', curriculumId: 'cur-1' },
   }) as unknown as ProjectAccess
-const row = (overrides: { teacher?: unknown; isActive?: boolean; slots?: number } = {}) => ({
+const row = (
+  overrides: { teacher?: unknown; teacherId?: string; isActive?: boolean; slots?: number } = {},
+) => ({
   id: OFF_ID,
   projectId: 'prj-1',
   subjectId: 'sub-1',
-  teacherId: null,
+  teacherId: overrides.teacherId ?? null,
   createdAt: new Date('2026-10-31T10:00:00.000Z'),
   updatedAt: new Date('2026-10-31T10:00:00.000Z'),
   subject: {
@@ -33,7 +35,11 @@ const row = (overrides: { teacher?: unknown; isActive?: boolean; slots?: number 
     timeSlot: { startTime: 420 + i * 50, endTime: 470 + i * 50 },
   })),
 })
-const teacher = { id: TCH_ID, email: 'teacher@schdlr.dev', name: 'Teacher Teste' }
+const teacher = {
+  id: TCH_ID,
+  name: 'Teacher Teste',
+  user: { id: 'u-1', email: 'teacher@schdlr.dev', name: 'Teacher Teste' },
+}
 
 async function codeOf(promise: Promise<unknown>) {
   const error = await promise.then(
@@ -49,7 +55,7 @@ describe('OfferingsService', () => {
     $transaction: jest.Mock
     offering: Record<'findMany' | 'findFirst' | 'update' | 'delete' | 'createMany', jest.Mock>
     subject: { findMany: jest.Mock }
-    unitMember: { findFirst: jest.Mock }
+    teacher: { findFirst: jest.Mock }
     boardSlot: Record<'updateMany' | 'deleteMany', jest.Mock>
   }
   let projects: Record<'resolveProject' | 'assertProjectWritable', jest.Mock>
@@ -66,7 +72,7 @@ describe('OfferingsService', () => {
         createMany: jest.fn(),
       },
       subject: { findMany: jest.fn().mockResolvedValue([]) },
-      unitMember: { findFirst: jest.fn().mockResolvedValue({ id: 'm-1' }) },
+      teacher: { findFirst: jest.fn().mockResolvedValue({ isActive: true }) },
       boardSlot: { updateMany: jest.fn(), deleteMany: jest.fn() },
     }
     projects = {
@@ -157,42 +163,71 @@ describe('OfferingsService', () => {
   })
 
   describe('update', () => {
-    it('define o professor da unidade, passando pelo assertProjectWritable', async () => {
+    it('define um Teacher da organização, passando pelo assertProjectWritable', async () => {
       await expect(
         service.update('crd', 'acme', 'sede', 'prj-1', OFF_ID, { teacherId: TCH_ID }),
       ).resolves.toMatchObject({ teacher })
       expect(projects.assertProjectWritable).toHaveBeenCalledWith(projectAccess())
-      expect(db.unitMember.findFirst).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { unitId: 'unit-1', userId: TCH_ID, isTeacher: true, user: { isActive: true } },
-        }),
+      expect(db.teacher.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: TCH_ID, organizationId: 'org-1' } }),
       )
       expect(db.offering.update).toHaveBeenCalledWith(
         expect.objectContaining({ where: { id: OFF_ID }, data: { teacherId: TCH_ID } }),
       )
     })
 
-    it('null tira o professor sem consultar membro', async () => {
+    it('com usuário, o nome do professor é o do usuário (0021)', async () => {
+      db.offering.update.mockResolvedValue(
+        row({ teacher: { ...teacher, name: 'Nome guardado' }, teacherId: TCH_ID }),
+      )
+      await expect(
+        service.update('crd', 'acme', 'sede', 'prj-1', OFF_ID, { teacherId: TCH_ID }),
+      ).resolves.toMatchObject({ teacher: { name: 'Teacher Teste' } })
+    })
+
+    it('vaga sem usuário sai com o próprio nome e user null', async () => {
+      const vaga = { id: TCH_ID, name: 'Professor de Matemática 1', user: null }
+      db.offering.update.mockResolvedValue(row({ teacher: vaga }))
+      await expect(
+        service.update('crd', 'acme', 'sede', 'prj-1', OFF_ID, { teacherId: TCH_ID }),
+      ).resolves.toMatchObject({ teacher: vaga })
+    })
+
+    it('professor desativado não entra em oferta nova: TEACHER_INACTIVE', async () => {
+      db.teacher.findFirst.mockResolvedValue({ isActive: false })
+      expect(
+        await codeOf(service.update('crd', 'acme', 'sede', 'prj-1', OFF_ID, { teacherId: TCH_ID })),
+      ).toBe('TEACHER_INACTIVE')
+      expect(db.offering.update).not.toHaveBeenCalled()
+    })
+
+    it('o mesmo professor que a oferta já tem não é conferido de novo', async () => {
+      db.offering.findFirst.mockResolvedValue(row({ teacherId: TCH_ID }))
+      await service.update('crd', 'acme', 'sede', 'prj-1', OFF_ID, { teacherId: TCH_ID })
+      expect(db.teacher.findFirst).not.toHaveBeenCalled()
+    })
+
+    it('null tira o professor sem consultar professores', async () => {
       db.offering.update.mockResolvedValue(row())
       await expect(
         service.update('crd', 'acme', 'sede', 'prj-1', OFF_ID, { teacherId: null }),
       ).resolves.toMatchObject({ teacher: null })
-      expect(db.unitMember.findFirst).not.toHaveBeenCalled()
+      expect(db.teacher.findFirst).not.toHaveBeenCalled()
       expect(db.offering.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: { teacherId: null } }),
       )
     })
 
-    it('quem não é professor da unidade, ou id fora do formato, dá INVALID_TEACHER', async () => {
-      db.unitMember.findFirst.mockResolvedValue(null)
+    it('Teacher de outra organização, inexistente ou id fora do formato dá INVALID_TEACHER', async () => {
+      db.teacher.findFirst.mockResolvedValue(null)
       expect(
         await codeOf(service.update('crd', 'acme', 'sede', 'prj-1', OFF_ID, { teacherId: TCH_ID })),
       ).toBe('INVALID_TEACHER')
-      db.unitMember.findFirst.mockClear()
+      db.teacher.findFirst.mockClear()
       expect(
         await codeOf(service.update('crd', 'acme', 'sede', 'prj-1', OFF_ID, { teacherId: 'x' })),
       ).toBe('INVALID_TEACHER')
-      expect(db.unitMember.findFirst).not.toHaveBeenCalled()
+      expect(db.teacher.findFirst).not.toHaveBeenCalled()
       expect(db.offering.update).not.toHaveBeenCalled()
     })
 
@@ -201,7 +236,7 @@ describe('OfferingsService', () => {
       expect(
         await codeOf(service.update('crd', 'acme', 'sede', 'prj-1', OFF_ID, { teacherId: TCH_ID })),
       ).toBe('TERM_STATUS_FORBIDS')
-      expect(db.unitMember.findFirst).not.toHaveBeenCalled()
+      expect(db.teacher.findFirst).not.toHaveBeenCalled()
       expect(db.offering.update).not.toHaveBeenCalled()
     })
 

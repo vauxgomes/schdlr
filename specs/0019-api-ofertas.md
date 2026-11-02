@@ -352,3 +352,11 @@ Desvios:
 (as que sobram, `offeringId` nulo) → `delete` da oferta. A célula com local fica, sem oferta. O
 formato da oferta ganhou `weeklyMinutes` ao lado do `slotsCount`, e os dois saem das durações dos
 horários das células, não mais do `_count`.
+
+**2026-11-01 — spec 0021.** O `PATCH { teacherId }` recebe o id de um `Teacher` ativo da
+organização da unidade, ou `null`: de fora da organização, inexistente ou fora do formato → `400
+INVALID_TEACHER` (mensagem "Teacher must be a teacher of the organization"); desativado → `409
+TEACHER_INACTIVE`, só quando o `teacherId` muda para ele. O `teacher` do formato passou a
+`{ id, name, user: { id, email, name } | null }`, com o `name` do usuário quando há usuário.
+`?teacherId=` filtra pelo `Teacher`. Saiu o ajuste no `MembersService` que zerava o professor das
+ofertas quando o membro saía da unidade ou perdia o `isTeacher`.

@@ -1,7 +1,7 @@
 ---
 id: 0021
 title: Professores
-status: todo
+status: done
 depends_on: [0005, 0008, 0009, 0010, 0016, 0018, 0019]
 ---
 
@@ -315,37 +315,37 @@ Cada item vira nota datada no fim da spec indicada, na execução.
 
 ## Critérios de aceite
 
-- [ ] `schema.prisma` com o `Teacher` acima, `Offering.teacherId → Teacher` e sem
+- [x] `schema.prisma` com o `Teacher` acima, `Offering.teacherId → Teacher` e sem
       `UnitMember.isTeacher`; uma migration nova, gerada pelo Prisma, sem edição; `pnpm db:migrate`
       sem drift depois
-- [ ] Gestores de unidade (dono e responsáveis) criam professores sem usuário e com usuário; demais
+- [x] Gestores de unidade (dono e responsáveis) criam professores sem usuário e com usuário; demais
       membros leem; quem não enxerga a organização recebe `404`
-- [ ] Professor sem usuário é listado em `?linked=false` e atribuído a oferta
-- [ ] `userId` só na criação: membro ativo da organização; não membro dá `400`; já professor dá
+- [x] Professor sem usuário é listado em `?linked=false` e atribuído a oferta
+- [x] `userId` só na criação: membro ativo da organização; não membro dá `400`; já professor dá
       `409`; `userId` no `PATCH` é descartado (o vínculo não muda)
-- [ ] Caso 1 e caso 2 de "ganhar um professor", e só eles; o convite com `isTeacher` cria o
+- [x] Caso 1 e caso 2 de "ganhar um professor", e só eles; o convite com `isTeacher` cria o
       `Teacher` vinculado no aceite (com o e-mail no nome se houver homônimo), e nada se o convite
       não for aceito ou se o convidado já for professor
-- [ ] Trocar o professor da oferta, da vaga para a pessoa e de uma pessoa para outra, pelo `PATCH`
+- [x] Trocar o professor da oferta, da vaga para a pessoa e de uma pessoa para outra, pelo `PATCH`
       da 0019; as ofertas de semestres encerrados não mudam
-- [ ] Nome repetido na organização dá `409`; desativado não é atribuído a oferta nova, mas fica nas
+- [x] Nome repetido na organização dá `409`; desativado não é atribuído a oferta nova, mas fica nas
       que já tinha
-- [ ] `DELETE` só de professor sem usuário (`409 TEACHER_HAS_USER`) e sem oferta alocada em célula
+- [x] `DELETE` só de professor sem usuário (`409 TEACHER_HAS_USER`) e sem oferta alocada em célula
       (`409 TEACHER_IN_USE`); as ofertas dele não alocadas ficam sem professor, na mesma transação
-- [ ] Ofertas (0019): `PATCH` aceita `Teacher` ativo da organização, recusa de fora (`400`) e
+- [x] Ofertas (0019): `PATCH` aceita `Teacher` ativo da organização, recusa de fora (`400`) e
       desativado (`409`); formato e filtro novos; sair da unidade não zera mais o professor
-- [ ] Convites e membros (0010): o `isTeacher` do convite cria o `Teacher`; `PATCH` de membro sem
+- [x] Convites e membros (0010): o `isTeacher` do convite cria o `Teacher`; `PATCH` de membro sem
       `isTeacher`
-- [ ] `UnitAccess.isTeacher` vem do `Teacher`
-- [ ] Seed com o `teacher@` vinculado e um professor a contratar; banco de dev recriado e semeado
-- [ ] Em `STARTED`, editar projeto, oferta (inclusive o professor), quadro e célula dá `409
+- [x] `UnitAccess.isTeacher` vem do `Teacher`
+- [x] Seed com o `teacher@` vinculado e um professor a contratar; banco de dev recriado e semeado
+- [x] Em `STARTED`, editar projeto, oferta (inclusive o professor), quadro e célula dá `409
 TERM_STATUS_FORBIDS` para todos; voltar o semestre a `ADJUSTMENTS` libera de novo; o semestre
       em si continua editável; o teste da matriz da 0016 atualizado na linha `STARTED`
-- [ ] Notas datadas na 0002, 0005, 0010, 0016, 0018 e 0019; "Contratos em vigor" do README ganha o `Teacher`
-- [ ] Códigos novos no catálogo da 0008
-- [ ] Testes unitários do service de professores, dos schemas, e os de ofertas, convites, membros e
+- [x] Notas datadas na 0002, 0005, 0010, 0016, 0018 e 0019; "Contratos em vigor" do README ganha o `Teacher`
+- [x] Códigos novos no catálogo da 0008
+- [x] Testes unitários do service de professores, dos schemas, e os de ofertas, convites, membros e
       seed ajustados; e2e das rotas com os services substituídos
-- [ ] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
+- [x] `pnpm test:api` passa sem `.env` e sem banco; `pnpm build:api` e o lint passam
 
 ## Verificação
 
@@ -435,3 +435,79 @@ kill %1
 Ao final, apagar o que o teste criou (projeto, semestre, currículo, os professores novos, o convite,
 o membro e o usuário `novo@`), devolvendo o banco ao estado da seed, e os códigos OTP e refresh
 tokens dos logins.
+
+## Registro
+
+**2026-11-01** — executada com `/spec 0021`, na branch `development`.
+
+Commits: `feat(api): professores (spec 0021)`.
+
+Verificação: com a autorização do usuário, `pnpm db:reset --force` recriou o banco de dev; o
+`pnpm db:migrate --name teachers` gerou `20261102001155_teachers` (sem edição) e o `pnpm db:migrate`
+seguinte deu "Already in sync". Seed com `SET_FIRST_TENANT=true`: 14 criados, com as duas linhas
+`professor`. Sem `.env`, `pnpm test:api` passa (747 unitários, 171 e2e) e `pnpm build:api` também;
+`tsc` e lint limpos; `pnpm format` estável. Contra o banco de dev, numa instância na porta 3011 com
+`MAIL_ENABLED=false` (a 3001 estava ocupada por outra instância, que não foi tocada), rodado em
+`bash` a partir de um script, todas as linhas da seção "Verificação" deram o esperado: o
+`coordinator@` lista o `Teacher Teste` (com usuário) e a vaga, `canManage: false`; `?linked=false`
+só a vaga; criar → `403`; o `manager@` cria a vaga (`201`, `user: null`), nome repetido → `409
+TEACHER_NAME_IN_USE`; `PATCH` com `userId` o descarta. A vaga entra na MAT-101 (`teacher.user:
+null`) e `?teacherId=` a acha; o id do usuário no lugar do `Teacher` → `400 INVALID_TEACHER`. O
+`coordinator@` ganha o próprio professor (`201`), de novo → `409 USER_ALREADY_TEACHER`, o master →
+`400 INVALID_TEACHER_USER`; a MAT-101 troca da vaga para ele, e a vaga fica com `offeringsCount 0`.
+A vaga desativada: escrever → `409 TEACHER_INACTIVE`, entrar em oferta nova → `409
+TEACHER_INACTIVE`, e fica na QUI-201 que já a tinha. A pessoa não se apaga (`409
+TEACHER_HAS_USER`). Uma vaga com a FIS-101 numa célula → `409 TEACHER_IN_USE`; tirada a célula →
+`204`, e a FIS-101 fica sem professor. Caso 1: antes do aceite, `?q=Novo` → `[]`; o `novo@` entra
+por OTP, aceita, e aparece "Novo Professor" com o `novo@`. Em `STARTED`, `PATCH` da oferta (pelo
+`manager@` e pelo `coordinator@`), do projeto, do quadro e `PUT` da célula → `409
+TERM_STATUS_FORBIDS`; `access.canEdit: false`; o `PATCH` do semestre → `200`; de volta a
+`ADJUSTMENTS`, a oferta e a célula voltam a aceitar. Além do roteiro: id fora do formato e de outra
+organização → `404 TEACHER_NOT_FOUND`; o master → `404 ORGANIZATION_NOT_FOUND`; com o nome guardado
+"Prof. Coord", o professor do `coordinator@` sai como "Coordinator Teste"; `?q=coordinator` o acha
+pelo nome do usuário; o `teacher@` saiu da unidade (`204`) e a FIS-101 continuou com ele; a lista
+de membros e o `access` da unidade trazem `isTeacher` pelo `Teacher`; `PATCH` de membro só com
+`isTeacher` → `400 EMPTY_UPDATE`; um convidado com o nome de um professor existente virou
+"Professor a contratar 1 (homo@schdlr.dev)"; um convite com `isTeacher` recusado não criou nada.
+Nenhum e-mail saiu (`MAIL_ENABLED=false`). No fim, projeto, semestre, currículo, bloco, os
+professores, convites, membros e usuários criados foram apagados, o `teacher@` voltou à unidade
+(reinserido por SQL, com outro `id` e `created_at`), e os códigos OTP e refresh tokens se foram.
+
+Não exercitado contra o banco: convite com `isTeacher` para quem já é professor na organização (a
+unidade de teste é a única, e todo professor dela já é membro; coberto pelo teste unitário), e as
+corridas pelo `P2002` e pelo `P2003`.
+
+Desvios:
+
+- **Com usuário, o `name` devolvido é sempre o `User.name`** (decisão do usuário durante a
+  execução). Vale no professor e no `teacher` da oferta, por `teacherName` em
+  `teachers/teacher-name.ts`. O `Teacher.name` guardado continua obrigatório e único na
+  organização: é o nome da vaga e o do `TEACHER_NAME_IN_USE`. Por isso o `?q=` procura também no
+  nome do usuário, e a lista é ordenada em memória pelo nome devolvido (`localeCompare` pt-BR), não
+  pelo `orderBy` do banco. Fica em aberto: o `PATCH { name }` de professor com usuário muda só o
+  nome guardado, que não aparece.
+- **Reset antes da migration.** O `prisma migrate dev` não roda num terminal não interativo quando
+  vai apagar coluna com dados (`unit_members.is_teacher`). O banco foi recriado primeiro (com a
+  autorização) e a migration gerada sobre ele vazio, sem `--create-only` e sem edição. O nome traz
+  a data em UTC (`20261102…`).
+- **`isTeacher` no formato do membro (0010) ficou**, calculado: ter `Teacher` ativo na organização.
+  A spec não dizia o que fazer com ele.
+- **`PATCH` de membro é só do dono**: com `isManager` como única chave, o responsável não tem mais
+  o que editar ali.
+- **`TenantAccessService.isTeacher(userId, organizationId)`** é público: o `resolveUnit` o chama
+  (uma consulta a mais por requisição de unidade) e o `UnitsService` também, na listagem e na
+  criação.
+- **Oferta**: `TEACHER_INACTIVE` só quando o `teacherId` muda; repetir o professor que a oferta já
+  tem não consulta nada. A mensagem de `INVALID_TEACHER` virou "Teacher must be a teacher of the
+  organization".
+- **Ordem nas escritas de professor**: `POST` — papel (`403`) → `assertWritable` → usuário (`400`)
+  → já professor (`409`) → nome (`409`); `PATCH` — professor (`404`) → papel → `assertWritable` →
+  desativado (`409`) → nome; `DELETE` — professor → papel → `assertWritable` → com usuário → com
+  oferta alocada. Um `P2002` no `POST` com `userId` relê o vínculo para escolher entre
+  `USER_ALREADY_TEACHER` e `TEACHER_NAME_IN_USE`.
+- **`DELETE`**: o `updateMany` solta só as ofertas sem célula (`boardSlots: { none: {} }`), para
+  que uma alocação na corrida caia no `Restrict` (`P2003` → `409 TEACHER_IN_USE`) em vez de ser
+  solta junto.
+- **Homônimo no convite**: se "Nome (e-mail)" também já existir na organização, o aceite falha
+  pelo `P2002` (500). Não tratado.
+- **Seed**: o `Teacher` é procurado pelo nome na organização, como as outras linhas da seed.

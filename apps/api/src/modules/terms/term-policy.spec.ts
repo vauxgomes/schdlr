@@ -25,7 +25,7 @@ describe('term-policy', () => {
     expect(TERM_PROJECT_POLICY).toEqual({
       PLANNING: { create: true, edit: 'MANAGERS', publish: true, othersSee: 'NONE' },
       ADJUSTMENTS: { create: false, edit: 'MANAGERS', publish: true, othersSee: 'PUBLISHED' },
-      STARTED: { create: false, edit: 'UNIT_ADMINS', publish: false, othersSee: 'PUBLISHED' },
+      STARTED: { create: false, edit: 'NOBODY', publish: false, othersSee: 'PUBLISHED' },
       FINISHED: { create: false, edit: 'NOBODY', publish: false, othersSee: 'PUBLISHED' },
       CANCELLED: { create: false, edit: 'NOBODY', publish: false, othersSee: 'NONE' },
     })
@@ -42,11 +42,7 @@ describe('term-policy', () => {
 
 describe('isProjectActionAllowed e isProjectVisible', () => {
   const ACTIONS = ['create', 'edit', 'publish', 'delete'] as const
-  const ROLES = [
-    { isProjectManager: true, canManageTerm: true },
-    { isProjectManager: true, canManageTerm: false },
-    { isProjectManager: false, canManageTerm: false },
-  ]
+  const ROLES = [{ isProjectManager: true }, { isProjectManager: false }]
 
   it('a ação só é permitida quando está aberta no status', () => {
     for (const status of STATUSES) {
@@ -60,9 +56,8 @@ describe('isProjectActionAllowed e isProjectVisible', () => {
     }
   })
 
-  it('em STARTED, editar é de dono e responsável, não do coordenador', () => {
-    expect(isProjectActionAllowed('STARTED', 'edit', ROLES[0])).toBe(true)
-    expect(isProjectActionAllowed('STARTED', 'edit', ROLES[1])).toBe(false)
+  it('em STARTED, ninguém edita (0021)', () => {
+    for (const roles of ROLES) expect(isProjectActionAllowed('STARTED', 'edit', roles)).toBe(false)
   })
 
   it.each([

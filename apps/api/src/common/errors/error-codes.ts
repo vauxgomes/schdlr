@@ -125,7 +125,7 @@ export const ERRORS = {
   OFFERING_NOT_FOUND: { status: HttpStatus.NOT_FOUND, message: 'Offering not found' },
   INVALID_TEACHER: {
     status: HttpStatus.BAD_REQUEST,
-    message: 'Teacher must be a teacher of the unit',
+    message: 'Teacher must be a teacher of the organization',
   },
 
   // Quadros (0020)
@@ -138,6 +138,21 @@ export const ERRORS = {
     message: 'Offering must belong to the project',
   },
   INVALID_LOCATION: { status: HttpStatus.BAD_REQUEST, message: 'Location must belong to the unit' },
+
+  // Professores (0021)
+  TEACHER_NOT_FOUND: { status: HttpStatus.NOT_FOUND, message: 'Teacher not found' },
+  TEACHER_NAME_IN_USE: { status: HttpStatus.CONFLICT, message: 'Teacher name already in use' },
+  TEACHER_INACTIVE: { status: HttpStatus.CONFLICT, message: 'Teacher is inactive' },
+  TEACHER_IN_USE: { status: HttpStatus.CONFLICT, message: 'Teacher has allocated offerings' },
+  TEACHER_HAS_USER: { status: HttpStatus.CONFLICT, message: 'Teacher has a user' },
+  INVALID_TEACHER_USER: {
+    status: HttpStatus.BAD_REQUEST,
+    message: 'User must be an active member of the organization',
+  },
+  USER_ALREADY_TEACHER: {
+    status: HttpStatus.CONFLICT,
+    message: 'User is already a teacher in this organization',
+  },
 } as const satisfies Record<string, { status: HttpStatus; message: string }>
 
 export type ErrorCode = keyof typeof ERRORS

@@ -382,3 +382,7 @@ Desvios:
 **2026-10-31 — spec 0019.** O projeto não nasce mais sem oferta: o `ProjectsService.create` grava
 o projeto e gera as ofertas das disciplinas ativas do currículo (`generateOfferings`, de
 `offerings/generate-offerings.ts`) no mesmo `$transaction`. O formato do projeto não mudou.
+
+**2026-11-01 — spec 0021.** "Em `STARTED`, dono e responsável editam" deixou de valer: em
+`STARTED` ninguém edita o projeto nem o que mora nele (`409 TERM_STATUS_FORBIDS`), e o
+`access.canEdit` é `false` para todos.

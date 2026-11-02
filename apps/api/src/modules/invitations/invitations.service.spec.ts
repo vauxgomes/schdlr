@@ -12,7 +12,14 @@ import { InvitationsService } from './invitations.service'
 
 const DAY = 86_400_000
 const organization = { id: 'org-1', name: 'Acme', slug: 'acme', ownerId: 'owner', isActive: true }
-const unit = { id: 'unit-1', name: 'Sede', slug: 'sede', isActive: true, organization }
+const unit = {
+  id: 'unit-1',
+  organizationId: 'org-1',
+  name: 'Sede',
+  slug: 'sede',
+  isActive: true,
+  organization,
+}
 
 const invitation = (overrides: Record<string, unknown> = {}) => ({
   id: 'inv-1',
@@ -55,6 +62,7 @@ describe('InvitationsService', () => {
   let tx: {
     user: Record<'findUnique' | 'create', jest.Mock>
     unitMember: Record<'findUnique' | 'upsert', jest.Mock>
+    teacher: Record<'findUnique' | 'create', jest.Mock>
     unitInvitation: Record<'updateMany' | 'create' | 'findUniqueOrThrow', jest.Mock>
   }
   let db: {
@@ -69,6 +77,7 @@ describe('InvitationsService', () => {
     tx = {
       user: { findUnique: jest.fn(), create: jest.fn() },
       unitMember: { findUnique: jest.fn(), upsert: jest.fn() },
+      teacher: { findUnique: jest.fn(), create: jest.fn() },
       unitInvitation: {
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
         create: jest.fn(),
@@ -267,7 +276,7 @@ describe('InvitationsService', () => {
   describe('responder', () => {
     beforeEach(() => tx.unitInvitation.findUniqueOrThrow.mockResolvedValue(invitation()))
 
-    it('aceitar passa por assertWritable e soma as flags', async () => {
+    it('aceitar passa por assertWritable e soma o isManager; sem isTeacher, nenhum Teacher', async () => {
       db.unitInvitation.findFirst.mockResolvedValue(
         invitation({ isManager: true, isTeacher: false }),
       )
@@ -281,9 +290,51 @@ describe('InvitationsService', () => {
       })
       expect(tx.unitMember.upsert).toHaveBeenCalledWith({
         where: { unitId_userId: { unitId: 'unit-1', userId: 'guest' } },
-        create: { unitId: 'unit-1', userId: 'guest', isManager: true, isTeacher: false },
+        create: { unitId: 'unit-1', userId: 'guest', isManager: true },
         update: { isManager: true },
       })
+      expect(tx.teacher.create).not.toHaveBeenCalled()
+    })
+
+    it('aceitar com isTeacher cria o Teacher vinculado, com o nome do usuário (0021)', async () => {
+      db.unitInvitation.findFirst.mockResolvedValue(invitation())
+      tx.teacher.findUnique.mockResolvedValue(null)
+      await service.respondById('guest', 'inv-1', 'accept')
+      expect(tx.unitMember.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          create: { unitId: 'unit-1', userId: 'guest', isManager: false },
+        }),
+      )
+      expect(tx.teacher.findUnique).toHaveBeenNthCalledWith(1, {
+        where: { organizationId_userId: { organizationId: 'org-1', userId: 'guest' } },
+        select: { id: true },
+      })
+      expect(tx.teacher.create).toHaveBeenCalledWith({
+        data: { organizationId: 'org-1', userId: 'guest', name: 'guest' },
+      })
+    })
+
+    it('com um homônimo na organização, o nome leva o e-mail', async () => {
+      db.unitInvitation.findFirst.mockResolvedValue(invitation())
+      tx.teacher.findUnique.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 'outro' })
+      await service.respondById('guest', 'inv-1', 'accept')
+      expect(tx.teacher.create).toHaveBeenCalledWith({
+        data: { organizationId: 'org-1', userId: 'guest', name: 'guest (guest@schdlr.dev)' },
+      })
+    })
+
+    it('quem já é professor na organização fica com o Teacher que tinha', async () => {
+      db.unitInvitation.findFirst.mockResolvedValue(invitation())
+      tx.teacher.findUnique.mockResolvedValue({ id: 't-1' })
+      await service.respondById('guest', 'inv-1', 'accept')
+      expect(tx.teacher.create).not.toHaveBeenCalled()
+    })
+
+    it('recusar um convite com isTeacher não cria Teacher', async () => {
+      db.unitInvitation.findFirst.mockResolvedValue(invitation())
+      await service.respondById('guest', 'inv-1', 'reject')
+      expect(tx.teacher.create).not.toHaveBeenCalled()
+      expect(tx.unitMember.upsert).not.toHaveBeenCalled()
     })
 
     it('aceitar com plano vencido não grava', async () => {

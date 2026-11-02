@@ -28,7 +28,10 @@ async function codeOf(promise: Promise<unknown>) {
 describe('UnitsService', () => {
   let tx: { $queryRaw: jest.Mock; unit: Record<'count' | 'findUnique' | 'create', jest.Mock> }
   let db: { $transaction: jest.Mock; unit: Record<'findMany' | 'update', jest.Mock> }
-  let tenants: Record<'resolveOrganization' | 'resolveUnit' | 'assertWritable', jest.Mock>
+  let tenants: Record<
+    'resolveOrganization' | 'resolveUnit' | 'assertWritable' | 'isTeacher',
+    jest.Mock
+  >
   let subscriptions: { getActivePlan: jest.Mock }
   let service: UnitsService
 
@@ -41,7 +44,12 @@ describe('UnitsService', () => {
       $transaction: jest.fn((fn: (t: typeof tx) => unknown) => fn(tx)),
       unit: { findMany: jest.fn(), update: jest.fn() },
     }
-    tenants = { resolveOrganization: jest.fn(), resolveUnit: jest.fn(), assertWritable: jest.fn() }
+    tenants = {
+      resolveOrganization: jest.fn(),
+      resolveUnit: jest.fn(),
+      assertWritable: jest.fn(),
+      isTeacher: jest.fn().mockResolvedValue(false),
+    }
     subscriptions = {
       getActivePlan: jest.fn().mockResolvedValue({ limits: { unitsPerOrganization: 1 } }),
     }
@@ -112,7 +120,7 @@ describe('UnitsService', () => {
     const access = (role: { isOwner?: boolean; isManager?: boolean }) => ({
       organization,
       unit: unit(),
-      membership: role.isManager ? { isManager: true, isTeacher: false } : null,
+      membership: role.isManager ? { isManager: true } : null,
       isOwner: false,
       isManager: false,
       isTeacher: false,
@@ -160,13 +168,13 @@ describe('UnitsService', () => {
       )
     })
 
-    it('o membro vê as ativas de que é membro, com o papel', async () => {
+    it('o membro vê as ativas de que é membro, com o papel; isTeacher vem do Teacher', async () => {
       tenants.resolveOrganization.mockResolvedValue({ organization, isOwner: false })
-      db.unit.findMany.mockResolvedValue([
-        { ...unit(), members: [{ isManager: false, isTeacher: true }] },
-      ])
+      tenants.isTeacher.mockResolvedValue(true)
+      db.unit.findMany.mockResolvedValue([{ ...unit(), members: [{ isManager: false }] }])
       const [view] = await service.list('u', 'acme')
       expect(view.access).toEqual({ isOwner: false, isManager: false, isTeacher: true })
+      expect(tenants.isTeacher).toHaveBeenCalledWith('u', 'org-1')
       expect(db.unit.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { organizationId: 'org-1', isActive: true, members: { some: { userId: 'u' } } },

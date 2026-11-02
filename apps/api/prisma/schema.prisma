@@ -90,7 +90,7 @@ model User {
   coordinatedCourses    Course[]
   createdTerms          Term[]
   createdProjects       Project[]
-  offerings             Offering[]
+  teacherProfiles       Teacher[]
 
   @@map("users")
 }
@@ -153,8 +153,9 @@ model Organization {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  owner User   @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  units Unit[]
+  owner    User      @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  units    Unit[]
+  teachers Teacher[]
 
   @@index([ownerId])
   @@map("organizations")
@@ -188,7 +189,6 @@ model UnitMember {
   unitId    String   @map("unit_id")
   userId    String   @map("user_id")
   isManager Boolean  @default(false) @map("is_manager")
-  isTeacher Boolean  @default(false) @map("is_teacher")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -221,6 +221,29 @@ model UnitInvitation {
   @@index([unitId, status])
   @@index([inviteeId, status])
   @@map("unit_invitations")
+}
+
+/// The organization's teacher. Without a user it is a vacancy ("Professor de Matemática 1"); the
+/// user is set only at creation and never changes.
+model Teacher {
+  id             String   @id @default(cuid())
+  organizationId String   @map("organization_id")
+  userId         String?  @map("user_id")
+  name           String
+  area           String?
+  notes          String?
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user         User?        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  offerings    Offering[]
+
+  @@unique([organizationId, name])
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@map("teachers")
 }
 
 // --- Academic catalog --------------------------------------------------------
@@ -391,7 +414,7 @@ model Offering {
 
   project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   subject    Subject     @relation(fields: [subjectId], references: [id], onDelete: Restrict)
-  teacher    User?       @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  teacher    Teacher?    @relation(fields: [teacherId], references: [id], onDelete: Restrict)
   boardSlots BoardSlot[]
 
   @@unique([projectId, subjectId])

@@ -33,6 +33,7 @@ describe('TenantAccessService', () => {
     organization: { findUnique: jest.Mock }
     unit: { findUnique: jest.Mock }
     unitMember: { findFirst: jest.Mock; findUnique: jest.Mock }
+    teacher: { findUnique: jest.Mock }
   }
   let subscriptions: { getActivePlan: jest.Mock }
   let service: TenantAccessService
@@ -42,6 +43,7 @@ describe('TenantAccessService', () => {
       organization: { findUnique: jest.fn() },
       unit: { findUnique: jest.fn() },
       unitMember: { findFirst: jest.fn(), findUnique: jest.fn() },
+      teacher: { findUnique: jest.fn() },
     }
     subscriptions = { getActivePlan: jest.fn() }
     service = new TenantAccessService(
@@ -97,12 +99,30 @@ describe('TenantAccessService', () => {
     it('membro recebe o papel', async () => {
       db.organization.findUnique.mockResolvedValue(organization())
       db.unit.findUnique.mockResolvedValue(unit())
-      db.unitMember.findUnique.mockResolvedValue({ isManager: true, isTeacher: false })
+      db.unitMember.findUnique.mockResolvedValue({ isManager: true })
+      db.teacher.findUnique.mockResolvedValue(null)
       await expect(service.resolveUnit('u', 'acme', 'sede')).resolves.toMatchObject({
         isOwner: false,
         isManager: true,
         isTeacher: false,
       })
+    })
+
+    it.each([
+      ['Teacher ativo na organização', { isActive: true }, true],
+      ['Teacher desativado', { isActive: false }, false],
+      ['sem Teacher', null, false],
+    ])('isTeacher vem do Teacher (0021): %s', async (_label, teacher, isTeacher) => {
+      db.organization.findUnique.mockResolvedValue(organization())
+      db.unit.findUnique.mockResolvedValue(unit())
+      db.unitMember.findUnique.mockResolvedValue({ isManager: false })
+      db.teacher.findUnique.mockResolvedValue(teacher)
+      await expect(service.resolveUnit('u', 'acme', 'sede')).resolves.toMatchObject({ isTeacher })
+      expect(db.teacher.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { organizationId_userId: { organizationId: 'org-1', userId: 'u' } },
+        }),
+      )
     })
 
     it('o dono enxerga unidade desativada, sem ser membro', async () => {

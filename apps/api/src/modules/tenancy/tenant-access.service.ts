@@ -17,7 +17,7 @@ export type UnitAccess = OrganizationAccess & {
   unit: Unit
   membership: UnitMember | null // null para o dono que não é membro
   isManager: boolean
-  isTeacher: boolean
+  isTeacher: boolean // tem um Teacher ativo nesta organização (0021)
 }
 
 /** Slug fora do formato é um slug que não existe: 404, não 400. */
@@ -79,8 +79,17 @@ export class TenantAccessService {
       unit,
       membership,
       isManager: membership?.isManager ?? false,
-      isTeacher: membership?.isTeacher ?? false,
+      isTeacher: await this.isTeacher(userId, access.organization.id),
     }
+  }
+
+  /** Ser professor é ter um Teacher ativo na organização, não uma flag do membro (0021). */
+  async isTeacher(userId: string, organizationId: string): Promise<boolean> {
+    const teacher = await this.database.teacher.findUnique({
+      where: { organizationId_userId: { organizationId, userId } },
+      select: { isActive: true },
+    })
+    return teacher?.isActive ?? false
   }
 
   /**

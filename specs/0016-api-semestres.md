@@ -393,3 +393,12 @@ Desvios:
   projeto. A spec só fixava a do `…/status`.
 - **`PATCH` e `…/status` releem o semestre** depois de gravar, para devolver `createdBy` e
   `projectsCount`.
+
+## Notas posteriores
+
+**2026-11-01 — spec 0021.** A linha `STARTED` da matriz virou "editar: ninguém":
+`TERM_PROJECT_POLICY.STARTED.edit` é `'NOBODY'`, e o valor `UNIT_ADMINS` saiu de `ProjectEditors`
+(e o `canManageTerm` saiu de `ProjectRoles`). "`STARTED` restringe ao dono e ao responsável" deixa
+de valer: mudar projeto, oferta, quadro ou célula com as aulas começadas é voltar o semestre a
+`ADJUSTMENTS`. O semestre em si continua editável em `STARTED` pelo dono e pelo responsável. O
+teste da matriz mudou na linha `STARTED`: `edit` dá `409 TERM_STATUS_FORBIDS` para todos.

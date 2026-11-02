@@ -14,7 +14,7 @@ export type UnitView = Omit<Unit, 'organizationId'> & {
   access: { isOwner: boolean; isManager: boolean; isTeacher: boolean }
 }
 
-type Role = { isManager: boolean; isTeacher: boolean }
+type Role = { isManager: boolean }
 
 @Injectable()
 export class UnitsService {
@@ -32,19 +32,23 @@ export class UnitsService {
         organizationId: organization.id,
         ...(!isOwner && { isActive: true, members: { some: { userId } } }),
       },
-      include: { members: { where: { userId }, select: { isManager: true, isTeacher: true } } },
+      include: { members: { where: { userId }, select: { isManager: true } } },
       orderBy: { name: 'asc' },
     })
-    return units.map(({ members: [role], ...unit }) => toView(unit, organization, isOwner, role))
+    // O professor é da organização: o mesmo em todas as unidades dela (0021).
+    const isTeacher = await this.tenants.isTeacher(userId, organization.id)
+    return units.map(({ members: [role], ...unit }) =>
+      toView(unit, organization, isOwner, role, isTeacher),
+    )
   }
 
   async get(userId: string, orgSlug: string, unitSlug: string): Promise<UnitView> {
-    const { unit, organization, isOwner, membership } = await this.tenants.resolveUnit(
+    const { unit, organization, isOwner, membership, isTeacher } = await this.tenants.resolveUnit(
       userId,
       orgSlug,
       unitSlug,
     )
-    return toView(unit, organization, isOwner, membership)
+    return toView(unit, organization, isOwner, membership, isTeacher)
   }
 
   /**
@@ -84,7 +88,13 @@ export class UnitsService {
 
         return tx.unit.create({ data: { name, slug, address, organizationId: organization.id } })
       })
-      return toView(unit, organization, true, null)
+      return toView(
+        unit,
+        organization,
+        true,
+        null,
+        await this.tenants.isTeacher(userId, organization.id),
+      )
     } catch (error) {
       if (isUniqueViolation(error)) throw new AppException('SLUG_ALREADY_IN_USE')
       throw error
@@ -104,7 +114,7 @@ export class UnitsService {
     await this.tenants.assertWritable(access, { reactivating: isUnitReactivation(body) })
 
     const unit = await this.database.unit.update({ where: { id: access.unit.id }, data: body })
-    return toView(unit, access.organization, access.isOwner, access.membership)
+    return toView(unit, access.organization, access.isOwner, access.membership, access.isTeacher)
   }
 }
 
@@ -113,6 +123,7 @@ function toView(
   organization: Organization,
   isOwner: boolean,
   role: Role | null | undefined,
+  isTeacher: boolean,
 ): UnitView {
   return {
     id,
@@ -126,7 +137,7 @@ function toView(
     access: {
       isOwner,
       isManager: role?.isManager ?? false,
-      isTeacher: role?.isTeacher ?? false,
+      isTeacher,
     },
   }
 }

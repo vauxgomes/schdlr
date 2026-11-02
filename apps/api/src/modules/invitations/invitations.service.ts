@@ -219,8 +219,9 @@ export class InvitationsService {
   }
 
   /**
-   * Aceitar passa por assertWritable e cria o membro (ou soma as flags às de quem já é); recusar
-   * é só a resposta de quem foi convidado e não muda a equipe.
+   * Aceitar passa por assertWritable e cria o membro (ou soma o isManager ao de quem já é); com
+   * isTeacher, cria também o Teacher do convidado (0021). Recusar é só a resposta de quem foi
+   * convidado e não muda a equipe.
    */
   private async respond(invitation: InvitationWithDetails, action: 'accept' | 'reject') {
     assertPending(invitation)
@@ -236,15 +237,16 @@ export class InvitationsService {
       isTeacher: false,
     })
 
-    const { unitId, inviteeId: userId, isManager, isTeacher } = invitation
-    return this.markResponded(invitation, 'ACCEPTED', (tx) =>
-      tx.unitMember.upsert({
+    const { unitId, inviteeId: userId, isManager, isTeacher, invitee } = invitation
+    return this.markResponded(invitation, 'ACCEPTED', async (tx) => {
+      await tx.unitMember.upsert({
         where: { unitId_userId: { unitId, userId } },
-        create: { unitId, userId, isManager, isTeacher },
+        create: { unitId, userId, isManager },
         // true nunca vira false.
-        update: { ...(isManager && { isManager: true }), ...(isTeacher && { isTeacher: true }) },
-      }),
-    )
+        update: { ...(isManager && { isManager: true }) },
+      })
+      if (isTeacher) await createTeacherFor(tx, unit.organizationId, { id: userId, ...invitee })
+    })
   }
 
   /** `status: PENDING` no filtro: duas respostas simultâneas não passam as duas. */
@@ -267,6 +269,29 @@ export class InvitationsService {
     })
     return toView(updated)
   }
+}
+
+/**
+ * O Teacher de quem aceita um convite com isTeacher, já vinculado e com o nome do usuário. Quem já
+ * é professor na organização fica com o que tinha; um homônimo leva o e-mail entre parênteses.
+ */
+async function createTeacherFor(
+  tx: Prisma.TransactionClient,
+  organizationId: string,
+  user: { id: string; email: string; name: string },
+) {
+  const existing = await tx.teacher.findUnique({
+    where: { organizationId_userId: { organizationId, userId: user.id } },
+    select: { id: true },
+  })
+  if (existing) return
+
+  const homonym = await tx.teacher.findUnique({
+    where: { organizationId_name: { organizationId, name: user.name } },
+    select: { id: true },
+  })
+  const name = homonym ? `${user.name} (${user.email})` : user.name
+  await tx.teacher.create({ data: { organizationId, userId: user.id, name } })
 }
 
 /** Dono e responsável; convite com isManager, só o dono. */

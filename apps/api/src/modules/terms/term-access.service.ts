@@ -58,14 +58,14 @@ export class TermAccessService {
    * (dono, responsável ou coordenador do curso), calculado pela spec de projeto.
    */
   assertProjectAction(
-    { term, canManageTerm }: TermAccess,
+    { term }: TermAccess,
     action: ProjectAction,
     { isProjectManager }: { isProjectManager: boolean },
   ): void {
     if (!isProjectActionOpen(term.status, action)) {
       throw new AppException('TERM_STATUS_FORBIDS', { status: term.status, action })
     }
-    if (!isProjectActionAllowed(term.status, action, { isProjectManager, canManageTerm })) {
+    if (!isProjectActionAllowed(term.status, action, { isProjectManager })) {
       throw new AppException('NOT_ALLOWED')
     }
   }

@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
-// Professor fora do formato é INVALID_TEACHER do service, não formato. Só teacherId é editável;
-// chaves extras são descartadas pelo z.object.
+// O teacherId é o de um Teacher (0021); fora do formato é INVALID_TEACHER do service, não formato.
+// Só teacherId é editável; chaves extras são descartadas pelo z.object.
 export const updateOfferingSchema = z
   .object({ teacherId: z.string().nullable().optional() })
   .refine((body) => body.teacherId !== undefined, {

@@ -88,7 +88,7 @@ describe('ofertas', () => {
     expect(res.body).toMatchObject({ errors: [{ code: 'EMPTY_UPDATE' }] })
   })
 
-  it('PATCH com professor que não é da unidade dá 400 INVALID_TEACHER', async () => {
+  it('PATCH com professor que não é da organização dá 400 INVALID_TEACHER', async () => {
     offerings.update.mockRejectedValue(new AppException('INVALID_TEACHER'))
     await http()
       .patch(`${O}/o-1`)
@@ -97,7 +97,7 @@ describe('ofertas', () => {
       .expect(400, {
         statusCode: 400,
         code: 'INVALID_TEACHER',
-        message: 'Teacher must be a teacher of the unit',
+        message: 'Teacher must be a teacher of the organization',
       })
   })
 

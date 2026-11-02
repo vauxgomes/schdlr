@@ -62,21 +62,21 @@ describe('membros e convites', () => {
       expect(members.list).toHaveBeenCalledWith('user-1', 'acme', 'sede')
     })
 
-    it('PATCH repassa as flags; sem flag dá EMPTY_UPDATE', async () => {
-      members.update.mockResolvedValue({ userId: 'u', isTeacher: true })
+    it('PATCH repassa só o isManager; sem ele, mesmo com isTeacher, dá EMPTY_UPDATE', async () => {
+      members.update.mockResolvedValue({ userId: 'u', isManager: true })
       await http()
         .patch(`${U}/members/u`)
         .set('Authorization', token)
-        .send({ isTeacher: true, email: 'x' })
+        .send({ isManager: true, isTeacher: true, email: 'x' })
         .expect(200)
       expect(members.update).toHaveBeenCalledWith('user-1', 'acme', 'sede', 'u', {
-        isTeacher: true,
+        isManager: true,
       })
 
       const res = await http()
         .patch(`${U}/members/u`)
         .set('Authorization', token)
-        .send({})
+        .send({ isTeacher: true })
         .expect(400)
       expect(res.body).toMatchObject({ errors: [{ code: 'EMPTY_UPDATE' }] })
     })
@@ -91,7 +91,7 @@ describe('membros e convites', () => {
       await http()
         .patch(`${U}/members/x`)
         .set('Authorization', token)
-        .send({ isTeacher: true })
+        .send({ isManager: true })
         .expect(404, { statusCode: 404, code: 'MEMBER_NOT_FOUND', message: 'Member not found' })
     })
   })

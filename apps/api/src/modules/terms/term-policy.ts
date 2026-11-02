@@ -5,8 +5,8 @@ import { ProjectStatus, TermStatus } from '@prisma/client'
 
 export type ProjectAction = 'create' | 'edit' | 'publish' | 'delete'
 
-/** Quem edita os projetos: gestores | dono e responsável | ninguém. */
-export type ProjectEditors = 'MANAGERS' | 'UNIT_ADMINS' | 'NOBODY'
+/** Quem edita os projetos: gestores | ninguém. */
+export type ProjectEditors = 'MANAGERS' | 'NOBODY'
 
 /** O que os demais membros (não gestores) veem dos projetos. Rascunho, nunca. */
 export type ProjectVisibility = 'NONE' | 'PUBLISHED'
@@ -20,14 +20,17 @@ export const TERM_TRANSITIONS: Record<TermStatus, readonly TermStatus[]> = {
   CANCELLED: [],
 }
 
-/** Apagar projeto segue `create`. Gestores veem todos os projetos em qualquer status. */
+/**
+ * Apagar projeto segue `create`. Gestores veem todos os projetos em qualquer status. Em STARTED,
+ * nada dentro dos projetos se edita: mudar é voltar o semestre a ADJUSTMENTS (0021).
+ */
 export const TERM_PROJECT_POLICY: Record<
   TermStatus,
   { create: boolean; edit: ProjectEditors; publish: boolean; othersSee: ProjectVisibility }
 > = {
   PLANNING: { create: true, edit: 'MANAGERS', publish: true, othersSee: 'NONE' },
   ADJUSTMENTS: { create: false, edit: 'MANAGERS', publish: true, othersSee: 'PUBLISHED' },
-  STARTED: { create: false, edit: 'UNIT_ADMINS', publish: false, othersSee: 'PUBLISHED' },
+  STARTED: { create: false, edit: 'NOBODY', publish: false, othersSee: 'PUBLISHED' },
   FINISHED: { create: false, edit: 'NOBODY', publish: false, othersSee: 'PUBLISHED' },
   CANCELLED: { create: false, edit: 'NOBODY', publish: false, othersSee: 'NONE' },
 }
@@ -38,8 +41,8 @@ export const canTransition = (from: TermStatus, to: TermStatus) =>
 /** Fechado: só leitura, sem volta. */
 export const isTermClosed = (status: TermStatus) => TERM_TRANSITIONS[status].length === 0
 
-/** O papel de quem age num projeto: gestor dele, e dono ou responsável pela unidade. */
-export type ProjectRoles = { isProjectManager: boolean; canManageTerm: boolean }
+/** O papel de quem age num projeto: gestor dele. */
+export type ProjectRoles = { isProjectManager: boolean }
 
 /** A ação existe neste status do semestre, para alguém. Apagar segue `create`. */
 export const isProjectActionOpen = (status: TermStatus, action: ProjectAction) => {
@@ -50,18 +53,14 @@ export const isProjectActionOpen = (status: TermStatus, action: ProjectAction) =
 }
 
 /**
- * A matriz "status × projetos" inteira, sem lançar: a ação existe no status e o papel basta. Em
- * STARTED, editar é só de dono e responsável; o resto é do gestor do projeto (0016, 0018).
+ * A matriz "status × projetos" inteira, sem lançar: a ação existe no status e o papel basta. O
+ * papel é sempre o de gestor do projeto (0016, 0018, 0021).
  */
 export const isProjectActionAllowed = (
   status: TermStatus,
   action: ProjectAction,
-  { isProjectManager, canManageTerm }: ProjectRoles,
-) => {
-  if (!isProjectActionOpen(status, action)) return false
-  const unitAdminsOnly = action === 'edit' && TERM_PROJECT_POLICY[status].edit === 'UNIT_ADMINS'
-  return unitAdminsOnly ? canManageTerm : isProjectManager
-}
+  { isProjectManager }: ProjectRoles,
+) => isProjectActionOpen(status, action) && isProjectManager
 
 /** Gestor do projeto vê sempre; os demais, só o publicado, e só se o status do semestre deixa. */
 export const isProjectVisible = (

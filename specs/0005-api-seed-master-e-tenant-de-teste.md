@@ -213,3 +213,10 @@ Desvios:
 - **O banco de dev ficou semeado** com o master e o tenant de teste, que é o estado esperado
   para as próximas specs.
 - O comentário do `.env.example` cita `pnpm otp <email>`, que só passa a existir com a 0004.
+
+## Notas posteriores
+
+**2026-11-01 — spec 0021.** O `teacher@` entra como membro sem flag de professor (a coluna
+`is_teacher` saiu) e ganha um `Teacher` vinculado, "Teacher Teste". A seed cria também um professor
+a contratar, "Professor a contratar 1", sem usuário. As duas linhas saem como `professor` na saída
+da seed.

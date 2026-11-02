@@ -1,12 +1,12 @@
 import { z } from 'zod'
 
-// Só as flags mudam; chaves extras são descartadas pelo z.object.
+// Só isManager muda: ser professor é ter um Teacher (0021). Chaves extras são descartadas pelo
+// z.object.
 export const updateMemberSchema = z
   .object({
     isManager: z.boolean().optional(),
-    isTeacher: z.boolean().optional(),
   })
-  .refine((body) => body.isManager !== undefined || body.isTeacher !== undefined, {
+  .refine((body) => body.isManager !== undefined, {
     message: 'At least one field is required',
     params: { code: 'EMPTY_UPDATE' },
   })
